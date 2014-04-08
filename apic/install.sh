@@ -62,7 +62,7 @@ git clone -b ${DEVSTACK_BRANCH} ${DEVSTACK_REPO} /opt/stack/devstack
 # create sample local.conf files
 cat >/opt/stack/devstack/local.conf.ctrl-node <<EOF
 [[local|localrc]]
-ENABLED_SERVICES=g-api,g-reg,key,n-api,n-crt,n-obj,n-cpu,n-cond,n-sch,n-novnc,n-cauth,horizon,rabbit,neutron,q-svc,q-agt,q-dhcp,quantum,mysql,q-meta,q-lbaas
+ENABLED_SERVICES=g-api,g-reg,key,n-api,n-crt,n-obj,n-cpu,n-cond,n-sch,n-novnc,n-cauth,horizon,rabbit,neutron,q-svc,q-agt,q-dhcp,quantum,mysql,q-meta
 
 MULTI_HOST=1
 HOST_IP=${HOST_IP_ADDR}
@@ -73,10 +73,9 @@ OVS_PHYSICAL_BRIDGE=br-eth1
 
 Q_PLUGIN=ml2
 Q_ML2_PLUGIN_MECHANISM_DRIVERS=openvswitch,cisco_apic
-Q_PLUGIN_EXTRA_CONF_FILES=( "ml2_conf_cisco.ini" )
 Q_PLUGIN_EXTRA_CONF_PATH="etc/neutron/plugins/ml2"
+Q_PLUGIN_EXTRA_CONF_FILES=( "ml2_conf_cisco.ini" )
 Q_ML2_TENANT_NETWORK_TYPE=vlan
-Q_ML2_PLUGIN_TYPE_DRIVERS=local,vlan,vxlan,gre
 ML2_VLAN_RANGES=physnet1:100:200
 ML2_L3_PLUGIN=neutron.services.l3_router.l3_apic.ApicL3ServicePlugin
 
