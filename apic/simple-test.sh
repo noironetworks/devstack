@@ -3,9 +3,9 @@
 set -x
 set -e
 
+cd /opt/stack/devstack
+. openrc admin admin
 TENANT=$(keystone tenant-list | awk '/demo/ {print $2}')
-IMAGE=$(nova image-list | awk '/cirros-0.3.1-x86_64-uec\ / {print $2}')
-FLAVOR=m1.tiny
 
 neutron net-create --tenant-id $TENANT net001
 neutron subnet-create --tenant-id $TENANT --name subnet001 net001 10.10.1.0/24
@@ -21,6 +21,9 @@ neutron router-port-list router001
 
 NET1=$(neutron net-list | awk '/net001/ {print $2}')
 NET2=$(neutron net-list | awk '/net002/ {print $2}')
+IMAGE=$(nova image-list | awk '/cirros-0.3.1-x86_64-uec\ / {print $2}')
+FLAVOR=m1.tiny
+
 nova boot --image $IMAGE --flavor $FLAVOR --nic net-id=$NET1 vm001
 nova boot --image $IMAGE --flavor $FLAVOR --nic net-id=$NET1 vm002
 nova boot --image $IMAGE --flavor $FLAVOR --nic net-id=$NET2 vm003
