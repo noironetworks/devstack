@@ -4,7 +4,7 @@ set -x
 set -e
 
 cd /opt/stack/devstack
-. openrc admin admin
+. openrc admin demo
 TENANT=$(keystone tenant-list | awk '/demo/ {print $2}')
 
 neutron net-create --tenant-id $TENANT net001
@@ -27,4 +27,6 @@ FLAVOR=m1.tiny
 nova boot --image $IMAGE --flavor $FLAVOR --nic net-id=$NET1 vm001
 nova boot --image $IMAGE --flavor $FLAVOR --nic net-id=$NET1 vm002
 nova boot --image $IMAGE --flavor $FLAVOR --nic net-id=$NET2 vm003
+nova list
+sleep 10
 nova list
