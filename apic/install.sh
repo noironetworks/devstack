@@ -78,6 +78,7 @@ Q_PLUGIN_EXTRA_CONF_PATH="etc/neutron/plugins/ml2"
 Q_ML2_TENANT_NETWORK_TYPE=vlan
 Q_ML2_PLUGIN_TYPE_DRIVERS=local,vlan,vxlan,gre
 ML2_VLAN_RANGES=physnet1:100:200
+ML2_L3_PLUGIN=neutron.services.l3_router.l3_apic.ApicL3ServicePlugin
 
 ADMIN_PASSWORD=nova
 MYSQL_PASSWORD=supersecret
