@@ -182,7 +182,7 @@ IRONICCLIENT_BRANCH=${IRONICCLIENT_BRANCH:-master}
 
 # unified auth system (manages accounts/tokens)
 KEYSTONE_REPO=${KEYSTONE_REPO:-${GIT_BASE}/openstack/keystone.git}
-KEYSTONE_BRANCH=${KEYSTONE_BRANCH:-"${ICEHOUSE_BRANCH}"`}
+KEYSTONE_BRANCH=${KEYSTONE_BRANCH:-"${ICEHOUSE_BRANCH}"}
 
 # python keystone client library to nova that horizon uses
 KEYSTONECLIENT_REPO=${KEYSTONECLIENT_REPO:-${GIT_BASE}/openstack/python-keystoneclient.git}
