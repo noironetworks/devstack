@@ -12,8 +12,9 @@ HOST_IP_ADDR=`ifconfig eth0 | tr : ' ' | awk '/inet\ / {print $3}'`
 APIC_IP_ADDR=$1
 APIC_PORT='80'
 APIC_CONFIG='/etc/neutron/plugins/ml2/ml2_cisco_conf.ini'
-DEVSTACK_REPO='http://github.com/noironetworks/devstack.git'
+DEVSTACK_REPO='https://github.com/noironetworks/devstack.git'
 DEVSTACK_BRANCH='cisco-apic-icehouse'
+CREATED_USER=false
 
 # Validate args
 if [ "${APIC_IP_ADDR}"x = ""x ] ; then
@@ -45,15 +46,23 @@ sudo apt-get -y install python-all-dev python-pip git
 # Create user 'stack' if one already does not exist, and
 #  - set same ssh privilages as current user
 #  - add to sudoers
-sudo egrep '^stack:' /etc/group 1>/dev/null || \
+if ! sudo egrep '^stack:' /etc/group 1>/dev/null
+then
     sudo groupadd stack
-sudo egrep '^stack:' /etc/passwd 1>/dev/null || (
+fi
+
+if ! sudo egrep '^stack:' /etc/passwd 1>/dev/null
+then
+  CREATED_USER=true
   sudo useradd -g stack -s /bin/bash -d /opt/stack -m stack
   sudo cp -r ${HOME}/.ssh /opt/stack/.ssh
   sudo chown -R stack.stack /opt/stack/.ssh
-)
-sudo egrep 'stack\ ALL' /etc/sudoers 1>/dev/null || \
+fi
+
+if ! sudo egrep 'stack\ ALL' /etc/sudoers 1>/dev/null
+then
     echo "stack ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers 1>/dev/null
+fi
 
 # Install devstack, always download the repo again
 sudo chmod a+w /opt/stack
@@ -66,6 +75,8 @@ ENABLED_SERVICES=g-api,g-reg,key,n-api,n-crt,n-obj,n-cpu,n-cond,n-sch,n-novnc,n-
 
 MULTI_HOST=1
 HOST_IP=${HOST_IP_ADDR}
+VNCSERVER_PROXYCLIENT_ADDRESS=${HOST_IP_ADDR}
+VNCSERVER_LISTEN=0.0.0.0
 
 ENABLE_TENANT_VLANS=True
 PHYSICAL_NETWORK=physnet1
@@ -92,19 +103,52 @@ SCREEN_LOGDIR=/opt/stack/logs
 #OFFLINE=True
 EOF
 
+cat >/opt/stack/devstack/local.conf.ctrl-noapic <<EOF
+[[local|localrc]]
+ENABLED_SERVICES=g-api,g-reg,key,n-api,n-crt,n-obj,n-cpu,n-cond,n-sch,n-novnc,n-cauth,horizon,rabbit,neutron,q-svc,q-agt,q-dhcp,quantum,mysql,q-meta,q-l3
+
+MULTI_HOST=1
+HOST_IP=${HOST_IP_ADDR}
+VNCSERVER_PROXYCLIENT_ADDRESS=${HOST_IP_ADDR}
+VNCSERVER_LISTEN=0.0.0.0
+
+ENABLE_TENANT_VLANS=True
+PHYSICAL_NETWORK=physnet1
+OVS_PHYSICAL_BRIDGE=br-eth1
+
+Q_PLUGIN=ml2
+Q_ML2_PLUGIN_MECHANISM_DRIVERS=openvswitch
+Q_ML2_TENANT_NETWORK_TYPE=vlan
+ML2_VLAN_RANGES=physnet1:100:200
+
+ADMIN_PASSWORD=nova
+MYSQL_PASSWORD=supersecret
+RABBIT_PASSWORD=supersecret
+SERVICE_PASSWORD=supersecret
+SERVICE_TOKEN=xyzlazydog
+
+LOGFILE=/opt/stack/logs/stack.sh.log
+SCREEN_LOGDIR=/opt/stack/logs
+#VERBOSE=True
+#DEBUG=True
+#OFFLINE=True
+EOF
+
 cat >/opt/stack/devstack/local.conf.compute-node <<EOF
 [[local|localrc]]
 ENABLED_SERVICES=n-cpu,q-agt,rabbit,neutron,nova
 
 MULTI_HOST=1
 HOST_IP=${HOST_IP_ADDR}
+VNCSERVER_PROXYCLIENT_ADDRESS=${HOST_IP_ADDR}
+VNCSERVER_LISTEN=0.0.0.0
 
 SERVICE_HOST=10.1.1.1
 DATABASE_TYPE=mysql
-MYSQL_HOST=$SERVICE_HOST
-RABBIT_HOST=$SERVICE_HOST
-GLANCE_HOSTPORT=${SERVICE_HOST}:9292
-Q_HOST=$SERVICE_HOST
+MYSQL_HOST=\${SERVICE_HOST}
+RABBIT_HOST=\${SERVICE_HOST}
+GLANCE_HOSTPORT=\${SERVICE_HOST}:9292
+Q_HOST=\${SERVICE_HOST}
 
 ENABLE_TENANT_VLANS=True
 PHYSICAL_NETWORK=physnet1
@@ -160,13 +204,22 @@ compute02=1/17
 EOF
 sudo chown -R stack.stack /etc/neutron
 
+# Set password for user stack
+if [ "${CREATED_USER}" = "true" ]
+then
+  echo "Please set password for user 'stack'"
+  sudo passwd stack || true
+fi
+
 # Done
-echo "$0 Done."
-echo "Login as user 'stack'"
-echo "  Based on your config update:"
+echo " "
+echo "Devstack installed"
+echo " "
+echo "Now login as user 'stack' and, based on your config,"
+echo "update these two files:"
 echo "    ~/devstack/local.conf"
 echo "    /etc/neutron/plugins/ml2/ml2_conf_cisco.ini"
-echo "  "
-echo "  Then run devstack as:"
+echo " "
+echo "Then run devstack as:"
 echo "    cd ~/${DEVSTACK_DIR}; ./stack.sh"
-echo "  "
+echo " "
