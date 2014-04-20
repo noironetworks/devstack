@@ -6,9 +6,9 @@ cd /opt/stack/devstack
 
 if nova list | grep vm001 1>/dev/null
 then
-  echo "Test already running"
-  nova list
-  exit 1
+    echo "Test already running"
+    nova list
+    exit 1
 fi
 
 TENANT=$(keystone tenant-list | awk '/demo/ {print $2}')
