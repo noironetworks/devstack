@@ -53,10 +53,10 @@ fi
 
 if ! sudo egrep '^stack:' /etc/passwd 1>/dev/null
 then
-  CREATED_USER=true
-  sudo useradd -g stack -s /bin/bash -d /opt/stack -m stack
-  sudo cp -r ${HOME}/.ssh /opt/stack/.ssh
-  sudo chown -R stack.stack /opt/stack/.ssh
+    CREATED_USER=true
+    sudo useradd -g stack -s /bin/bash -d /opt/stack -m stack
+    sudo cp -r ${HOME}/.ssh /opt/stack/.ssh
+    sudo chown -R stack.stack /opt/stack/.ssh
 fi
 
 if ! sudo egrep 'stack\ ALL' /etc/sudoers 1>/dev/null
@@ -208,10 +208,9 @@ EOF
 sudo chown -R stack.stack /etc/neutron
 
 # Set password for user stack
-if [ "${CREATED_USER}" = "true" ]
-then
-  echo "Please set password for user 'stack'"
-  sudo passwd stack || true
+if [ "${CREATED_USER}"x = "true"x ] ; then
+    echo "Please set password for user 'stack'"
+    sudo passwd stack || true
 fi
 
 # Done
