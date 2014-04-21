@@ -191,9 +191,13 @@ apic_password=password
 # Port for the APIC Controller
 apic_port=80
 
+# How to map names to APIC: use-uuid or use-name
+apic_name_mapping=use_name
+
 # Default names in APIC policies
 apic_vmm_provider=VMware
 apic_vmm_domain=openstack
+apic_app_profile_name=openstack_app
 apic_vlan_ns_name=openstack_ns
 apic_node_profile=openstack_profile
 apic_entity_profile=openstack_entity
