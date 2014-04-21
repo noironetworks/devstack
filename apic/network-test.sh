@@ -9,7 +9,7 @@ TENANT_NAME=demo
 FLAVOR=m1.tiny
 ROUTER=router1
 
-. ~/devstack/openrc "${USER_NAME}" "${TENANT_NAME}"
+. ${HOME}/devstack/openrc "${USER_NAME}" "${TENANT_NAME}"
 IMAGE=$(nova image-list | awk '/cirros-0.3.1-x86_64-uec\ / {print $2}' | head -1)
 
 if ! [ "$NUM_NETS" -eq "$NUM_NETS" ] 2>/dev/null ; then
