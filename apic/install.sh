@@ -138,7 +138,7 @@ EOF
 
 cat >/opt/stack/devstack/local.conf.compute-node <<EOF
 [[local|localrc]]
-ENABLED_SERVICES=n-cpu,q-agt,rabbit,neutron,nova
+ENABLED_SERVICES=n-cpu,q-agt,n-novnc,rabbit,neutron,nova
 
 MULTI_HOST=1
 HOST_IP=${HOST_IP_ADDR}
@@ -151,6 +151,7 @@ MYSQL_HOST=\${SERVICE_HOST}
 RABBIT_HOST=\${SERVICE_HOST}
 GLANCE_HOSTPORT=\${SERVICE_HOST}:9292
 Q_HOST=\${SERVICE_HOST}
+NOVNCPROXY_URL=http://\${SERVICE_HOST}:6080/vnc_auto.html
 
 ENABLE_TENANT_VLANS=True
 ENABLE_TENANT_TUNNELS=False
