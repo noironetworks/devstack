@@ -191,7 +191,7 @@ apic_password=password
 # Port for the APIC Controller
 apic_port=80
 
-# How to map names to APIC: use-uuid or use-name
+# How to map names to APIC: use_uuid or use_name
 apic_name_mapping=use_name
 
 # Default names in APIC policies
