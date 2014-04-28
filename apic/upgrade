@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+HOME=${HOME:-/opt/stack}
+PKGS=/opt/stack
+REMOTE="origin"
+RELEASE="cisco-apic-icehouse"
+VERSION=${HOME}/devstack/apic/version
+
+echo "Previous Version"
+$VERSION
+
+cd ${PKGS}/neutron
+git fetch -p "${REMOTE}"
+git reset --hard ${REMOTE}/${RELEASE}
+
+cd ${HOME}/devstack
+git fetch -p "${REMOTE}"
+git reset --hard ${REMOTE}/${RELEASE}
+
+echo "New Version"
+$VERSION
+
+echo "Apic Plugin Upgraded"
+echo ""

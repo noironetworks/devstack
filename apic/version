@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+PACKAGE="'APIC Openstack Plugin for Devstack (icehouse)'"
+NEUTRON_VERSION=$(cd /opt/stack/neutron; git log --oneline -1 | cut -d' ' -f1)
+DEVSTACK_VERSION=$(cd ${HOME}/devstack; git log --oneline -1 | cut -d' ' -f1)
+
+echo "PACKAGE=${PACKAGE}"
+echo "NEUTRON_VERSION=${NEUTRON_VERSION}"
+echo "DEVSTACK_VERSION=${DEVSTACK_VERSION}"
+echo ""
