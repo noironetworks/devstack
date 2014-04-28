@@ -1,4 +1,0 @@
-1. Ubuntu servers installed with 12.04 and connected to ACI switches
-2. Cisco ACI fabric and APIC installed and funtional (version > 872a)
-3. Access to internet for http, https, and apt from controller node
-4. Http and https access from conroller to compute node and APIC
