@@ -17,6 +17,7 @@
 # - configure_neutron_third_party
 # - init_neutron_third_party
 # - start_neutron_third_party
+# - start_agent_third_party
 # - create_neutron_cache_dir
 # - create_nova_conf_neutron
 # - start_neutron_service_and_check
@@ -1003,6 +1004,11 @@ function install_neutron_third_party {
 # start_neutron_third_party() - Start running processes, including screen
 function start_neutron_third_party {
     _neutron_third_party_do start
+}
+
+# start_agent_third_party() - Start running processes, including screen
+function start_agent_third_party {
+    _neutron_third_party_do start_agent
 }
 
 # stop_neutron_third_party - Stop running processes (non-screen)
