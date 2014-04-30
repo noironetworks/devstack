@@ -1251,6 +1251,7 @@ fi
 
 if is_service_enabled neutron; then
     start_neutron_agents
+    start_agent_third_party
 fi
 # Once neutron agents are started setup initial network elements
 if is_service_enabled q-svc; then
