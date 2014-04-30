@@ -71,7 +71,7 @@ git clone -b ${DEVSTACK_BRANCH} ${DEVSTACK_REPO} /opt/stack/devstack
 # create sample local.conf files
 cat >/opt/stack/devstack/local.conf.ctrl-node <<EOF
 [[local|localrc]]
-ENABLED_SERVICES=g-api,g-reg,key,n-api,n-crt,n-obj,n-cpu,n-cond,n-sch,n-novnc,n-cauth,horizon,rabbit,neutron,q-svc,q-agt,q-dhcp,quantum,mysql,q-meta
+ENABLED_SERVICES=g-api,g-reg,key,n-api,n-crt,n-obj,n-cpu,n-cond,n-sch,n-novnc,n-cauth,horizon,rabbit,neutron,q-svc,q-agt,q-dhcp,quantum,mysql,q-meta,cisco_apic,apicagt,apicsvc
 
 MULTI_HOST=1
 HOST_IP=${HOST_IP_ADDR}
@@ -138,7 +138,7 @@ EOF
 
 cat >/opt/stack/devstack/local.conf.compute-node <<EOF
 [[local|localrc]]
-ENABLED_SERVICES=n-cpu,q-agt,n-novnc,rabbit,neutron,nova
+ENABLED_SERVICES=n-cpu,q-agt,n-novnc,rabbit,neutron,nova,cisco_apic,apicagt
 
 MULTI_HOST=1
 HOST_IP=${HOST_IP_ADDR}
