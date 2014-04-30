@@ -1,0 +1,52 @@
+# Cisco APIC plugin support
+# -------------------------
+
+
+# Save trace setting
+APIC3_XTRACE=$(set +o | grep xtrace)
+set +o xtrace
+
+function configure_cisco_apic {
+  APIC_SVC_AGENT="$NEUTRON_BIN_DIR/neutron-cisco-apic-service-agent"
+  APIC_HOST_AGENT="$NEUTRON_BIN_DIR/neutron-cisco-apic-host-agent"
+  APIC_CFG_FILES="--config-file $NEUTRON_CONF --config-file /$Q_PLUGIN_CONF_FILE"
+  for apic_cfg_file in ${Q_PLUGIN_EXTRA_CONF_FILES[@]}; do
+    APIC_CFG_FILES+=" --config-file /$apic_cfg_file"
+  done
+}
+
+function init_cisco_apic {
+    :
+}
+
+function install_cisco_apic {
+  if is_service_enabled n-cpu neutron cisco_apic apicagt ; then
+    install_package lldpd
+    echo 'DAEMON_ARGS="-r -c -I eth*"' | sudo tee /etc/default/lldpd 1>/dev/null
+    restart_service lldpd
+  fi
+}
+
+function start_cisco_apic {
+    :
+}
+
+function stop_cisco_apic {
+    :
+}
+
+function check_cisco_apic {
+  # unfortunately in the check section since this must start after q-svc
+  if is_service_enabled neutron q-svc cisco_apic ; then
+    screen_it apicsvc "cd $NEUTRON_DIR && python $APIC_SVC_AGENT $APIC_CFG_FILES"
+  fi
+}
+
+function start_agent_cisco_apic {
+  if is_service_enabled n-cpu neutron cisco_apic ; then
+    screen_it apicagt "cd $NEUTRON_DIR && PATH=/usr/sbin:$PATH python $APIC_HOST_AGENT $APIC_CFG_FILES"
+  fi
+}
+
+# Restore xtrace
+$APIC3_XTRACE
