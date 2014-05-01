@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -x
+
+NETDEVS=$(ip -o link | cut -d: -f2 | awk '{print $1;}' | grep -E '^(qvo|tap)')
+for p in $NETDEVS ; do
+  sudo ovs-vsctl del-port br-int $p
+  sudo ip link delete $p
+done
+
+BRIDGES=$(brctl show | grep -v 'bridge name' | awk '{print $1;}' | grep -E '^(qbr|brq)')
+for b in $BRIDGES ; do
+  sudo ifconfig $b down
+  sudo brctl delbr $b
+done
+
+INTPORTS=$(sudo ovs-vsctl list-ports br-int | grep -E '^(tap|qr-)')
+for p in $INTPORTS ; do
+  sudo ovs-vsctl del-port br-int $p
+done
+
+EXTPORTS=$(sudo ovs-vsctl list-ports br-ex | grep -E '^(tap|qg-)')
+for p in $EXTPORTS ; do
+  sudo ovs-vsctl del-port br-ex $p
+done
+
+OVSBRIDGES=$(sudo ovs-vsctl list-br | grep -E '(br-int|br-tun|br-ex)')
+for br in $OVSBRIDGES ; do
+  sudo ovs-vsctl del-br $br
+done
+
+for ns in $NAMESPACES ; do
+  sudo ip netns delete $ns
+done
