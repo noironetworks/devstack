@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#
+# Set parameters
+#
 set -e
 HOME=${HOME:-/opt/stack}
 PKGS=/opt/stack
@@ -7,6 +10,28 @@ REMOTE="origin"
 RELEASE="cisco-apic-icehouse"
 VERSION=${HOME}/devstack/apic/version
 
+#
+# Check pre-conditions
+#
+if [ ! -d "${HOME}/devstack" ] ; then
+    echo "ERROR: Devstack distribution not found at: ${HOME}/devstack"
+    echo "       Did you run install script yet? Run as:"
+    echo "       curl -fsL http://git.io/apic-install | bash -s"
+    echo ""
+    exit 1
+fi 1>&2
+
+if [ ! -d "${PKGS}/neutron" ] ; then
+    echo "ERROR: Neutron distribution not found at: ${PKGS}/neutron"
+    echo "       Did you run devstack yet? Run as:"
+    echo "       cd ${HOME}/devstack && ./stack.sh"
+    echo ""
+    exit 1
+fi 1>&2
+
+#
+# Do upgrade
+#
 echo "Previous Version"
 $VERSION
 
