@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+try:
+    import os
+    import sys
+    import MySQLdb
+
+    # Get DB credentials
+    hostname = os.environ.get('SERVICE_HOST', 'localhost')
+    password = os.environ.get('MYSQL_PASSWORD', None)
+    if password is None:
+        raise Exception("mysql password not specified")
+
+    # DB connection
+    neutron_db = {
+        "host":   hostname,
+        "db":     "neutron_ml2",
+        "user":   "root",
+        "passwd": password,
+        }
+
+    # Query to check for duplicate agents
+    check_agents_query="""
+        select agent_type, host, count(1) num from agents
+        group by host, agent_type having num > 1
+        order by host, agent_type
+    """
+
+    # Make query
+    db = MySQLdb.connect(**neutron_db)
+    cur = db.cursor()
+    cur.execute(check_agents_query)
+    rows = cur.fetchall()
+
+    # Check for duplicate agents
+    if rows:
+        dups = ""
+        for row in rows:
+            dups += "\n %d agents on %s for %s" % (row[2], row[1], row[0])
+        raise Exception("Found duplicate agents: " + dups)
+
+except Exception as e:
+    print "ERROR: ", e
+    raise SystemExit(1)
+
+# Just for record
+raise SystemExit(0)
