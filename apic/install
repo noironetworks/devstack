@@ -57,8 +57,10 @@ if ! sudo egrep '^stack:' /etc/passwd 1>/dev/null
 then
     CREATED_USER=true
     sudo useradd -g stack -s /bin/bash -d ${STACK_HOME} -m stack
-    sudo cp -r ${HOME}/.ssh ${STACK_HOME}/.ssh
-    sudo chown -R stack.stack ${STACK_HOME}/.ssh
+    if [ -d "${HOME}/.ssh" ] ; then
+        sudo cp -r ${HOME}/.ssh ${STACK_HOME}/.ssh
+        sudo chown -R stack.stack ${STACK_HOME}/.ssh
+    fi
 fi
 
 if ! sudo egrep 'stack\ ALL' /etc/sudoers 1>/dev/null
@@ -180,9 +182,10 @@ SCREEN_LOGDIR=${STACK_HOME}/logs
 EOF
 
 cat >${DEVSTACK_TOP}/local.sh <<EOF
-#!/bin/sh
+#!/bin/bash
 [ -f  ${DEVSTACK_TOP}/.localrc.auto ] && . ${DEVSTACK_TOP}/.localrc.auto
 export MYSQL_PASSWORD
+[ -n "\$SERVICE_HOST" ] && export SERVICE_HOST
 ${DEVSTACK_TOP}/apic/check_agents
 EOF
 chmod a+x ${DEVSTACK_TOP}/local.sh
