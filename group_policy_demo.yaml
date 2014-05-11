@@ -1,0 +1,159 @@
+#!highlight yaml
+
+heat_template_version: 2013-05-23
+
+resources:
+
+# Creating classifiers
+
+    http_classifier:
+        type: OS::Neutron::policy_classifier
+        properties:
+            name: http_classifier
+            protocol: tcp
+            port_range: '80'
+            direction: in
+
+    https_classifier:
+        type: OS::Neutron::policy_classifier
+        properties:
+            name: https_classifier
+            protocol: tcp
+            port_range: '443'
+            direction: in
+
+    ssh_classifier:
+        type: OS::Neutron::policy_classifier
+        properties:
+            name: ssh_classifier
+            protocol: tcp
+            port_range: '22'
+            direction: in
+
+    all_classifier:
+        type: OS::Neutron::policy_classifier
+        properties:
+            name: all
+            direction: bi
+
+    allow_action:
+        type: OS::Neutron::policy_action
+        properties:
+            name: allow_action
+            action_type: allow
+ 
+# Creating web contracts
+
+    allow_http:
+        type: OS::Neutron::policy_rule
+        properties:
+            name: allow_http
+            policy_classifier_id: { get_resource: http_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+
+    allow_https:
+        type: OS::Neutron::policy_rule
+        properties:
+            name: allow_https
+            policy_classifier_id: { get_resource: https_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+
+    web_contract:
+        type: OS::Neutron::contract
+        properties:
+            name: web_contract
+            policy_rules: [{ get_resource: allow_http },
+                           { get_resource: allow_https }] 
+            child_contracts: []
+
+# Create EPGs for providers and consumers
+
+    web_epg:
+        type: OS::Neutron::endpoint_group
+        properties:
+            name: web_epg
+            provided_contracts: 
+                - contract_id: { get_resource: web_contract }
+                  contract_scope: 'None'
+
+    user_epg:
+        type: OS::Neutron::endpoint_group
+        properties:
+            name: user_epg
+            provided_contracts: 
+                - contract_id: { get_resource: web_contract }
+                  contract_scope: 'None'
+
+# Create webserver
+
+    web_server_ep:
+        type: OS::Neutron::endpoint
+        properties:
+            name: web_server_ep
+            endpoint_group_id: { get_resource: web_epg }
+
+#    web_server:
+#        type: OS::Nova::Server
+#        properties:
+#            name: web_svr
+#            image: "cirros-0.3.1-x86_64-uec"
+#            flavor: "m1.tiny"
+#            networks:
+#                - port: { get_attr: ["web_server_ep", "neutron_port_id"] }
+
+# Create a user
+
+    user_server_ep:
+        type: OS::Neutron::endpoint
+        properties:
+            name: user_server_ep
+            endpoint_group_id: { get_resource: user_epg }
+
+ #   user_server:
+ #       type: OS::Nova::Server
+ #       properties:
+ #           name: user_svr
+ #           image: "cirros-0.3.1-x86_64-uec"
+ #           flavor: "m1.tiny"
+ #           networks:
+ #               - port: { get_attr: ["user_server_ep", "neutron_port_id"] }
+
+# Create firewall
+
+    fw_policy:
+        type: OS::Neutron::FirewallPolicy
+        properties:
+            name: admin_fw_policy
+            firewall_rules: []
+
+    fw:
+        type: OS::Neutron::Firewall
+        properties:
+            name: fw
+            admin_state_up: False
+            firewall_policy_id: { get_resource: fw_policy }
+
+
+# Now connect them all together
+
+    redirect_to_fw_action:
+        type: OS::Neutron::policy_action
+        properties:
+            name: redirect_to_fw_action
+            action_type: redirect
+            action_value: { get_resource: fw }
+ 
+    redirect_to_fw_rule:
+        type: OS::Neutron::policy_rule
+        properties:
+            name: redirect_to_fw_rule
+            policy_classifier_id: { get_resource: all_classifier }
+            policy_actions: [{ get_resource: redirect_to_fw_action }]
+
+    admin_contract:
+        type: OS::Neutron::contract
+        properties:
+            name: admin_contract
+            policy_rules: [{ get_resource: redirect_to_fw_rule }] 
+            child_contracts: [{ get_resource: web_contract }]
+
