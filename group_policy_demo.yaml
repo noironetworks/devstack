@@ -92,14 +92,14 @@ resources:
             name: web_server_ep
             endpoint_group_id: { get_resource: web_epg }
 
-#    web_server:
-#        type: OS::Nova::Server
-#        properties:
-#            name: web_svr
-#            image: "cirros-0.3.1-x86_64-uec"
-#            flavor: "m1.tiny"
-#            networks:
-#                - port: { get_attr: ["web_server_ep", "neutron_port_id"] }
+    web_server:
+        type: OS::Nova::Server
+        properties:
+            name: web_svr
+            image: "cirros-0.3.1-x86_64-uec"
+            flavor: "m1.tiny"
+            networks:
+                - port: {get_attr: [web_server_ep, neutron_port_id]}
 
 # Create a user
 
@@ -109,14 +109,14 @@ resources:
             name: user_server_ep
             endpoint_group_id: { get_resource: user_epg }
 
- #   user_server:
- #       type: OS::Nova::Server
- #       properties:
- #           name: user_svr
- #           image: "cirros-0.3.1-x86_64-uec"
- #           flavor: "m1.tiny"
- #           networks:
- #               - port: { get_attr: ["user_server_ep", "neutron_port_id"] }
+    user_server:
+        type: OS::Nova::Server
+        properties:
+            name: user_svr
+            image: "cirros-0.3.1-x86_64-uec"
+            flavor: "m1.tiny"
+            networks:
+                - port: {get_attr: [user_server_ep, neutron_port_id]}
 
 # Create firewall
 
