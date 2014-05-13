@@ -103,6 +103,11 @@ function init_horizon {
         _horizon_config_set $local_settings OPENSTACK_NEUTRON_NETWORK enable_vpn True
     fi
 
+    # enable Group Policy dashboard in case service is enabled
+    if is_service_enabled group-policy; then
+        _horizon_config_set $local_settings OPENSTACK_NEUTRON_NETWORK enable_group_policy True
+    fi
+
     # Create an empty directory that apache uses as docroot
     sudo mkdir -p $HORIZON_DIR/.blackhole
 
