@@ -32,8 +32,7 @@ if [ ! -f /etc/lsb-release ] ; then
 fi
 eval `cat /etc/lsb-release`
 if [ "${DISTRIB_RELEASE}"x != "12.04"x ] ; then
-    echo "ERROR: This script is only supported on ubuntu 12.04" 1>&2
-    exit 1
+    echo "WARNING: This script has only been tested on ubuntu 12.04" 1>&2
 fi
 if [ -d ${DEVSTACK_TOP} ] ; then
     echo "ERROR: devstack already exists" 1>&2
@@ -197,10 +196,12 @@ sudo chown -R stack.stack ${STACK_HOME}
 # Update config in /etc
 sudo mkdir -p /etc/neutron/plugins/ml2
 sudo tee /etc/neutron/plugins/ml2/ml2_conf_cisco.ini 1>/dev/null <<EOF
-[ml2_cisco_apic]
+[DEFAULT]
+apic_system_id=openstack1
 
+[ml2_cisco_apic]
 # Hostname for the APIC controller
-apic_host=${APIC_IP_ADDR}
+apic_hosts=${APIC_IP_ADDR}
 
 # Username for the APIC controller
 apic_username=admin
@@ -208,26 +209,16 @@ apic_username=admin
 # Password for the APIC controller
 apic_password=password
 
-# Port for the APIC Controller
-apic_port=80
-
 # How to map names to APIC: use_uuid or use_name
 apic_name_mapping=use_name
 
-# Default names in APIC policies
-apic_vmm_provider=VMware
-apic_vmm_domain=openstack
-apic_app_profile_name=openstack_app
-apic_vlan_ns_name=openstack_ns
-apic_node_profile=openstack_profile
-apic_entity_profile=openstack_entity
-apic_function_profile=openstack_function
+# For testing only
 apic_clear_node_profiles=True
 
 # For static configuration, by default detect hostlinks
 # [apic_switch:17]
 # compute01=1/17
-
+#
 # [apic_switch:18]
 # compute02=1/17
 EOF
