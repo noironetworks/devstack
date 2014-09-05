@@ -14,7 +14,7 @@ try:
     # DB connection
     neutron_db = {
         "host":   hostname,
-        "db":     "neutron_ml2",
+        "db":     "neutron",
         "user":   "root",
         "passwd": password,
         }
