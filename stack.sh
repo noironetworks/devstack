@@ -37,6 +37,56 @@ umask 022
 # Keep track of the devstack directory
 TOP_DIR=$(cd $(dirname "$0") && pwd)
 
+
+# Sanity Checks
+# -------------
+
+# Clean up last environment var cache
+if [[ -r $TOP_DIR/.stackenv ]]; then
+    rm $TOP_DIR/.stackenv
+fi
+
+# ``stack.sh`` keeps the list of ``apt`` and ``rpm`` dependencies and config
+# templates and other useful files in the ``files`` subdirectory
+FILES=$TOP_DIR/files
+if [ ! -d $FILES ]; then
+    die $LINENO "missing devstack/files"
+fi
+
+# ``stack.sh`` keeps function libraries here
+# Make sure ``$TOP_DIR/lib`` directory is present
+if [ ! -d $TOP_DIR/lib ]; then
+    die $LINENO "missing devstack/lib"
+fi
+
+# Check if run as root
+# OpenStack is designed to be run as a non-root user; Horizon will fail to run
+# as **root** since Apache will not serve content from **root** user).
+# ``stack.sh`` must not be run as **root**.  It aborts and suggests one course of
+# action to create a suitable user account.
+
+if [[ $EUID -eq 0 ]]; then
+    echo "You are running this script as root."
+    echo "Cut it out."
+    echo "Really."
+    echo "If you need an account to run DevStack, do this (as root, heh) to create $STACK_USER:"
+    echo "$TOP_DIR/tools/create-stack-user.sh"
+    exit 1
+fi
+
+# Check to see if we are already running DevStack
+# Note that this may fail if USE_SCREEN=False
+if type -p screen >/dev/null && screen -ls | egrep -q "[0-9].$SCREEN_NAME"; then
+    echo "You are already running a stack.sh session."
+    echo "To rejoin this session type 'screen -x stack'."
+    echo "To destroy this session, type './unstack.sh'."
+    exit 1
+fi
+
+
+# Prepare the environment
+# -----------------------
+
 # Import common functions
 source $TOP_DIR/functions
 
@@ -48,9 +98,18 @@ source $TOP_DIR/lib/config
 # and ``DISTRO``
 GetDistro
 
+# Warn users who aren't on an explicitly supported distro, but allow them to
+# override check and attempt installation with ``FORCE=yes ./stack``
+if [[ ! ${DISTRO} =~ (precise|trusty|7.0|wheezy|sid|testing|jessie|f19|f20|rhel6|rhel7) ]]; then
+    echo "WARNING: this script has not been tested on $DISTRO"
+    if [[ "$FORCE" != "yes" ]]; then
+        die $LINENO "If you wish to run this script anyway run with FORCE=yes"
+    fi
+fi
+
 
 # Global Settings
-# ===============
+# ---------------
 
 # Check for a ``localrc`` section embedded in ``local.conf`` and extract if
 # ``localrc`` does not already exist
@@ -95,7 +154,7 @@ fi
 # ``stackrc`` sources ``localrc`` to allow you to safely override those settings.
 
 if [[ ! -r $TOP_DIR/stackrc ]]; then
-    log_error $LINENO "missing $TOP_DIR/stackrc - did you grab more than just stack.sh?"
+    die $LINENO "missing $TOP_DIR/stackrc - did you grab more than just stack.sh?"
 fi
 source $TOP_DIR/stackrc
 
@@ -106,89 +165,24 @@ source $TOP_DIR/stackrc
 # Make sure the proxy config is visible to sub-processes
 export_proxy_variables
 
-# Destination path for installation ``DEST``
-DEST=${DEST:-/opt/stack}
-
-
-# Sanity Check
-# ------------
-
-# Clean up last environment var cache
-if [[ -r $TOP_DIR/.stackenv ]]; then
-    rm $TOP_DIR/.stackenv
-fi
-
-# ``stack.sh`` keeps the list of ``apt`` and ``rpm`` dependencies and config
-# templates and other useful files in the ``files`` subdirectory
-FILES=$TOP_DIR/files
-if [ ! -d $FILES ]; then
-    log_error $LINENO "missing devstack/files"
-fi
-
-# ``stack.sh`` keeps function libraries here
-# Make sure ``$TOP_DIR/lib`` directory is present
-if [ ! -d $TOP_DIR/lib ]; then
-    log_error $LINENO "missing devstack/lib"
-fi
-
-# Import common services (database, message queue) configuration
-source $TOP_DIR/lib/database
-source $TOP_DIR/lib/rpc_backend
-
 # Remove services which were negated in ENABLED_SERVICES
 # using the "-" prefix (e.g., "-rabbit") instead of
 # calling disable_service().
 disable_negated_services
 
-# Warn users who aren't on an explicitly supported distro, but allow them to
-# override check and attempt installation with ``FORCE=yes ./stack``
-if [[ ! ${DISTRO} =~ (precise|saucy|trusty|7.0|wheezy|sid|testing|jessie|f19|f20|rhel6|rhel7) ]]; then
-    echo "WARNING: this script has not been tested on $DISTRO"
-    if [[ "$FORCE" != "yes" ]]; then
-        die $LINENO "If you wish to run this script anyway run with FORCE=yes"
-    fi
-fi
-
 # Look for obsolete stuff
 if [[ ,${ENABLED_SERVICES}, =~ ,"swift", ]]; then
     echo "FATAL: 'swift' is not supported as a service name"
-    echo "FATAL: Use the actual swift service names to enable tham as required:"
+    echo "FATAL: Use the actual swift service names to enable them as required:"
     echo "FATAL: s-proxy s-object s-container s-account"
-    exit 1
-fi
-
-# Make sure we only have one rpc backend enabled,
-# and the specified rpc backend is available on your platform.
-check_rpc_backend
-
-# Check to see if we are already running DevStack
-# Note that this may fail if USE_SCREEN=False
-if type -p screen >/dev/null && screen -ls | egrep -q "[0-9].$SCREEN_NAME"; then
-    echo "You are already running a stack.sh session."
-    echo "To rejoin this session type 'screen -x stack'."
-    echo "To destroy this session, type './unstack.sh'."
     exit 1
 fi
 
 # Set up logging level
 VERBOSE=$(trueorfalse True $VERBOSE)
 
-# root Access
-# -----------
-
-# OpenStack is designed to be run as a non-root user; Horizon will fail to run
-# as **root** since Apache will not serve content from **root** user).
-# ``stack.sh`` must not be run as **root**.  It aborts and suggests one course of
-# action to create a suitable user account.
-
-if [[ $EUID -eq 0 ]]; then
-    echo "You are running this script as root."
-    echo "Cut it out."
-    echo "Really."
-    echo "If you need an account to run DevStack, do this (as root, heh) to create $STACK_USER:"
-    echo "$TOP_DIR/tools/create-stack-user.sh"
-    exit 1
-fi
+# Configure sudo
+# --------------
 
 # We're not **root**, make sure ``sudo`` is available
 is_package_installed sudo || install_package sudo
@@ -208,27 +202,27 @@ chmod 0440 $TEMPFILE
 sudo chown root:root $TEMPFILE
 sudo mv $TEMPFILE /etc/sudoers.d/50_stack_sh
 
-# Additional repos
-# ----------------
+
+# Configure Distro Repositories
+# -----------------------------
 
 # For debian/ubuntu make apt attempt to retry network ops on it's own
 if is_ubuntu; then
-    echo 'APT::Acquire::Retries "20";' | sudo tee /etc/apt/apt.conf.d/80retry
+    echo 'APT::Acquire::Retries "20";' | sudo tee /etc/apt/apt.conf.d/80retry  >/dev/null
+fi
+
+# upstream Rackspace centos7 images have an issue where cloud-init is
+# installed via pip because there were not official packages when the
+# image was created (fix in the works).  Remove all pip packages
+# before we do anything else
+if [[ $DISTRO = "rhel7" && is_rackspace ]]; then
+    (sudo pip freeze | xargs sudo pip uninstall -y) || true
 fi
 
 # Some distros need to add repos beyond the defaults provided by the vendor
 # to pick up required packages.
 
-# The Debian Wheezy official repositories do not contain all required packages,
-# add gplhost repository.
-if [[ "$os_VENDOR" =~ (Debian) ]]; then
-    echo 'deb http://archive.gplhost.com/debian grizzly main' | sudo tee /etc/apt/sources.list.d/gplhost_wheezy-backports.list
-    echo 'deb http://archive.gplhost.com/debian grizzly-backports main' | sudo tee -a /etc/apt/sources.list.d/gplhost_wheezy-backports.list
-    apt_get update
-    apt_get install --force-yes gplhost-archive-keyring
-fi
-
-if [[ is_fedora && $DISTRO =~ (rhel) ]]; then
+if [[ is_fedora && $DISTRO == "rhel6" ]]; then
     # Installing Open vSwitch on RHEL requires enabling the RDO repo.
     RHEL6_RDO_REPO_RPM=${RHEL6_RDO_REPO_RPM:-"http://rdo.fedorapeople.org/openstack-icehouse/rdo-release-icehouse.rpm"}
     RHEL6_RDO_REPO_ID=${RHEL6_RDO_REPO_ID:-"openstack-icehouse"}
@@ -237,10 +231,13 @@ if [[ is_fedora && $DISTRO =~ (rhel) ]]; then
         yum_install $RHEL6_RDO_REPO_RPM || \
             die $LINENO "Error installing RDO repo, cannot continue"
     fi
+fi
+
+if [[ is_fedora && ( $DISTRO == "rhel6" || $DISTRO == "rhel7" ) ]]; then
     # RHEL requires EPEL for many Open Stack dependencies
-    if [[ $DISTRO =~ (rhel7) ]]; then
+    if [[ $DISTRO == "rhel7" ]]; then
         EPEL_RPM=${RHEL7_EPEL_RPM:-"http://dl.fedoraproject.org/pub/epel/beta/7/x86_64/epel-release-7-0.2.noarch.rpm"}
-    else
+    elif [[ $DISTRO == "rhel6" ]]; then
         EPEL_RPM=${RHEL6_EPEL_RPM:-"http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm"}
     fi
     if ! sudo yum repolist enabled epel | grep -q 'epel'; then
@@ -251,17 +248,20 @@ if [[ is_fedora && $DISTRO =~ (rhel) ]]; then
 
     # ... and also optional to be enabled
     is_package_installed yum-utils || install_package yum-utils
-    if [[ $DISTRO =~ (rhel7) ]]; then
+    if [[ $DISTRO == "rhel7" ]]; then
         OPTIONAL_REPO=rhel-7-server-optional-rpms
-    else
+    elif [[ $DISTRO == "rhel6" ]]; then
         OPTIONAL_REPO=rhel-6-server-optional-rpms
     fi
     sudo yum-config-manager --enable ${OPTIONAL_REPO}
-
 fi
 
-# Filesystem setup
-# ----------------
+
+# Configure Target Directories
+# ----------------------------
+
+# Destination path for installation ``DEST``
+DEST=${DEST:-/opt/stack}
 
 # Create the destination directory and ensure it is writable by the user
 # and read/executable by everybody for daemons (e.g. apache run for horizon)
@@ -272,17 +272,18 @@ safe_chmod 0755 $DEST
 # a basic test for $DEST path permissions (fatal on error unless skipped)
 check_path_perm_sanity ${DEST}
 
+# Destination path for service data
+DATA_DIR=${DATA_DIR:-${DEST}/data}
+sudo mkdir -p $DATA_DIR
+safe_chown -R $STACK_USER $DATA_DIR
+
+# Configure proper hostname
 # Certain services such as rabbitmq require that the local hostname resolves
 # correctly.  Make sure it exists in /etc/hosts so that is always true.
 LOCAL_HOSTNAME=`hostname -s`
 if [ -z "`grep ^127.0.0.1 /etc/hosts | grep $LOCAL_HOSTNAME`" ]; then
     sudo sed -i "s/\(^127.0.0.1.*\)/\1 $LOCAL_HOSTNAME/" /etc/hosts
 fi
-
-# Destination path for service data
-DATA_DIR=${DATA_DIR:-${DEST}/data}
-sudo mkdir -p $DATA_DIR
-safe_chown -R $STACK_USER $DATA_DIR
 
 
 # Common Configuration
@@ -317,9 +318,6 @@ fi
 # Allow the use of an alternate hostname (such as localhost/127.0.0.1) for service endpoints.
 SERVICE_HOST=${SERVICE_HOST:-$HOST_IP}
 
-# Allow the use of an alternate protocol (such as https) for service endpoints
-SERVICE_PROTOCOL=${SERVICE_PROTOCOL:-http}
-
 # Configure services to use syslog instead of writing to individual log files
 SYSLOG=`trueorfalse False $SYSLOG`
 SYSLOG_HOST=${SYSLOG_HOST:-$HOST_IP}
@@ -337,6 +335,14 @@ SERVICE_TIMEOUT=${SERVICE_TIMEOUT:-60}
 # Reset the bundle of CA certificates
 SSL_BUNDLE_FILE="$DATA_DIR/ca-bundle.pem"
 rm -f $SSL_BUNDLE_FILE
+
+# Import common services (database, message queue) configuration
+source $TOP_DIR/lib/database
+source $TOP_DIR/lib/rpc_backend
+
+# Make sure we only have one rpc backend enabled,
+# and the specified rpc backend is available on your platform.
+check_rpc_backend
 
 
 # Configure Projects
@@ -484,6 +490,10 @@ if is_service_enabled s-proxy; then
     # ``SWIFT_HASH`` is a random unique string for a swift cluster that
     # can never change.
     read_password SWIFT_HASH "ENTER A RANDOM SWIFT HASH."
+
+    if [[ -z "$SWIFT_TEMPURL_KEY" ]] && [[ "$SWIFT_ENABLE_TEMPURLS" == "True" ]]; then
+        read_password SWIFT_TEMPURL_KEY "ENTER A KEY FOR SWIFT TEMPURLS."
+    fi
 fi
 
 
@@ -530,7 +540,7 @@ function echo_nolog {
     echo $@ >&3
 }
 
-if [[ is_fedora && $DISTRO =~ (rhel) ]]; then
+if [[ is_fedora && $DISTRO == "rhel6" ]]; then
     # poor old python2.6 doesn't have argparse by default, which
     # outfilter.py uses
     is_package_installed python-argparse || install_package python-argparse
@@ -629,7 +639,11 @@ function exit_trap {
 
     if [[ $r -ne 0 ]]; then
         echo "Error on exit"
-        ./tools/worlddump.py -d $LOGDIR
+        if [[ -z $LOGDIR ]]; then
+            ./tools/worlddump.py
+        else
+            ./tools/worlddump.py -d $LOGDIR
+        fi
     fi
 
     exit $r
@@ -668,11 +682,11 @@ source $TOP_DIR/tools/install_prereqs.sh
 
 # Configure an appropriate python environment
 if [[ "$OFFLINE" != "True" ]]; then
-    $TOP_DIR/tools/install_pip.sh
+    PYPI_ALTERNATIVE_URL=$PYPI_ALTERNATIVE_URL $TOP_DIR/tools/install_pip.sh
 fi
 
-# Do the ugly hacks for borken packages and distros
-$TOP_DIR/tools/fixup_stuff.sh
+# Do the ugly hacks for broken packages and distros
+source $TOP_DIR/tools/fixup_stuff.sh
 
 
 # Extras Pre-install
@@ -802,11 +816,11 @@ if is_service_enabled ceilometer; then
     install_ceilometer
     echo_summary "Configuring Ceilometer"
     configure_ceilometer
-    configure_ceilometerclient
 fi
 
 if is_service_enabled heat; then
     install_heat
+    install_heat_other
     cleanup_heat
     configure_heat
 fi
@@ -1267,6 +1281,10 @@ if is_service_enabled heat; then
     init_heat
     echo_summary "Starting Heat"
     start_heat
+    if [ "$HEAT_CREATE_TEST_IMAGE" = "True" ]; then
+        echo_summary "Building Heat functional test image"
+        build_heat_functional_test_image
+    fi
 fi
 
 
@@ -1406,120 +1424,55 @@ if [[ -n "$DEPRECATED_TEXT" ]]; then
     echo_summary "WARNING: $DEPRECATED_TEXT"
 fi
 
-# TODO(dtroyer): Remove EXTRA_OPTS after stable/icehouse branch is cut
-# Specific warning for deprecated configs
-if [[ -n "$EXTRA_OPTS" ]]; then
-    echo ""
-    echo_summary "WARNING: EXTRA_OPTS is used"
-    echo "You are using EXTRA_OPTS to pass configuration into nova.conf."
-    echo "Please convert that configuration in localrc to a nova.conf section in local.conf:"
-    echo "EXTRA_OPTS will be removed early in the Juno development cycle"
-    echo "
-[[post-config|\$NOVA_CONF]]
-[DEFAULT]
-"
-    for I in "${EXTRA_OPTS[@]}"; do
-        # Replace the first '=' with ' ' for iniset syntax
-        echo ${I}
-    done
-fi
-
-# TODO(dtroyer): Remove EXTRA_BAREMETAL_OPTS after stable/icehouse branch is cut
-if [[ -n "$EXTRA_BAREMETAL_OPTS" ]]; then
-    echo ""
-    echo_summary "WARNING: EXTRA_BAREMETAL_OPTS is used"
-    echo "You are using EXTRA_BAREMETAL_OPTS to pass configuration into nova.conf."
-    echo "Please convert that configuration in localrc to a nova.conf section in local.conf:"
-    echo "EXTRA_BAREMETAL_OPTS will be removed early in the Juno development cycle"
-    echo "
-[[post-config|\$NOVA_CONF]]
-[baremetal]
-"
-    for I in "${EXTRA_BAREMETAL_OPTS[@]}"; do
-        # Replace the first '=' with ' ' for iniset syntax
-        echo ${I}
-    done
-fi
-
-# TODO(dtroyer): Remove Q_AGENT_EXTRA_AGENT_OPTS after stable/juno branch is cut
-if [[ -n "$Q_AGENT_EXTRA_AGENT_OPTS" ]]; then
-    echo ""
-    echo_summary "WARNING: Q_AGENT_EXTRA_AGENT_OPTS is used"
-    echo "You are using Q_AGENT_EXTRA_AGENT_OPTS to pass configuration into $NEUTRON_CONF."
-    echo "Please convert that configuration in localrc to a $NEUTRON_CONF section in local.conf:"
-    echo "Q_AGENT_EXTRA_AGENT_OPTS will be removed early in the 'K' development cycle"
-    echo "
+if is_service_enabled neutron; then
+    # TODO(dtroyer): Remove Q_AGENT_EXTRA_AGENT_OPTS after stable/juno branch is cut
+    if [[ -n "$Q_AGENT_EXTRA_AGENT_OPTS" ]]; then
+        echo ""
+        echo_summary "WARNING: Q_AGENT_EXTRA_AGENT_OPTS is used"
+        echo "You are using Q_AGENT_EXTRA_AGENT_OPTS to pass configuration into $NEUTRON_CONF."
+        echo "Please convert that configuration in localrc to a $NEUTRON_CONF section in local.conf:"
+        echo "Q_AGENT_EXTRA_AGENT_OPTS will be removed early in the 'K' development cycle"
+        echo "
 [[post-config|/\$Q_PLUGIN_CONF_FILE]]
 [DEFAULT]
 "
-    for I in "${Q_AGENT_EXTRA_AGENT_OPTS[@]}"; do
-        # Replace the first '=' with ' ' for iniset syntax
-        echo ${I}
-    done
-fi
+        for I in "${Q_AGENT_EXTRA_AGENT_OPTS[@]}"; do
+            # Replace the first '=' with ' ' for iniset syntax
+            echo ${I}
+        done
+    fi
 
-# TODO(dtroyer): Remove Q_AGENT_EXTRA_SRV_OPTS after stable/juno branch is cut
-if [[ -n "$Q_AGENT_EXTRA_SRV_OPTS" ]]; then
-    echo ""
-    echo_summary "WARNING: Q_AGENT_EXTRA_SRV_OPTS is used"
-    echo "You are using Q_AGENT_EXTRA_SRV_OPTS to pass configuration into $NEUTRON_CONF."
-    echo "Please convert that configuration in localrc to a $NEUTRON_CONF section in local.conf:"
-    echo "Q_AGENT_EXTRA_AGENT_OPTS will be removed early in the 'K' development cycle"
-    echo "
+    # TODO(dtroyer): Remove Q_AGENT_EXTRA_SRV_OPTS after stable/juno branch is cut
+    if [[ -n "$Q_AGENT_EXTRA_SRV_OPTS" ]]; then
+        echo ""
+        echo_summary "WARNING: Q_AGENT_EXTRA_SRV_OPTS is used"
+        echo "You are using Q_AGENT_EXTRA_SRV_OPTS to pass configuration into $NEUTRON_CONF."
+        echo "Please convert that configuration in localrc to a $NEUTRON_CONF section in local.conf:"
+        echo "Q_AGENT_EXTRA_AGENT_OPTS will be removed early in the 'K' development cycle"
+        echo "
 [[post-config|/\$Q_PLUGIN_CONF_FILE]]
 [DEFAULT]
 "
-    for I in "${Q_AGENT_EXTRA_SRV_OPTS[@]}"; do
-        # Replace the first '=' with ' ' for iniset syntax
-        echo ${I}
-    done
+        for I in "${Q_AGENT_EXTRA_SRV_OPTS[@]}"; do
+            # Replace the first '=' with ' ' for iniset syntax
+            echo ${I}
+        done
+    fi
 fi
 
-# TODO(dtroyer): Remove Q_DHCP_EXTRA_DEFAULT_OPTS after stable/icehouse branch is cut
-if [[ -n "$Q_DHCP_EXTRA_DEFAULT_OPTS" ]]; then
-    echo ""
-    echo_summary "WARNING: Q_DHCP_EXTRA_DEFAULT_OPTS is used"
-    echo "You are using Q_DHCP_EXTRA_DEFAULT_OPTS to pass configuration into $Q_DHCP_CONF_FILE."
-    echo "Please convert that configuration in localrc to a $Q_DHCP_CONF_FILE section in local.conf:"
-    echo "Q_DHCP_EXTRA_DEFAULT_OPTS will be removed early in the Juno development cycle"
-    echo "
-[[post-config|/\$Q_DHCP_CONF_FILE]]
-[DEFAULT]
-"
-    for I in "${Q_DHCP_EXTRA_DEFAULT_OPTS[@]}"; do
-        # Replace the first '=' with ' ' for iniset syntax
-        echo ${I}
-    done
-fi
-
-# TODO(dtroyer): Remove Q_SRV_EXTRA_DEFAULT_OPTS after stable/icehouse branch is cut
-if [[ -n "$Q_SRV_EXTRA_DEFAULT_OPTS" ]]; then
-    echo ""
-    echo_summary "WARNING: Q_SRV_EXTRA_DEFAULT_OPTS is used"
-    echo "You are using Q_SRV_EXTRA_DEFAULT_OPTS to pass configuration into $NEUTRON_CONF."
-    echo "Please convert that configuration in localrc to a $NEUTRON_CONF section in local.conf:"
-    echo "Q_SRV_EXTRA_DEFAULT_OPTS will be removed early in the Juno development cycle"
-    echo "
-[[post-config|\$NEUTRON_CONF]]
-[DEFAULT]
-"
-    for I in "${Q_SRV_EXTRA_DEFAULT_OPTS[@]}"; do
-        # Replace the first '=' with ' ' for iniset syntax
-        echo ${I}
-    done
-fi
-
-# TODO(dtroyer): Remove CINDER_MULTI_LVM_BACKEND after stable/juno branch is cut
-if [[ "$CINDER_MULTI_LVM_BACKEND" = "True" ]]; then
-    echo ""
-    echo_summary "WARNING: CINDER_MULTI_LVM_BACKEND is used"
-    echo "You are using CINDER_MULTI_LVM_BACKEND to configure Cinder's multiple LVM backends"
-    echo "Please convert that configuration in local.conf to use CINDER_ENABLED_BACKENDS."
-    echo "CINDER_ENABLED_BACKENDS will be removed early in the 'K' development cycle"
-    echo "
+if is_service_enabled cinder; then
+    # TODO(dtroyer): Remove CINDER_MULTI_LVM_BACKEND after stable/juno branch is cut
+    if [[ "$CINDER_MULTI_LVM_BACKEND" = "True" ]]; then
+        echo ""
+        echo_summary "WARNING: CINDER_MULTI_LVM_BACKEND is used"
+        echo "You are using CINDER_MULTI_LVM_BACKEND to configure Cinder's multiple LVM backends"
+        echo "Please convert that configuration in local.conf to use CINDER_ENABLED_BACKENDS."
+        echo "CINDER_ENABLED_BACKENDS will be removed early in the 'K' development cycle"
+        echo "
 [[local|localrc]]
 CINDER_ENABLED_BACKENDS=lvm:lvmdriver-1,lvm:lvmdriver-2
 "
+    fi
 fi
 
 # Indicate how long this took to run (bash maintained variable ``SECONDS``)

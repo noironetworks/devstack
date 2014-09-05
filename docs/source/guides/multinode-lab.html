@@ -54,7 +54,7 @@
         </div>
         
         <h3>Minimal Install</h3>
-        <p>You need to have a fresh install of Linux on all of your nodes.  You can download the <a href="https://help.ubuntu.com/community/Installation/MinimalCD">Minimal CD</a> for Ubuntu 12.04 (only 27MB) since DevStack will download &amp; install all the additional dependencies.  The netinstall ISO is available for <a href="http://mirrors.kernel.org/fedora/releases/20/Fedora/x86_64/iso/Fedora-20-x86_64-netinst.iso">Fedora</a> and <a href="http://mirrors.kernel.org/centos/6.5/isos/x86_64/CentOS-6.5-x86_64-netinstall.iso">CentOS/RHEL</a>.</p>
+        <p>You need to have a system with a fresh install of Linux.  You can download the <a href="https://help.ubuntu.com/community/Installation/MinimalCD">Minimal CD</a> for Ubuntu releases since DevStack will download &amp; install all the additional dependencies.  The netinstall ISO is available for <a href="http://mirrors.kernel.org/fedora/releases/18/Fedora/x86_64/iso/Fedora-20-x86_64-netinst.iso">Fedora</a> and <a href="http://mirrors.kernel.org/centos/6.5/isos/x86_64/CentOS-6.5-x86_64-netinstall.iso">CentOS/RHEL</a>.</p>
 
         <p>Install a couple of packages to bootstrap configuration:</p>
         <pre>apt-get install -y git sudo || yum install -y git sudo</pre>
@@ -184,7 +184,13 @@ SERVICE_HOST=192.168.42.11
 MYSQL_HOST=192.168.42.11
 RABBIT_HOST=192.168.42.11
 GLANCE_HOSTPORT=192.168.42.11:9292
-ENABLED_SERVICES=n-cpu,n-net,n-api,c-sch,c-api,c-vol</pre>
+ENABLED_SERVICES=n-cpu,n-net,n-api,c-sch,c-api,c-vol
+NOVA_VNC_ENABLED=True
+NOVNCPROXY_URL="http://192.168.42.11:6080/vnc_auto.html"
+VNCSERVER_LISTEN=$HOST_IP
+VNCSERVER_PROXYCLIENT_ADDRESS=$VNCSERVER_LISTEN
+</pre>
+
 <!-- save for vlan
 FLAT_INTERFACE=eth0.926
 -->

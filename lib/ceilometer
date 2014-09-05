@@ -79,19 +79,19 @@ function is_ceilometer_enabled {
 
 create_ceilometer_accounts() {
 
-    SERVICE_TENANT=$(openstack project list | awk "/ $SERVICE_TENANT_NAME / { print \$2 }")
-    ADMIN_ROLE=$(openstack role list | awk "/ admin / { print \$2 }")
+    local service_tenant=$(openstack project list | awk "/ $SERVICE_TENANT_NAME / { print \$2 }")
+    local admin_role=$(openstack role list | awk "/ admin / { print \$2 }")
 
     # Ceilometer
     if [[ "$ENABLED_SERVICES" =~ "ceilometer-api" ]]; then
-        CEILOMETER_USER=$(get_or_create_user "ceilometer" \
-            "$SERVICE_PASSWORD" $SERVICE_TENANT "ceilometer@example.com")
-        get_or_add_user_role $ADMIN_ROLE $CEILOMETER_USER $SERVICE_TENANT
+        local ceilometer_user=$(get_or_create_user "ceilometer" \
+            "$SERVICE_PASSWORD" $service_tenant)
+        get_or_add_user_role $admin_role $ceilometer_user $service_tenant
 
         if [[ "$KEYSTONE_CATALOG_BACKEND" = 'sql' ]]; then
-            CEILOMETER_SERVICE=$(get_or_create_service "ceilometer" \
+            local ceilometer_service=$(get_or_create_service "ceilometer" \
                 "metering" "OpenStack Telemetry Service")
-            get_or_create_endpoint $CEILOMETER_SERVICE \
+            get_or_create_endpoint $ceilometer_service \
                 "$REGION_NAME" \
                 "$CEILOMETER_SERVICE_PROTOCOL://$CEILOMETER_SERVICE_HOST:$CEILOMETER_SERVICE_PORT/" \
                 "$CEILOMETER_SERVICE_PROTOCOL://$CEILOMETER_SERVICE_HOST:$CEILOMETER_SERVICE_PORT/" \
@@ -113,16 +113,8 @@ function cleanup_ceilometer {
     fi
 }
 
-# configure_ceilometerclient() - Set config files, create data dirs, etc
-function configure_ceilometerclient {
-    setup_develop $CEILOMETERCLIENT_DIR
-    sudo install -D -m 0644 -o $STACK_USER {$CEILOMETERCLIENT_DIR/tools/,/etc/bash_completion.d/}ceilometer.bash_completion
-}
-
 # configure_ceilometer() - Set config files, create data dirs, etc
 function configure_ceilometer {
-    setup_develop $CEILOMETER_DIR
-
     [ ! -d $CEILOMETER_CONF_DIR ] && sudo mkdir -m 755 -p $CEILOMETER_CONF_DIR
     sudo chown $STACK_USER $CEILOMETER_CONF_DIR
 
@@ -162,6 +154,7 @@ function configure_ceilometer {
 
     if [ "$CEILOMETER_BACKEND" = 'mysql' ] || [ "$CEILOMETER_BACKEND" = 'postgresql' ] ; then
         iniset $CEILOMETER_CONF database connection `database_connection_url ceilometer`
+        iniset $CEILOMETER_CONF DEFAULT collector_workers $(( ($(nproc) + 1) / 2 ))
     else
         iniset $CEILOMETER_CONF database connection mongodb://localhost:27017/ceilometer
         configure_mongodb
@@ -218,25 +211,32 @@ function init_ceilometer {
 # install_ceilometer() - Collect source and prepare
 function install_ceilometer {
     git_clone $CEILOMETER_REPO $CEILOMETER_DIR $CEILOMETER_BRANCH
+    setup_develop $CEILOMETER_DIR
+
 }
 
 # install_ceilometerclient() - Collect source and prepare
 function install_ceilometerclient {
     git_clone $CEILOMETERCLIENT_REPO $CEILOMETERCLIENT_DIR $CEILOMETERCLIENT_BRANCH
+    setup_develop $CEILOMETERCLIENT_DIR
+    sudo install -D -m 0644 -o $STACK_USER {$CEILOMETERCLIENT_DIR/tools/,/etc/bash_completion.d/}ceilometer.bash_completion
 }
 
 # start_ceilometer() - Start running processes, including screen
 function start_ceilometer {
+    screen_it ceilometer-acentral "cd ; ceilometer-agent-central --config-file $CEILOMETER_CONF"
+    screen_it ceilometer-anotification "cd ; ceilometer-agent-notification --config-file $CEILOMETER_CONF"
+    screen_it ceilometer-collector "cd ; ceilometer-collector --config-file $CEILOMETER_CONF"
+    screen_it ceilometer-api "cd ; ceilometer-api -d -v --log-dir=$CEILOMETER_API_LOG_DIR --config-file $CEILOMETER_CONF"
+
+    # Start the compute agent last to allow time for the collector to
+    # fully wake up and connect to the message bus. See bug #1355809
     if [[ "$VIRT_DRIVER" = 'libvirt' ]]; then
         screen_it ceilometer-acompute "cd ; sg $LIBVIRT_GROUP 'ceilometer-agent-compute --config-file $CEILOMETER_CONF'"
     fi
     if [[ "$VIRT_DRIVER" = 'vsphere' ]]; then
         screen_it ceilometer-acompute "cd ; ceilometer-agent-compute --config-file $CEILOMETER_CONF"
     fi
-    screen_it ceilometer-acentral "cd ; ceilometer-agent-central --config-file $CEILOMETER_CONF"
-    screen_it ceilometer-anotification "cd ; ceilometer-agent-notification --config-file $CEILOMETER_CONF"
-    screen_it ceilometer-collector "cd ; ceilometer-collector --config-file $CEILOMETER_CONF"
-    screen_it ceilometer-api "cd ; ceilometer-api -d -v --log-dir=$CEILOMETER_API_LOG_DIR --config-file $CEILOMETER_CONF"
 
     # only die on API if it was actually intended to be turned on
     if is_service_enabled ceilometer-api; then

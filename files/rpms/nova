@@ -1,6 +1,8 @@
 MySQL-python
 curl
+dnsmasq # for nova-network
 dnsmasq-utils # for dhcp_release
+conntrack-tools
 ebtables
 gawk
 genisoimage # required for config_drive
@@ -13,6 +15,8 @@ libvirt-python # NOPRIME
 libxml2-python
 numpy # needed by websockify for spice console
 m2crypto
+mysql-connector-python
+mysql-devel  # testonly
 mysql-server # NOPRIME
 parted
 polkit

@@ -76,21 +76,20 @@ function setup_trove_logging {
 # service              trove     admin        # if enabled
 
 function create_trove_accounts {
-    # Trove
-    SERVICE_TENANT=$(openstack project list | awk "/ $SERVICE_TENANT_NAME / { print \$2 }")
-    SERVICE_ROLE=$(openstack role list | awk "/ admin / { print \$2 }")
+    local service_tenant=$(openstack project list | awk "/ $SERVICE_TENANT_NAME / { print \$2 }")
+    local service_role=$(openstack role list | awk "/ admin / { print \$2 }")
 
     if [[ "$ENABLED_SERVICES" =~ "trove" ]]; then
 
-        TROVE_USER=$(get_or_create_user "trove" \
-            "$SERVICE_PASSWORD" $SERVICE_TENANT "trove@example.com")
-        get_or_add_user_role $SERVICE_ROLE $TROVE_USER $SERVICE_TENANT
+        local trove_user=$(get_or_create_user "trove" \
+            "$SERVICE_PASSWORD" $service_tenant)
+        get_or_add_user_role $service_role $trove_user $service_tenant
 
         if [[ "$KEYSTONE_CATALOG_BACKEND" = 'sql' ]]; then
 
-            TROVE_SERVICE=$(get_or_create_service "trove" \
+            local trove_service=$(get_or_create_service "trove" \
                 "database" "Trove Service")
-            get_or_create_endpoint $TROVE_SERVICE \
+            get_or_create_endpoint $trove_service \
                 "$REGION_NAME" \
                 "http://$SERVICE_HOST:8779/v1.0/\$(tenant_id)s" \
                 "http://$SERVICE_HOST:8779/v1.0/\$(tenant_id)s" \
@@ -180,6 +179,7 @@ function configure_trove {
     iniset $TROVE_CONF_DIR/trove-guestagent.conf DEFAULT nova_proxy_admin_pass $RADMIN_USER_PASS
     iniset $TROVE_CONF_DIR/trove-guestagent.conf DEFAULT trove_auth_url $TROVE_AUTH_ENDPOINT
     iniset $TROVE_CONF_DIR/trove-guestagent.conf DEFAULT control_exchange trove
+    iniset $TROVE_CONF_DIR/trove-guestagent.conf DEFAULT ignore_users os_admin
     iniset $TROVE_CONF_DIR/trove-guestagent.conf DEFAULT log_dir /tmp/
     iniset $TROVE_CONF_DIR/trove-guestagent.conf DEFAULT log_file trove-guestagent.log
     setup_trove_logging $TROVE_CONF_DIR/trove-guestagent.conf
@@ -203,10 +203,21 @@ function init_trove {
     # Initialize the trove database
     $TROVE_BIN_DIR/trove-manage db_sync
 
-    # Upload the trove-guest image to glance
-    TROVE_GUEST_IMAGE_ID=$(upload_image $TROVE_GUEST_IMAGE_URL $TOKEN | grep ' id ' | get_field 2)
+    # If no guest image is specified, skip remaining setup
+    [ -z "$TROVE_GUEST_IMAGE_URL"] && return 0
 
-    # Initialize appropriate datastores / datastore versions
+    # Find the glance id for the trove guest image
+    # The image is uploaded by stack.sh -- see $IMAGE_URLS handling
+    GUEST_IMAGE_NAME=$(basename "$TROVE_GUEST_IMAGE_URL")
+    GUEST_IMAGE_NAME=${GUEST_IMAGE_NAME%.*}
+    TROVE_GUEST_IMAGE_ID=$(openstack --os-token $TOKEN --os-url http://$GLANCE_HOSTPORT image list | grep "${GUEST_IMAGE_NAME}" | get_field 1)
+    if [ -z "$TROVE_GUEST_IMAGE_ID" ]; then
+        # If no glance id is found, skip remaining setup
+        echo "Datastore ${TROVE_DATASTORE_TYPE} will not be created: guest image ${GUEST_IMAGE_NAME} not found."
+        return 1
+    fi
+
+    # Now that we have the guest image id, initialize appropriate datastores / datastore versions
     $TROVE_BIN_DIR/trove-manage datastore_update "$TROVE_DATASTORE_TYPE" ""
     $TROVE_BIN_DIR/trove-manage datastore_version_update "$TROVE_DATASTORE_TYPE" "$TROVE_DATASTORE_VERSION" "$TROVE_DATASTORE_TYPE" \
         "$TROVE_GUEST_IMAGE_ID" "$TROVE_DATASTORE_PACKAGE" 1
@@ -225,6 +236,7 @@ function start_trove {
 # stop_trove() - Stop running processes
 function stop_trove {
     # Kill the trove screen windows
+    local serv
     for serv in tr-api tr-tmgr tr-cond; do
         screen_stop $serv
     done

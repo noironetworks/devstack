@@ -7,6 +7,7 @@
 # ``stack.sh`` calls the entry points in this order:
 #
 # install_sahara
+# install_python_saharaclient
 # configure_sahara
 # start_sahara
 # stop_sahara
@@ -24,8 +25,13 @@ set +o xtrace
 SAHARA_REPO=${SAHARA_REPO:-${GIT_BASE}/openstack/sahara.git}
 SAHARA_BRANCH=${SAHARA_BRANCH:-master}
 
+SAHARA_PYTHONCLIENT_REPO=${SAHARA_PYTHONCLIENT_REPO:-${GIT_BASE}/openstack/python-saharaclient.git}
+SAHARA_PYTHONCLIENT_BRANCH=${SAHARA_PYTHONCLIENT_BRANCH:-master}
+
 # Set up default directories
 SAHARA_DIR=$DEST/sahara
+SAHARA_PYTHONCLIENT_DIR=$DEST/python-saharaclient
+
 SAHARA_CONF_DIR=${SAHARA_CONF_DIR:-/etc/sahara}
 SAHARA_CONF_FILE=${SAHARA_CONF_DIR}/sahara.conf
 
@@ -57,18 +63,18 @@ TEMPEST_SERVICES+=,sahara
 # service     sahara    admin
 function create_sahara_accounts {
 
-    SERVICE_TENANT=$(openstack project list | awk "/ $SERVICE_TENANT_NAME / { print \$2 }")
-    ADMIN_ROLE=$(openstack role list | awk "/ admin / { print \$2 }")
+    local service_tenant=$(openstack project list | awk "/ $SERVICE_TENANT_NAME / { print \$2 }")
+    local admin_role=$(openstack role list | awk "/ admin / { print \$2 }")
 
-    SAHARA_USER=$(get_or_create_user "sahara" \
-        "$SERVICE_PASSWORD" $SERVICE_TENANT "sahara@example.com")
-    get_or_add_user_role $ADMIN_ROLE $SAHARA_USER $SERVICE_TENANT
+    local sahara_user=$(get_or_create_user "sahara" \
+        "$SERVICE_PASSWORD" $service_tenant)
+    get_or_add_user_role $admin_role $sahara_user $service_tenant
 
     if [[ "$KEYSTONE_CATALOG_BACKEND" = 'sql' ]]; then
 
-        SAHARA_SERVICE=$(get_or_create_service "sahara" \
+        local sahara_service=$(get_or_create_service "sahara" \
             "data_processing" "Sahara Data Processing")
-        get_or_create_endpoint $SAHARA_SERVICE \
+        get_or_create_endpoint $sahara_service \
             "$REGION_NAME" \
             "$SAHARA_SERVICE_PROTOCOL://$SAHARA_SERVICE_HOST:$SAHARA_SERVICE_PORT/v1.1/\$(tenant_id)s" \
             "$SAHARA_SERVICE_PROTOCOL://$SAHARA_SERVICE_HOST:$SAHARA_SERVICE_PORT/v1.1/\$(tenant_id)s" \
@@ -111,6 +117,14 @@ function configure_sahara {
     iniset $SAHARA_CONF_FILE keystone_authtoken signing_dir $SAHARA_AUTH_CACHE_DIR
     iniset $SAHARA_CONF_FILE keystone_authtoken cafile $KEYSTONE_SSL_CA
 
+    # Set configuration to send notifications
+
+    if is_service_enabled ceilometer; then
+        iniset $SAHARA_CONF_FILE DEFAULT enable_notifications "true"
+        iniset $SAHARA_CONF_FILE DEFAULT notification_driver "messaging"
+        iniset_rpc_backend sahara $SAHARA_CONF_FILE DEFAULT
+    fi
+
     iniset $SAHARA_CONF_FILE DEFAULT verbose True
     iniset $SAHARA_CONF_FILE DEFAULT debug $ENABLE_DEBUG_LOG_LEVEL
 
@@ -144,6 +158,12 @@ function configure_sahara {
 function install_sahara {
     git_clone $SAHARA_REPO $SAHARA_DIR $SAHARA_BRANCH
     setup_develop $SAHARA_DIR
+}
+
+# install_python_saharaclient() - Collect source and prepare
+function install_python_saharaclient {
+    git_clone $SAHARA_PYTHONCLIENT_REPO $SAHARA_PYTHONCLIENT_DIR $SAHARA_PYTHONCLIENT_BRANCH
+    setup_develop $SAHARA_PYTHONCLIENT_DIR
 }
 
 # start_sahara() - Start running processes, including screen

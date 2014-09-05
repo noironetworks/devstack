@@ -52,7 +52,11 @@ TEMPEST_STATE_PATH=${TEMPEST_STATE_PATH:=$DATA_DIR/tempest}
 NOVA_SOURCE_DIR=$DEST/nova
 
 BUILD_INTERVAL=1
-BUILD_TIMEOUT=196
+
+# This is the timeout that tempest will wait for a VM to change state,
+# spawn, delete, etc.
+# The default is set to 196 seconds.
+BUILD_TIMEOUT=${BUILD_TIMEOUT:-196}
 
 
 BOTO_MATERIALS_PATH="$FILES/images/s3-materials/cirros-${CIRROS_VERSION}"
@@ -108,6 +112,8 @@ function configure_tempest {
             image_uuid_alt="$IMAGE_UUID"
         fi
         images+=($IMAGE_UUID)
+    # TODO(stevemar): update this command to use openstackclient's `openstack image list`
+    # when it supports listing by status.
     done < <(glance image-list --status=active | awk -F'|' '!/^(+--)|ID|aki|ari/ { print $3,$2 }')
 
     case "${#images[*]}" in
@@ -307,9 +313,9 @@ function configure_tempest {
     iniset $TEMPEST_CONFIG boto ec2_url "http://$SERVICE_HOST:8773/services/Cloud"
     iniset $TEMPEST_CONFIG boto s3_url "http://$SERVICE_HOST:${S3_SERVICE_PORT:-3333}"
     iniset $TEMPEST_CONFIG boto s3_materials_path "$BOTO_MATERIALS_PATH"
-    iniset $TEMPEST_CONFIG boto ari_manifest cirros-${CIRROS_VERSION}-x86_64-initrd.manifest.xml
-    iniset $TEMPEST_CONFIG boto ami_manifest cirros-${CIRROS_VERSION}-x86_64-blank.img.manifest.xml
-    iniset $TEMPEST_CONFIG boto aki_manifest cirros-${CIRROS_VERSION}-x86_64-vmlinuz.manifest.xml
+    iniset $TEMPEST_CONFIG boto ari_manifest cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-initrd.manifest.xml
+    iniset $TEMPEST_CONFIG boto ami_manifest cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-blank.img.manifest.xml
+    iniset $TEMPEST_CONFIG boto aki_manifest cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-vmlinuz.manifest.xml
     iniset $TEMPEST_CONFIG boto instance_type "$boto_instance_type"
     iniset $TEMPEST_CONFIG boto http_socket_timeout 30
     iniset $TEMPEST_CONFIG boto ssh_user ${DEFAULT_INSTANCE_USER:-cirros}
@@ -329,10 +335,10 @@ function configure_tempest {
     fi
 
     # Scenario
-    iniset $TEMPEST_CONFIG scenario img_dir "$FILES/images/cirros-${CIRROS_VERSION}-x86_64-uec"
-    iniset $TEMPEST_CONFIG scenario ami_img_file "cirros-${CIRROS_VERSION}-x86_64-blank.img"
-    iniset $TEMPEST_CONFIG scenario ari_img_file "cirros-${CIRROS_VERSION}-x86_64-initrd"
-    iniset $TEMPEST_CONFIG scenario aki_img_file "cirros-${CIRROS_VERSION}-x86_64-vmlinuz"
+    iniset $TEMPEST_CONFIG scenario img_dir "$FILES/images/cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-uec"
+    iniset $TEMPEST_CONFIG scenario ami_img_file "cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-blank.img"
+    iniset $TEMPEST_CONFIG scenario ari_img_file "cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-initrd"
+    iniset $TEMPEST_CONFIG scenario aki_img_file "cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-vmlinuz"
 
     # Large Ops Number
     iniset $TEMPEST_CONFIG scenario large_ops_number ${TEMPEST_LARGE_OPS_NUMBER:-0}
@@ -354,7 +360,7 @@ function configure_tempest {
     fi
 
     if [ $TEMPEST_VOLUME_DRIVER != "default" ]; then
-        iniset $TEMPEST_CONFIG volume vendor_name $TEMPEST_VOLUME_VENDOR
+        iniset $TEMPEST_CONFIG volume vendor_name "$TEMPEST_VOLUME_VENDOR"
         iniset $TEMPEST_CONFIG volume storage_protocol $TEMPEST_STORAGE_PROTOCOL
     fi
 
@@ -371,6 +377,16 @@ function configure_tempest {
     # Baremetal
     if [ "$VIRT_DRIVER" = "ironic" ] ; then
         iniset $TEMPEST_CONFIG baremetal driver_enabled True
+        iniset $TEMPEST_CONFIG compute-feature-enabled change_password False
+        iniset $TEMPEST_CONFIG compute-feature-enabled console_output False
+        iniset $TEMPEST_CONFIG compute-feature-enabled interface_attach False
+        iniset $TEMPEST_CONFIG compute-feature-enabled live_migration False
+        iniset $TEMPEST_CONFIG compute-feature-enabled pause False
+        iniset $TEMPEST_CONFIG compute-feature-enabled rescue False
+        iniset $TEMPEST_CONFIG compute-feature-enabled resize False
+        iniset $TEMPEST_CONFIG compute-feature-enabled shelve False
+        iniset $TEMPEST_CONFIG compute-feature-enabled snapshot False
+        iniset $TEMPEST_CONFIG compute-feature-enabled suspend False
     fi
 
     # service_available
@@ -406,13 +422,13 @@ function create_tempest_accounts {
 # install_tempest() - Collect source and prepare
 function install_tempest {
     git_clone $TEMPEST_REPO $TEMPEST_DIR $TEMPEST_BRANCH
-    pip_install "tox<1.7"
+    pip_install tox
 }
 
 # init_tempest() - Initialize ec2 images
 function init_tempest {
-    local base_image_name=cirros-${CIRROS_VERSION}-x86_64
-    # /opt/stack/devstack/files/images/cirros-${CIRROS_VERSION}-x86_64-uec
+    local base_image_name=cirros-${CIRROS_VERSION}-${CIRROS_ARCH}
+    # /opt/stack/devstack/files/images/cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-uec
     local image_dir="$FILES/images/${base_image_name}-uec"
     local kernel="$image_dir/${base_image_name}-vmlinuz"
     local ramdisk="$image_dir/${base_image_name}-initrd"
@@ -424,9 +440,9 @@ function init_tempest {
         ( #new namespace
             # tenant:demo ; user: demo
             source $TOP_DIR/accrc/demo/demo
-            euca-bundle-image -r x86_64 -i "$kernel" --kernel true -d "$BOTO_MATERIALS_PATH"
-            euca-bundle-image -r x86_64 -i "$ramdisk" --ramdisk true -d "$BOTO_MATERIALS_PATH"
-            euca-bundle-image -r x86_64 -i "$disk_image" -d "$BOTO_MATERIALS_PATH"
+            euca-bundle-image -r ${CIRROS_ARCH} -i "$kernel" --kernel true -d "$BOTO_MATERIALS_PATH"
+            euca-bundle-image -r ${CIRROS_ARCH} -i "$ramdisk" --ramdisk true -d "$BOTO_MATERIALS_PATH"
+            euca-bundle-image -r ${CIRROS_ARCH} -i "$disk_image" -d "$BOTO_MATERIALS_PATH"
         ) 2>&1 </dev/null | cat
     else
         echo "Boto materials are not prepared"

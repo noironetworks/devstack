@@ -127,10 +127,6 @@ BM_FLAVOR_ID=${BM_FLAVOR_ID:-11}
 BM_FLAVOR_ARCH=${BM_FLAVOR_ARCH:-$BM_CPU_ARCH}
 
 
-# Below this, we set some path and filenames.
-# Defaults are probably sufficient.
-DIB_DIR=${DIB_DIR:-$DEST/diskimage-builder}
-
 # Use DIB to create deploy ramdisk and kernel.
 BM_BUILD_DEPLOY_RAMDISK=`trueorfalse True $BM_BUILD_DEPLOY_RAMDISK`
 # If not use DIB, these files are used as deploy ramdisk/kernel.
@@ -165,8 +161,9 @@ function is_baremetal {
 # Install diskimage-builder and shell-in-a-box
 # so that we can build the deployment kernel & ramdisk
 function prepare_baremetal_toolchain {
-    git_clone $DIB_REPO $DIB_DIR $DIB_BUILD_BRANCH
-
+    if [[ $(type -P ramdisk-image-create) == "" ]]; then
+        pip_install diskimage_builder
+    fi
     local shellinabox_basename=$(basename $BM_SHELL_IN_A_BOX)
     if [[ ! -e $DEST/$shellinabox_basename ]]; then
         cd $DEST
@@ -223,25 +220,27 @@ function upload_baremetal_deploy {
         BM_DEPLOY_KERNEL=bm-deploy.kernel
         BM_DEPLOY_RAMDISK=bm-deploy.initramfs
         if [ ! -e "$TOP_DIR/files/$BM_DEPLOY_KERNEL" -o ! -e "$TOP_DIR/files/$BM_DEPLOY_RAMDISK" ]; then
-            $DIB_DIR/bin/ramdisk-image-create $BM_DEPLOY_FLAVOR \
+            ramdisk-image-create $BM_DEPLOY_FLAVOR \
                 -o $TOP_DIR/files/bm-deploy
         fi
     fi
 
     # load them into glance
-    BM_DEPLOY_KERNEL_ID=$(glance \
-        --os-auth-token $token \
-        --os-image-url http://$GLANCE_HOSTPORT \
-        image-create \
-        --name $BM_DEPLOY_KERNEL \
-        --is-public True --disk-format=aki \
+    BM_DEPLOY_KERNEL_ID=$(openstack \
+        --os-token $token \
+        --os-url http://$GLANCE_HOSTPORT \
+        image create \
+        $BM_DEPLOY_KERNEL \
+        --public --disk-format=aki \
+        --container-format=aki \
         < $TOP_DIR/files/$BM_DEPLOY_KERNEL  | grep ' id ' | get_field 2)
-    BM_DEPLOY_RAMDISK_ID=$(glance \
-        --os-auth-token $token \
-        --os-image-url http://$GLANCE_HOSTPORT \
-        image-create \
-        --name $BM_DEPLOY_RAMDISK \
-        --is-public True --disk-format=ari \
+    BM_DEPLOY_RAMDISK_ID=$(openstack \
+        --os-token $token \
+        --os-url http://$GLANCE_HOSTPORT \
+        image create \
+        $BM_DEPLOY_RAMDISK \
+        --public --disk-format=ari \
+        --container-format=ari \
         < $TOP_DIR/files/$BM_DEPLOY_RAMDISK  | grep ' id ' | get_field 2)
 }
 
@@ -271,7 +270,7 @@ function extract_and_upload_k_and_r_from_image {
     image_name=$(basename "$file" ".qcow2")
 
     # this call returns the file names as "$kernel,$ramdisk"
-    out=$($DIB_DIR/bin/disk-image-get-kernel \
+    out=$(disk-image-get-kernel \
             -x -d $TOP_DIR/files -o bm-deploy -i $file)
     if [ $? -ne 0 ]; then
         die $LINENO "Failed to get kernel and ramdisk from $file"
@@ -284,19 +283,21 @@ function extract_and_upload_k_and_r_from_image {
     OUT_RAMDISK=${out##*,}
 
     # load them into glance
-    KERNEL_ID=$(glance \
-        --os-auth-token $token \
-        --os-image-url http://$GLANCE_HOSTPORT \
-        image-create \
-        --name $image_name-kernel \
-        --is-public True --disk-format=aki \
+    KERNEL_ID=$(openstack \
+        --os-token $token \
+        --os-url http://$GLANCE_HOSTPORT \
+        image create \
+        $image_name-kernel \
+        --public --disk-format=aki \
+        --container-format=aki \
         < $TOP_DIR/files/$OUT_KERNEL | grep ' id ' | get_field 2)
-    RAMDISK_ID=$(glance \
-        --os-auth-token $token \
-        --os-image-url http://$GLANCE_HOSTPORT \
-        image-create \
-        --name $image_name-initrd \
-        --is-public True --disk-format=ari \
+    RAMDISK_ID=$(openstack \
+        --os-token $token \
+        --os-url http://$GLANCE_HOSTPORT \
+        image create \
+        $image_name-initrd \
+        --public --disk-format=ari \
+        --container-format=ari \
         < $TOP_DIR/files/$OUT_RAMDISK | grep ' id ' | get_field 2)
 }
 
@@ -362,18 +363,18 @@ function upload_baremetal_image {
     if [ "$CONTAINER_FORMAT" = "bare" ]; then
         extract_and_upload_k_and_r_from_image $token $IMAGE
     elif [ "$CONTAINER_FORMAT" = "ami" ]; then
-        KERNEL_ID=$(glance \
-            --os-auth-token $token \
-            --os-image-url http://$GLANCE_HOSTPORT \
-            image-create \
-            --name "$IMAGE_NAME-kernel" --is-public True \
+        KERNEL_ID=$(openstack \
+            --os-token $token \
+            --os-url http://$GLANCE_HOSTPORT \
+            image create \
+            "$IMAGE_NAME-kernel" --public \
             --container-format aki \
             --disk-format aki < "$KERNEL" | grep ' id ' | get_field 2)
-        RAMDISK_ID=$(glance \
-            --os-auth-token $token \
-            --os-image-url http://$GLANCE_HOSTPORT \
-            image-create \
-            --name "$IMAGE_NAME-ramdisk" --is-public True \
+        RAMDISK_ID=$(openstack \
+            --os-token $token \
+            --os-url http://$GLANCE_HOSTPORT \
+            image create \
+            "$IMAGE_NAME-ramdisk" --public \
             --container-format ari \
             --disk-format ari < "$RAMDISK" | grep ' id ' | get_field 2)
     else
@@ -381,11 +382,11 @@ function upload_baremetal_image {
         return
     fi
 
-    glance \
-        --os-auth-token $token \
-        --os-image-url http://$GLANCE_HOSTPORT \
-        image-create \
-        --name "${IMAGE_NAME%.img}" --is-public True \
+    openstack \
+        --os-token $token \
+        --os-url http://$GLANCE_HOSTPORT \
+        image create \
+        "${IMAGE_NAME%.img}" --public \
         --container-format $CONTAINER_FORMAT \
         --disk-format $DISK_FORMAT \
         ${KERNEL_ID:+--property kernel_id=$KERNEL_ID} \

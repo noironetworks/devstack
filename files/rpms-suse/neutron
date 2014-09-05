@@ -10,6 +10,7 @@ python-greenlet
 python-iso8601
 python-kombu
 python-mysql
+python-mysql.connector
 python-Paste
 python-PasteDeploy
 python-pyudev
@@ -20,6 +21,7 @@ rabbitmq-server # NOPRIME
 sqlite3
 sudo
 vlan
+radvd # NOPRIME
 
 # FIXME: qpid is not part of openSUSE, those names are tentative
 python-qpid # NOPRIME

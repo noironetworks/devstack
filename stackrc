@@ -52,6 +52,18 @@ if [[ -z "$ENABLED_SERVICES" ]]; then
     ENABLED_SERVICES+=,rabbit,tempest,mysql
 fi
 
+# SQLAlchemy supports multiple database drivers for each database server
+# type. For example, deployer may use MySQLdb, MySQLConnector, or oursql
+# to access MySQL database.
+#
+# When defined, the variable controls which database driver is used to
+# connect to database server. Otherwise using default driver defined for
+# each database type.
+#
+# You can find the list of currently supported drivers for each database
+# type at: http://docs.sqlalchemy.org/en/rel_0_9/core/engines.html
+# SQLALCHEMY_DATABASE_DRIVER="mysqldb"
+
 # Global toggle for enabling services under mod_wsgi. If this is set to
 # ``True`` all services that use HTTPD + mod_wsgi as the preferred method of
 # deployment, will be deployed under Apache. If this is set to ``False`` all
@@ -124,6 +136,10 @@ CINDER_BRANCH=${CINDER_BRANCH:-stable/icehouse}
 CINDERCLIENT_REPO=${CINDERCLIENT_REPO:-${GIT_BASE}/openstack/python-cinderclient.git}
 CINDERCLIENT_BRANCH=${CINDERCLIENT_BRANCH:-master}
 
+# diskimage-builder
+DIB_REPO=${DIB_REPO:-${GIT_BASE}/openstack/diskimage-builder.git}
+DIB_BRANCH=${DIB_BRANCH:-master}
+
 # image catalog service
 GLANCE_REPO=${GLANCE_REPO:-${GIT_BASE}/openstack/glance.git}
 GLANCE_BRANCH=${GLANCE_BRANCH:-stable/icehouse}
@@ -139,6 +155,14 @@ HEAT_BRANCH=${HEAT_BRANCH:-stable/icehouse}
 # python heat client library
 HEATCLIENT_REPO=${HEATCLIENT_REPO:-${GIT_BASE}/openstack/python-heatclient.git}
 HEATCLIENT_BRANCH=${HEATCLIENT_BRANCH:-master}
+
+# heat-cfntools server agent
+HEAT_CFNTOOLS_REPO=${HEAT_CFNTOOLS_REPO:-${GIT_BASE}/openstack/heat-cfntools.git}
+HEAT_CFNTOOLS_BRANCH=${HEAT_CFNTOOLS_BRANCH:-master}
+
+# heat example templates and elements
+HEAT_TEMPLATES_REPO=${HEAT_TEMPLATES_REPO:-${GIT_BASE}/openstack/heat-templates.git}
+HEAT_TEMPLATES_BRANCH=${HEAT_TEMPLATES_BRANCH:-master}
 
 # django powered web control panel for openstack
 HORIZON_REPO=${HORIZON_REPO:-${GIT_BASE}/openstack/horizon.git}
@@ -176,9 +200,21 @@ NOVA_BRANCH=${NOVA_BRANCH:-stable/icehouse}
 NOVACLIENT_REPO=${NOVACLIENT_REPO:-${GIT_BASE}/openstack/python-novaclient.git}
 NOVACLIENT_BRANCH=${NOVACLIENT_BRANCH:-master}
 
+# os-apply-config configuration template tool
+OAC_REPO=${OAC_REPO:-${GIT_BASE}/openstack/os-apply-config.git}
+OAC_BRANCH=${OAC_BRANCH:-master}
+
+# os-collect-config configuration agent
+OCC_REPO=${OCC_REPO:-${GIT_BASE}/openstack/os-collect-config.git}
+OCC_BRANCH=${OCC_BRANCH:-master}
+
 # consolidated openstack python client
 OPENSTACKCLIENT_REPO=${OPENSTACKCLIENT_REPO:-${GIT_BASE}/openstack/python-openstackclient.git}
 OPENSTACKCLIENT_BRANCH=${OPENSTACKCLIENT_BRANCH:-master}
+
+# os-refresh-config configuration run-parts tool
+ORC_REPO=${ORC_REPO:-${GIT_BASE}/openstack/os-refresh-config.git}
+ORC_BRANCH=${ORC_BRANCH:-master}
 
 # cliff command line framework
 CLIFF_REPO=${CLIFF_REPO:-${GIT_BASE}/openstack/cliff.git}
@@ -250,10 +286,9 @@ SWIFTCLIENT_BRANCH=${SWIFTCLIENT_BRANCH:-master}
 TEMPEST_REPO=${TEMPEST_REPO:-${GIT_BASE}/openstack/tempest.git}
 TEMPEST_BRANCH=${TEMPEST_BRANCH:-master}
 
-
-# diskimage-builder
-DIB_REPO=${DIB_REPO:-${GIT_BASE}/openstack/diskimage-builder.git}
-DIB_BRANCH=${DIB_BRANCH:-master}
+# Tripleo elements for diskimage-builder images
+TIE_REPO=${TIE_REPO:-${GIT_BASE}/openstack/tripleo-image-elements.git}
+TIE_BRANCH=${TIE_BRANCH:-master}
 
 # a websockets/html5 or flash powered VNC console for vm instances
 NOVNC_REPO=${NOVNC_REPO:-https://github.com/kanaka/noVNC.git}
@@ -283,6 +318,10 @@ WSME_BRANCH=${WSME_BRANCH:-master}
 # pecan
 PECAN_REPO=${PECAN_REPO:-${GIT_BASE}/stackforge/pecan.git}
 PECAN_BRANCH=${PECAN_BRANCH:-master}
+
+# sqlalchemy-migrate
+SQLALCHEMY_MIGRATE_REPO=${SQLALCHEMY_MIGRATE_REPO:-${GIT_BASE}/stackforge/sqlalchemy-migrate.git}
+SQLALCHEMY_MIGRATE_BRANCH=${SQLALCHEMY_MIGRATE_BRANCH:-master}
 
 
 # Nova hypervisor configuration.  We default to libvirt with **kvm** but will
@@ -332,14 +371,15 @@ esac
 #    glance as a disk image.  If it ends in .gz, it is uncompressed first.
 #    example:
 #      http://cloud-images.ubuntu.com/releases/precise/release/ubuntu-12.04-server-cloudimg-armel-disk1.img
-#      http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-x86_64-rootfs.img.gz
+#      http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-rootfs.img.gz
 #  * OpenVZ image:
 #    OpenVZ uses its own format of image, and does not support UEC style images
 
 #IMAGE_URLS="http://smoser.brickies.net/ubuntu/ttylinux-uec/ttylinux-uec-amd64-11.2_2.6.35-15_1.tar.gz" # old ttylinux-uec image
-#IMAGE_URLS="http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-x86_64-disk.img" # cirros full disk image
+#IMAGE_URLS="http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-disk.img" # cirros full disk image
 
 CIRROS_VERSION=${CIRROS_VERSION:-"0.3.2"}
+CIRROS_ARCH=${CIRROS_ARCH:-"x86_64"}
 
 # Set default image based on ``VIRT_DRIVER`` and ``LIBVIRT_TYPE``, either of
 # which may be set in ``localrc``.  Also allow ``DEFAULT_IMAGE_NAME`` and
@@ -351,11 +391,11 @@ case "$VIRT_DRIVER" in
     libvirt)
         case "$LIBVIRT_TYPE" in
             lxc) # the cirros root disk in the uec tarball is empty, so it will not work for lxc
-                DEFAULT_IMAGE_NAME=${DEFAULT_IMAGE_NAME:-cirros-${CIRROS_VERSION}-x86_64-rootfs}
-                IMAGE_URLS=${IMAGE_URLS:-"http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-x86_64-rootfs.img.gz"};;
+                DEFAULT_IMAGE_NAME=${DEFAULT_IMAGE_NAME:-cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-rootfs}
+                IMAGE_URLS=${IMAGE_URLS:-"http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-rootfs.img.gz"};;
             *) # otherwise, use the uec style image (with kernel, ramdisk, disk)
-                DEFAULT_IMAGE_NAME=${DEFAULT_IMAGE_NAME:-cirros-${CIRROS_VERSION}-x86_64-uec}
-                IMAGE_URLS=${IMAGE_URLS:-"http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-x86_64-uec.tar.gz"};;
+                DEFAULT_IMAGE_NAME=${DEFAULT_IMAGE_NAME:-cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-uec}
+                IMAGE_URLS=${IMAGE_URLS:-"http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-uec.tar.gz"};;
         esac
         ;;
     vsphere)
@@ -363,10 +403,20 @@ case "$VIRT_DRIVER" in
         IMAGE_URLS=${IMAGE_URLS:-"http://partnerweb.vmware.com/programs/vmdkimage/cirros-0.3.2-i386-disk.vmdk"};;
     xenserver)
         DEFAULT_IMAGE_NAME=${DEFAULT_IMAGE_NAME:-cirros-0.3.0-x86_64-disk}
-        IMAGE_URLS=${IMAGE_URLS:-"https://github.com/downloads/citrix-openstack/warehouse/cirros-0.3.0-x86_64-disk.vhd.tgz"};;
+        IMAGE_URLS=${IMAGE_URLS:-"https://github.com/downloads/citrix-openstack/warehouse/cirros-0.3.0-x86_64-disk.vhd.tgz"}
+        IMAGE_URLS+=",http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-x86_64-uec.tar.gz";;
+    ironic)
+        # Ironic can do both partition and full disk images, depending on the driver
+        if [[ "$IRONIC_DEPLOY_DRIVER" == "agent_ssh" ]]; then
+            DEFAULT_IMAGE_NAME=${DEFAULT_IMAGE_NAME:-cirros-${CIRROS_VERSION}-x86_64-disk}
+        else
+            DEFAULT_IMAGE_NAME=${DEFAULT_IMAGE_NAME:-cirros-${CIRROS_VERSION}-x86_64-uec}
+        fi
+        IMAGE_URLS=${IMAGE_URLS:-"http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-x86_64-uec.tar.gz"}
+        IMAGE_URLS+=",http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-x86_64-disk.img";;
     *) # Default to Cirros with kernel, ramdisk and disk image
-        DEFAULT_IMAGE_NAME=${DEFAULT_IMAGE_NAME:-cirros-${CIRROS_VERSION}-x86_64-uec}
-        IMAGE_URLS=${IMAGE_URLS:-"http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-x86_64-uec.tar.gz"};;
+        DEFAULT_IMAGE_NAME=${DEFAULT_IMAGE_NAME:-cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-uec}
+        IMAGE_URLS=${IMAGE_URLS:-"http://download.cirros-cloud.net/${CIRROS_VERSION}/cirros-${CIRROS_VERSION}-${CIRROS_ARCH}-uec.tar.gz"};;
 esac
 
 # Use 64bit fedora image if heat is enabled
@@ -384,7 +434,7 @@ fi
 # Trove needs a custom image for it's work
 if [[ "$ENABLED_SERVICES" =~ 'tr-api' ]]; then
     case "$VIRT_DRIVER" in
-        libvirt|baremetal|ironic)
+        libvirt|baremetal|ironic|xenapi)
             TROVE_GUEST_IMAGE_URL=${TROVE_GUEST_IMAGE_URL:-"http://tarballs.openstack.org/trove/images/ubuntu_mysql.qcow2/ubuntu_mysql.qcow2"}
             IMAGE_URLS+=",${TROVE_GUEST_IMAGE_URL}"
             ;;
@@ -429,6 +479,9 @@ INSTALL_TESTONLY_PACKAGES=${INSTALL_TESTONLY_PACKAGES:-False}
 
 # Undo requirements changes by global requirements
 UNDO_REQUIREMENTS=${UNDO_REQUIREMENTS:-True}
+
+# Allow the use of an alternate protocol (such as https) for service endpoints
+SERVICE_PROTOCOL=${SERVICE_PROTOCOL:-http}
 
 # Local variables:
 # mode: shell-script

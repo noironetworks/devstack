@@ -31,6 +31,8 @@ set +o xtrace
 # set up default directories
 HEAT_DIR=$DEST/heat
 HEATCLIENT_DIR=$DEST/python-heatclient
+HEAT_CFNTOOLS_DIR=$DEST/heat-cfntools
+HEAT_TEMPLATES_REPO_DIR=$DEST/heat-templates
 HEAT_AUTH_CACHE_DIR=${HEAT_AUTH_CACHE_DIR:-/var/cache/heat}
 HEAT_STANDALONE=`trueorfalse False $HEAT_STANDALONE`
 HEAT_CONF_DIR=/etc/heat
@@ -179,6 +181,12 @@ function install_heat {
     git_clone $HEAT_REPO $HEAT_DIR $HEAT_BRANCH
 }
 
+# install_heat_other() - Collect source and prepare
+function install_heat_other {
+    git_clone $HEAT_CFNTOOLS_REPO $HEAT_CFNTOOLS_DIR $HEAT_CFNTOOLS_BRANCH
+    git_clone $HEAT_TEMPLATES_REPO $HEAT_TEMPLATES_REPO_DIR $HEAT_TEMPLATES_BRANCH
+}
+
 # start_heat() - Start running processes, including screen
 function start_heat {
     screen_it h-eng "cd $HEAT_DIR; bin/heat-engine --config-file=$HEAT_CONF"
@@ -190,49 +198,35 @@ function start_heat {
 # stop_heat() - Stop running processes
 function stop_heat {
     # Kill the screen windows
+    local serv
     for serv in h-eng h-api h-api-cfn h-api-cw; do
         screen_stop $serv
     done
 }
 
-function disk_image_create {
-    local elements_path=$1
-    local elements=$2
-    local arch=$3
-    local output=$TOP_DIR/files/$4
-    if [[ -f "$output.qcow2" ]]; then
-        echo "Image file already exists: $output_file"
-    else
-        ELEMENTS_PATH=$elements_path disk-image-create \
-            $elements -a $arch -o $output
-    fi
-    # upload with fake URL so that image in $TOP_DIR/files is used
-    upload_image "http://localhost/$output.qcow2" $TOKEN
-}
-
 # create_heat_accounts() - Set up common required heat accounts
 function create_heat_accounts {
     # migrated from files/keystone_data.sh
-    SERVICE_TENANT=$(openstack project list | awk "/ $SERVICE_TENANT_NAME / { print \$2 }")
-    ADMIN_ROLE=$(openstack role list | awk "/ admin / { print \$2 }")
+    local service_tenant=$(openstack project list | awk "/ $SERVICE_TENANT_NAME / { print \$2 }")
+    local admin_role=$(openstack role list | awk "/ admin / { print \$2 }")
 
-    HEAT_USER=$(get_or_create_user "heat" \
-        "$SERVICE_PASSWORD" $SERVICE_TENANT "heat@example.com")
-    get_or_add_user_role $ADMIN_ROLE $HEAT_USER $SERVICE_TENANT
+    local heat_user=$(get_or_create_user "heat" \
+        "$SERVICE_PASSWORD" $service_tenant)
+    get_or_add_user_role $admin_role $heat_user $service_tenant
 
     if [[ "$KEYSTONE_CATALOG_BACKEND" = 'sql' ]]; then
 
-        HEAT_SERVICE=$(get_or_create_service "heat" \
+        local heat_service=$(get_or_create_service "heat" \
                 "orchestration" "Heat Orchestration Service")
-        get_or_create_endpoint $HEAT_SERVICE \
+        get_or_create_endpoint $heat_service \
             "$REGION_NAME" \
             "$SERVICE_PROTOCOL://$HEAT_API_HOST:$HEAT_API_PORT/v1/\$(tenant_id)s" \
             "$SERVICE_PROTOCOL://$HEAT_API_HOST:$HEAT_API_PORT/v1/\$(tenant_id)s" \
             "$SERVICE_PROTOCOL://$HEAT_API_HOST:$HEAT_API_PORT/v1/\$(tenant_id)s"
 
-        HEAT_CFN_SERVICE=$(get_or_create_service "heat-cfn" \
+        local heat_cfn_service=$(get_or_create_service "heat-cfn" \
                 "cloudformation" "Heat CloudFormation Service")
-        get_or_create_endpoint $HEAT_CFN_SERVICE \
+        get_or_create_endpoint $heat_cfn_service \
             "$REGION_NAME" \
             "$SERVICE_PROTOCOL://$HEAT_API_CFN_HOST:$HEAT_API_CFN_PORT/v1" \
             "$SERVICE_PROTOCOL://$HEAT_API_CFN_HOST:$HEAT_API_CFN_PORT/v1" \
@@ -247,42 +241,59 @@ function create_heat_accounts {
         # heat_stack_owner role is given to users who create Heat stacks,
         # it's the default role used by heat to delegate to the heat service
         # user (for performing deferred operations via trusts), see heat.conf
-        HEAT_OWNER_ROLE=$(get_or_create_role "heat_stack_owner")
+        local heat_owner_role=$(get_or_create_role "heat_stack_owner")
 
         # Give the role to the demo and admin users so they can create stacks
         # in either of the projects created by devstack
-        get_or_add_user_role $HEAT_OWNER_ROLE demo demo
-        get_or_add_user_role $HEAT_OWNER_ROLE admin demo
-        get_or_add_user_role $HEAT_OWNER_ROLE admin admin
+        get_or_add_user_role $heat_owner_role demo demo
+        get_or_add_user_role $heat_owner_role admin demo
+        get_or_add_user_role $heat_owner_role admin admin
         iniset $HEAT_CONF DEFAULT deferred_auth_method trusts
     fi
 
     if [[ "$HEAT_STACK_DOMAIN" == "True" ]]; then
         # Note we have to pass token/endpoint here because the current endpoint and
         # version negotiation in OSC means just --os-identity-api-version=3 won't work
-        KS_ENDPOINT_V3="$KEYSTONE_SERVICE_URI/v3"
+        local ks_endpoint_v3="$KEYSTONE_SERVICE_URI/v3"
 
-        D_ID=$(openstack --os-token $OS_TOKEN --os-url=$KS_ENDPOINT_V3 \
+        D_ID=$(openstack --os-token $OS_TOKEN --os-url=$ks_endpoint_v3 \
             --os-identity-api-version=3 domain list | grep ' heat ' | get_field 1)
 
         if [[ -z "$D_ID" ]]; then
-            D_ID=$(openstack --os-token $OS_TOKEN --os-url=$KS_ENDPOINT_V3 \
+            D_ID=$(openstack --os-token $OS_TOKEN --os-url=$ks_endpoint_v3 \
                 --os-identity-api-version=3 domain create heat \
                 --description "Owns users and projects created by heat" \
                 | grep ' id ' | get_field 2)
             iniset $HEAT_CONF DEFAULT stack_user_domain ${D_ID}
 
-            openstack --os-token $OS_TOKEN --os-url=$KS_ENDPOINT_V3 \
+            openstack --os-token $OS_TOKEN --os-url=$ks_endpoint_v3 \
                 --os-identity-api-version=3 user create --password $SERVICE_PASSWORD \
                 --domain $D_ID heat_domain_admin \
                 --description "Manages users and projects created by heat"
-            openstack --os-token $OS_TOKEN --os-url=$KS_ENDPOINT_V3 \
+            openstack --os-token $OS_TOKEN --os-url=$ks_endpoint_v3 \
                 --os-identity-api-version=3 role add \
                 --user heat_domain_admin --domain ${D_ID} admin
             iniset $HEAT_CONF DEFAULT stack_domain_admin heat_domain_admin
             iniset $HEAT_CONF DEFAULT stack_domain_admin_password $SERVICE_PASSWORD
         fi
     fi
+}
+
+# build_heat_functional_test_image() - Build and upload functional test image
+function build_heat_functional_test_image {
+    build_dib_pip_repo "$OCC_DIR $OAC_DIR $ORC_DIR $HEAT_CFNTOOLS_DIR"
+    local image_name=heat-functional-tests-image
+
+    # The elements to invoke disk-image-create with
+    local image_elements="vm fedora selinux-permissive pypi \
+        os-collect-config os-refresh-config os-apply-config heat-cfntools \
+        heat-config heat-config-cfn-init heat-config-puppet heat-config-script"
+
+    # Elements path for tripleo-image-elements and heat-templates software-config
+    local elements_path=$TIE_DIR/elements:$HEAT_TEMPLATES_REPO_DIR/hot/software-config/elements
+
+    disk_image_create_upload "$image_name" "$image_elements" "$elements_path"
+    iniset $TEMPEST_CONFIG orchestration image_ref $image_name
 }
 
 # Restore xtrace

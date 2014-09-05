@@ -26,6 +26,8 @@ set +o xtrace
 # Make sure we only have one rpc backend enabled.
 # Also check the specified rpc backend is available on your platform.
 function check_rpc_backend {
+    local c svc
+
     local rpc_needed=1
     # We rely on the fact that filenames in lib/* match the service names
     # that can be passed as arguments to is_service_enabled.
@@ -94,11 +96,7 @@ function cleanup_rpc_backend {
 function install_rpc_backend {
     if is_service_enabled rabbit; then
         # Install rabbitmq-server
-        # the temp file is necessary due to LP: #878600
-        tfile=$(mktemp)
-        install_package rabbitmq-server > "$tfile" 2>&1
-        cat "$tfile"
-        rm -f "$tfile"
+        install_package rabbitmq-server
     elif is_service_enabled qpid; then
         if is_fedora; then
             install_package qpid-cpp-server
@@ -142,6 +140,7 @@ function restart_rpc_backend {
         # NOTE(bnemec): Retry initial rabbitmq configuration to deal with
         # the fact that sometimes it fails to start properly.
         # Reference: https://bugzilla.redhat.com/show_bug.cgi?id=1059028
+        local i
         for i in `seq 10`; do
             if is_fedora || is_suse; then
                 # service is not started by default
