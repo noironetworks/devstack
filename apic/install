@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Install icehouse devstack with APIC ML2 driver for neutron
+# Install master devstack with APIC ML2 driver for neutron
 #
 
 # Usage:
@@ -13,7 +13,7 @@ APIC_IP_ADDR=$1
 APIC_PORT='80'
 APIC_CONFIG='/etc/neutron/plugins/ml2/ml2_cisco_conf.ini'
 DEVSTACK_REPO='https://github.com/noironetworks/devstack.git'
-DEVSTACK_BRANCH='cisco-apic-icehouse'
+DEVSTACK_BRANCH='cisco-apic-master'
 STACK_HOME='/opt/stack'
 DEVSTACK_TOP="${STACK_HOME}/devstack"
 CREATED_USER=false
