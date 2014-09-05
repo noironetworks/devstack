@@ -261,8 +261,8 @@ PBR_REPO=${PBR_REPO:-${GIT_BASE}/openstack-dev/pbr.git}
 PBR_BRANCH=${PBR_BRANCH:-master}
 
 # neutron service
-NEUTRON_REPO=${NEUTRON_REPO:-"https://github.com/noironetworks/neutron.git"}
-NEUTRON_BRANCH=${NEUTRON_BRANCH:-cisco-apic-master}
+NEUTRON_REPO=${NEUTRON_REPO:-${GIT_BASE}/openstack/neutron.git}
+NEUTRON_BRANCH=${NEUTRON_BRANCH:-master}
 
 # neutron client
 NEUTRONCLIENT_REPO=${NEUTRONCLIENT_REPO:-${GIT_BASE}/openstack/python-neutronclient.git}
