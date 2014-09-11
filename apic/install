@@ -75,7 +75,7 @@ sudo chmod a+w ${STACK_HOME}
 git clone -b ${DEVSTACK_BRANCH} ${DEVSTACK_REPO} ${DEVSTACK_TOP}
 
 # Clone apicapi repo and install it
-git clone -b ${APICAPI_BRANCH} ${APICAPI_REPO} ${DEVSTACK_TOP}
+git clone -b ${APICAPI_BRANCH} ${APICAPI_REPO} ${DEVSTACK_TOP}/apicapi
 cd ${DEVSTACK_TOP}/apicapi
 sudo python setup.py install
 
