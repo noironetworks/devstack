@@ -14,6 +14,9 @@ APIC_PORT='80'
 APIC_CONFIG='/etc/neutron/plugins/ml2/ml2_cisco_conf.ini'
 DEVSTACK_REPO='https://github.com/noironetworks/devstack.git'
 DEVSTACK_BRANCH='cisco-apic-icehouse'
+APICAPI_REPO='https://github.com/noironetworks/apicapi'
+APICAPI_BRANCH='master'
+
 STACK_HOME='/opt/stack'
 DEVSTACK_TOP="${STACK_HOME}/devstack"
 CREATED_USER=false
@@ -70,6 +73,11 @@ fi
 # Install devstack, always download the repo again
 sudo chmod a+w ${STACK_HOME}
 git clone -b ${DEVSTACK_BRANCH} ${DEVSTACK_REPO} ${DEVSTACK_TOP}
+
+# Clone apicapi repo and install it
+git clone -b ${APICAPI_BRANCH} ${APICAPI_REPO} ${DEVSTACK_TOP}
+cd ${DEVSTACK_TOP}/apicapi
+sudo python setup.py install
 
 # create sample local.conf files
 cat >${DEVSTACK_TOP}/local.conf.ctrl-node <<EOF
