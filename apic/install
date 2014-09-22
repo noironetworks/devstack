@@ -30,10 +30,6 @@ if [ ! -f /etc/lsb-release ] ; then
     echo "ERROR: This script is only supported on ubuntu" 1>&2
     exit 1
 fi
-eval `cat /etc/lsb-release`
-if [ "${DISTRIB_RELEASE}"x != "12.04"x ] ; then
-    echo "WARNING: This script has only been tested on ubuntu 12.04" 1>&2
-fi
 if [ -d ${DEVSTACK_TOP} ] ; then
     echo "ERROR: devstack already exists" 1>&2
     exit 1
