@@ -1,5 +1,6 @@
 dnsmasq-base
 dnsmasq-utils # for dhcp_release
+conntrack
 kpartx
 parted
 iputils-arping
@@ -15,6 +16,7 @@ sudo
 qemu-kvm # NOPRIME
 qemu # dist:wheezy,jessie NOPRIME
 libvirt-bin # NOPRIME
+pm-utils
 libjs-jquery-tablesorter # Needed for coverage html reports
 vlan
 curl

@@ -42,21 +42,23 @@ IRONIC_POLICY_JSON=$IRONIC_CONF_DIR/policy.json
 IRONIC_SCRIPTS_DIR=${IRONIC_SCRIPTS_DIR:-$TOP_DIR/tools/ironic/scripts}
 IRONIC_TEMPLATES_DIR=${IRONIC_TEMPLATES_DIR:-$TOP_DIR/tools/ironic/templates}
 IRONIC_BAREMETAL_BASIC_OPS=$(trueorfalse False $IRONIC_BAREMETAL_BASIC_OPS)
+IRONIC_DRIVERS_WHITELIST=${IRONIC_DRIVERS_WHITELIST:-fake,pxe_ssh}
 IRONIC_SSH_USERNAME=${IRONIC_SSH_USERNAME:-`whoami`}
 IRONIC_SSH_KEY_DIR=${IRONIC_SSH_KEY_DIR:-$IRONIC_DATA_DIR/ssh_keys}
 IRONIC_SSH_KEY_FILENAME=${IRONIC_SSH_KEY_FILENAME:-ironic_key}
 IRONIC_KEY_FILE=$IRONIC_SSH_KEY_DIR/$IRONIC_SSH_KEY_FILENAME
 IRONIC_SSH_VIRT_TYPE=${IRONIC_SSH_VIRT_TYPE:-virsh}
 IRONIC_TFTPBOOT_DIR=${IRONIC_TFTPBOOT_DIR:-$IRONIC_DATA_DIR/tftpboot}
-IRONIC_VM_SSH_PORT=${IRONIC_VM_SSH_PORT:-2222}
+IRONIC_VM_SSH_PORT=${IRONIC_VM_SSH_PORT:-22}
 IRONIC_VM_SSH_ADDRESS=${IRONIC_VM_SSH_ADDRESS:-$HOST_IP}
 IRONIC_VM_COUNT=${IRONIC_VM_COUNT:-1}
 IRONIC_VM_SPECS_CPU=${IRONIC_VM_SPECS_CPU:-1}
-# NOTE(agordeev): both ubuntu and fedora deploy images won't work with 256MB of RAM.
-#                 System halts and throws kernel panic during initramfs unpacking.
-#                 Ubuntu needs at least 384MB, but fedora requires 448.
-#                 So placing 512 here to satisfy both.
-IRONIC_VM_SPECS_RAM=${IRONIC_VM_SPECS_RAM:-512}
+# NOTE(adam_g): Kernels 3.12 and newer user tmpfs by default for initramfs.
+#               DIB produced ramdisks tend to be ~250MB but tmpfs will only allow
+#               use of 50% of available memory before ENOSPC.  Set minimum 1GB
+#               for nodes to avoid (LP: #1311987) and ensure consistency across
+#               older and newer kernels.
+IRONIC_VM_SPECS_RAM=${IRONIC_VM_SPECS_RAM:-1024}
 IRONIC_VM_SPECS_DISK=${IRONIC_VM_SPECS_DISK:-10}
 IRONIC_VM_EMULATOR=${IRONIC_VM_EMULATOR:-/usr/bin/qemu-system-x86_64}
 IRONIC_VM_NETWORK_BRIDGE=${IRONIC_VM_NETWORK_BRIDGE:-brbm}
@@ -169,8 +171,18 @@ function configure_ironic_api {
 function configure_ironic_conductor {
     cp $IRONIC_DIR/etc/ironic/rootwrap.conf $IRONIC_ROOTWRAP_CONF
     cp -r $IRONIC_DIR/etc/ironic/rootwrap.d $IRONIC_CONF_DIR
+    IRONIC_ROOTWRAP=$(get_rootwrap_location ironic)
+    ROOTWRAP_ISUDOER_CMD="$IRONIC_ROOTWRAP $IRONIC_CONF_DIR/rootwrap.conf *"
+
+    # Set up the rootwrap sudoers for ironic
+    TEMPFILE=`mktemp`
+    echo "$STACK_USER ALL=(root) NOPASSWD: $ROOTWRAP_ISUDOER_CMD" >$TEMPFILE
+    chmod 0440 $TEMPFILE
+    sudo chown root:root $TEMPFILE
+    sudo mv $TEMPFILE /etc/sudoers.d/ironic-rootwrap
 
     iniset $IRONIC_CONF_FILE DEFAULT rootwrap_config $IRONIC_ROOTWRAP_CONF
+    iniset $IRONIC_CONF_FILE DEFAULT drivers_whitelist $IRONIC_DRIVERS_WHITELIST
     iniset $IRONIC_CONF_FILE conductor api_url http://$HOST_IP:6385
     iniset $IRONIC_CONF_FILE pxe tftp_server $HOST_IP
     iniset $IRONIC_CONF_FILE pxe tftp_root $IRONIC_TFTPBOOT_DIR
@@ -315,8 +327,13 @@ function enroll_vms {
     IRONIC_NET_ID=$(neutron net-list | grep private | get_field 1)
     local idx=0
 
-    # work around; need to know what netns neutron uses for private network
-    neutron port-create private
+    # work around; need to know what netns neutron uses for private network.
+    # Without knowing how to interconnect the networks, PXE won't work properly
+    # for fake baremetal instances. The network should be configured prior all
+    # the instances operation. If we don't do this, the first port creation
+    # only happens in the middle of fake baremetal instance's spawning by nova,
+    # so we'll end up with unbootable fake baremetal VM due to broken PXE.
+    PORT_ID=$(neutron port-create private | grep " id " | get_field 2)
 
     while read MAC; do
 
@@ -357,13 +374,22 @@ function enroll_vms {
 
     sudo ovs-vsctl -- --if-exists del-port ovs-tap1 -- add-port br-int ovs-tap1 tag=$TAG_ID
     sudo ovs-vsctl -- --if-exists del-port brbm-tap1 -- add-port $IRONIC_VM_NETWORK_BRIDGE brbm-tap1
+
+    # Remove the port needed only for workaround. For additional info read the
+    # comment at the beginning of this function
+    neutron port-delete $PORT_ID
+}
+
+function configure_iptables {
+    # enable tftp natting for allowing connections to HOST_IP's tftp server
+    sudo modprobe nf_conntrack_tftp
+    sudo modprobe nf_nat_tftp
+    # nodes boot from TFTP and callback to the API server listening on $HOST_IP
+    sudo iptables -I INPUT -d $HOST_IP -p udp --dport 69 -j ACCEPT || true
+    sudo iptables -I INPUT -d $HOST_IP -p tcp --dport 6385 -j ACCEPT || true
 }
 
 function configure_tftpd {
-    # enable tftp natting for allowing connections to SERVICE_HOST's tftp server
-    sudo modprobe nf_conntrack_tftp
-    sudo modprobe nf_nat_tftp
-
     if is_ubuntu; then
         PXEBIN=/usr/lib/syslinux/pxelinux.0
     elif is_fedora; then
@@ -412,31 +438,10 @@ function ironic_ssh_check {
     fi
 }
 
-function configure_ironic_sshd {
-    # Ensure sshd server accepts connections from localhost only
-
-    SSH_CONFIG=/etc/ssh/sshd_config
-    HOST_PORT=$IRONIC_VM_SSH_ADDRESS:$IRONIC_VM_SSH_PORT
-    if ! sudo grep ListenAddress $SSH_CONFIG | grep $HOST_PORT; then
-        echo "ListenAddress $HOST_PORT" | sudo tee -a $SSH_CONFIG
-    fi
-
-    SSH_SERVICE_NAME=sshd
-    if is_ubuntu; then
-        SSH_SERVICE_NAME=ssh
-    fi
-
-    restart_service $SSH_SERVICE_NAME
-    # to ensure ssh service is up and running
-    sleep 3
-    ironic_ssh_check $IRONIC_SSH_KEY_DIR/$IRONIC_SSH_KEY_FILENAME $IRONIC_VM_SSH_ADDRESS $IRONIC_VM_SSH_PORT $IRONIC_SSH_USERNAME 10
-
-}
-
 function configure_ironic_auxiliary {
     configure_ironic_dirs
     configure_ironic_ssh_keypair
-    configure_ironic_sshd
+    ironic_ssh_check $IRONIC_SSH_KEY_DIR/$IRONIC_SSH_KEY_FILENAME $IRONIC_VM_SSH_ADDRESS $IRONIC_VM_SSH_PORT $IRONIC_SSH_USERNAME 10
 }
 
 # build deploy kernel+ramdisk, then upload them to glance
@@ -496,19 +501,6 @@ function prepare_baremetal_basic_ops {
         fi
     done
 
-    SCREEN_NAME=${SCREEN_NAME:-stack}
-    SERVICE_DIR=${SERVICE_DIR:-${DEST}/status}
-
-    # stop all nova services
-    stop_nova || true
-
-    # remove any nova services failure status
-    find $SERVICE_DIR/$SCREEN_NAME -name 'n-*.failure' -exec rm -f '{}' \;
-
-    # start them again
-    start_nova_api
-    start_nova
-
     TOKEN=$(keystone token-get | grep ' id ' | get_field 2)
     die_if_not_set $LINENO TOKEN "Keystone fail to get token"
 
@@ -520,6 +512,12 @@ function prepare_baremetal_basic_ops {
     create_bridge_and_vms
     enroll_vms
     configure_tftpd
+    configure_iptables
+
+    # restart nova-compute to ensure its resource tracking is up to
+    # date with newly enrolled nodes
+    stop_nova_compute || true
+    start_nova_compute
 }
 
 function cleanup_baremetal_basic_ops {
@@ -534,6 +532,10 @@ function cleanup_baremetal_basic_ops {
     sudo su $STACK_USER -c "$IRONIC_SCRIPTS_DIR/cleanup-nodes $IRONIC_VM_COUNT $IRONIC_VM_NETWORK_BRIDGE"
     sudo rm -rf /etc/xinetd.d/tftp /etc/init/tftpd-hpa.override
     restart_service xinetd
+    sudo iptables -D INPUT -d $HOST_IP -p udp --dport 69 -j ACCEPT || true
+    sudo iptables -D INPUT -d $HOST_IP -p tcp --dport 6385 -j ACCEPT || true
+    sudo rmmod nf_conntrack_tftp || true
+    sudo rmmod nf_nat_tftp || true
 }
 
 # Restore xtrace + pipefail

@@ -149,6 +149,14 @@ if [[ ! ${DISTRO} =~ (precise|saucy|trusty|7.0|wheezy|sid|testing|jessie|f19|f20
     fi
 fi
 
+# Look for obsolete stuff
+if [[ ,${ENABLED_SERVICES} =~ ,"swift" ]]; then
+    echo "FATAL: 'swift' is not supported as a service name"
+    echo "FATAL: Use the actual swift service names to enable tham as required:"
+    echo "FATAL: s-proxy s-object s-container s-account"
+    exit 1
+fi
+
 # Make sure we only have one rpc backend enabled,
 # and the specified rpc backend is available on your platform.
 check_rpc_backend
@@ -203,6 +211,11 @@ sudo mv $TEMPFILE /etc/sudoers.d/50_stack_sh
 # Additional repos
 # ----------------
 
+# For debian/ubuntu make apt attempt to retry network ops on it's own
+if is_ubuntu; then
+    echo 'APT::Acquire::Retries "20";' | sudo tee /etc/apt/apt.conf.d/80retry
+fi
+
 # Some distros need to add repos beyond the defaults provided by the vendor
 # to pick up required packages.
 
@@ -215,21 +228,24 @@ if [[ "$os_VENDOR" =~ (Debian) ]]; then
     apt_get install --force-yes gplhost-archive-keyring
 fi
 
-if [[ is_fedora && $DISTRO =~ (rhel6) ]]; then
-    # Installing Open vSwitch on RHEL6 requires enabling the RDO repo.
-    RHEL6_RDO_REPO_RPM=${RHEL6_RDO_REPO_RPM:-"http://rdo.fedorapeople.org/openstack-havana/rdo-release-havana.rpm"}
-    RHEL6_RDO_REPO_ID=${RHEL6_RDO_REPO_ID:-"openstack-havana"}
+if [[ is_fedora && $DISTRO =~ (rhel) ]]; then
+    # Installing Open vSwitch on RHEL requires enabling the RDO repo.
+    RHEL6_RDO_REPO_RPM=${RHEL6_RDO_REPO_RPM:-"http://rdo.fedorapeople.org/openstack-icehouse/rdo-release-icehouse.rpm"}
+    RHEL6_RDO_REPO_ID=${RHEL6_RDO_REPO_ID:-"openstack-icehouse"}
     if ! sudo yum repolist enabled $RHEL6_RDO_REPO_ID | grep -q $RHEL6_RDO_REPO_ID; then
         echo "RDO repo not detected; installing"
         yum_install $RHEL6_RDO_REPO_RPM || \
             die $LINENO "Error installing RDO repo, cannot continue"
     fi
-
-    # RHEL6 requires EPEL for many Open Stack dependencies
-    RHEL6_EPEL_RPM=${RHEL6_EPEL_RPM:-"http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm"}
+    # RHEL requires EPEL for many Open Stack dependencies
+    if [[ $DISTRO =~ (rhel7) ]]; then
+        EPEL_RPM=${RHEL7_EPEL_RPM:-"http://dl.fedoraproject.org/pub/epel/beta/7/x86_64/epel-release-7-0.1.noarch.rpm"}
+    else
+        EPEL_RPM=${RHEL6_EPEL_RPM:-"http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm"}
+    fi
     if ! sudo yum repolist enabled epel | grep -q 'epel'; then
         echo "EPEL not detected; installing"
-        yum_install ${RHEL6_EPEL_RPM} || \
+        yum_install ${EPEL_RPM} || \
             die $LINENO "Error installing EPEL repo, cannot continue"
     fi
 
@@ -425,7 +441,7 @@ initialize_database_backends && echo "Using $DATABASE_TYPE database backend" || 
 
 # Rabbit connection info
 if is_service_enabled rabbit; then
-    RABBIT_HOST=${RABBIT_HOST:-localhost}
+    RABBIT_HOST=${RABBIT_HOST:-$SERVICE_HOST}
     read_password RABBIT_PASSWORD "ENTER A PASSWORD TO USE FOR RABBIT."
 fi
 
@@ -531,26 +547,15 @@ if [[ -n "$LOGFILE" ]]; then
     # Copy stdout to fd 3
     exec 3>&1
     if [[ "$VERBOSE" == "True" ]]; then
-        # Redirect stdout/stderr to tee to write the log file
-        exec 1> >( awk -v logfile=${LOGFILE} '
-                /((set \+o$)|xtrace)/ { next }
-                {
-                    cmd ="date +\"%Y-%m-%d %H:%M:%S.%3N | \""
-                    cmd | getline now
-                    close("date +\"%Y-%m-%d %H:%M:%S.%3N | \"")
-                    sub(/^/, now)
-                    print > logfile
-                    fflush(logfile)
-                    print
-                    fflush("")
-                }' ) 2>&1
-        # Set up a second fd for output
-        exec 6> >( tee "${SUMFILE}" )
+        # Set fd 1 and 2 to write the log file
+        exec 1> >( $TOP_DIR/tools/outfilter.py -v -o "${LOGFILE}" ) 2>&1
+        # Set fd 6 to summary log file
+        exec 6> >( $TOP_DIR/tools/outfilter.py -o "${SUMFILE}" )
     else
         # Set fd 1 and 2 to primary logfile
-        exec 1> "${LOGFILE}" 2>&1
+        exec 1> >( $TOP_DIR/tools/outfilter.py -o "${LOGFILE}" ) 2>&1
         # Set fd 6 to summary logfile and stdout
-        exec 6> >( tee "${SUMFILE}" >&3 )
+        exec 6> >( $TOP_DIR/tools/outfilter.py -v -o "${SUMFILE}" >&3 )
     fi
 
     echo_summary "stack.sh log $LOGFILE"
@@ -566,7 +571,7 @@ else
         exec 1>/dev/null 2>&1
     fi
     # Always send summary fd to original stdout
-    exec 6>&3
+    exec 6> >( $TOP_DIR/tools/outfilter.py -v >&3 )
 fi
 
 # Set up logging of screen windows
@@ -742,6 +747,8 @@ if is_service_enabled nova; then
 fi
 
 if is_service_enabled horizon; then
+    # django openstack_auth
+    install_django_openstack_auth
     # dashboard
     install_horizon
     configure_horizon
@@ -1001,9 +1008,13 @@ if is_service_enabled n-net q-dhcp; then
     fi
 
     clean_iptables
-    rm -rf ${NOVA_STATE_PATH}/networks
-    sudo mkdir -p ${NOVA_STATE_PATH}/networks
-    safe_chown -R ${USER} ${NOVA_STATE_PATH}/networks
+
+    if is_service_enabled n-net; then
+        rm -rf ${NOVA_STATE_PATH}/networks
+        sudo mkdir -p ${NOVA_STATE_PATH}/networks
+        safe_chown -R ${USER} ${NOVA_STATE_PATH}/networks
+    fi
+
     # Force IP forwarding on, just in case
     sudo sysctl -w net.ipv4.ip_forward=1
 fi
