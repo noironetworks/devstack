@@ -24,6 +24,7 @@ function install_cisco_apic {
         install_package lldpd
         echo 'DAEMON_ARGS="-r -c -I eth*"' | sudo tee /etc/default/lldpd 1>/dev/null
         restart_service lldpd
+        pip_install -U apicapi
     fi
 }
 
