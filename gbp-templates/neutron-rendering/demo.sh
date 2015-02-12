@@ -6,10 +6,7 @@
 # or
 # ./demo neutron
 
-#EXT_ALLOCATION_POOL_START="203.0.113.101"
-#EXT_ALLOCATION_POOL_END="203.0.113.200"
-
-EXT_PTG_NAME="Outside"
+EXT_POLICY_NAME="Outside"
 
 ACI_RENDERING="aci"
 NEUTRON_RENDERING="neutron"
@@ -54,22 +51,31 @@ set -o errexit
 
 source $OPENSTACK_ENV_FILE
 
-set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $TENANT_NAME
+set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $ADMIN_TENANT_NAME
 
 # Print the commands being run so that we can see the command that triggers
 # an error.  It is also useful for following allowing as the install occurs.
 set -o xtrace
 
-heat stack-create -f external_connectivity.yaml external -P "external_network_cidr=$EXT_NET_CIDR;external_network_gateway=$EXT_NET_GATEWAY;external_segment_name=$EXT_SEGMENT_NAME;external_ptg_name=$EXT_PTG_NAME;physical_network_name=$PHYSICAL_NETWORK_NAME;physical_network_type=$PHYSICAL_NETWORK_TYPE;port_address_translation=$PORT_ADDRESS_TRANSLATION"
-#heat stack-create -f external_connectivity.yaml external -P "external_network_cidr=$EXT_NET_CIDR;external_network_gateway=$EXT_NET_GATEWAY;external_allocation_pool_start=$EXT_ALLOCATION_POOL_START;external_allocation_pool_end=$EXT_ALLOCATION_POOL_END"
+heat stack-create -f external_connectivity.yaml external -P "external_network_cidr=$EXT_NET_CIDR;external_network_gateway=$EXT_NET_GATEWAY;external_segment_name=$EXT_SEGMENT_NAME;physical_network_name=$PHYSICAL_NETWORK_NAME;physical_network_type=$PHYSICAL_NETWORK_TYPE;port_address_translation=$PORT_ADDRESS_TRANSLATION"
+
+sleep 3
+
+EXT_SEGMENT_ID=`gbp external-segment-show $EXT_SEGMENT_NAME | grep ' id ' | cut -d"|" -f3 | sed 's/ //g'`
 
 set +o xtrace
-set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $TENANT_NAME
+set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $NON_ADMIN_TENANT_NAME
 set -o xtrace
  
-heat stack-create -f three_tier_with_lb.yaml demo -P "monitoring_vm_image=$MONITORING_VM_IMAGE_NAME;web_vm_image=$WEB_VM_IMAGE_NAME;app_vm_image=$APP_VM_IMAGE_NAME;db_vm_image=$DB_VM_IMAGE_NAME;app_ip_pool=$APP_IP_POOL;mgmt_ip_pool=$SERVICES_MGMT_IP_POOL"
+heat stack-create -f three_tier_with_lb.yaml demo -P "monitoring_vm_image=$MONITORING_VM_IMAGE_NAME;web_vm_image=$WEB_VM_IMAGE_NAME;app_vm_image=$APP_VM_IMAGE_NAME;db_vm_image=$DB_VM_IMAGE_NAME;app_ip_pool=$APP_IP_POOL;mgmt_ip_pool=$SERVICES_MGMT_IP_POOL;external_policy_name=$EXT_POLICY_NAME;external_segment_id=$EXT_SEGMENT_ID;web_tier_consumed_prs_name=$WEB_TIER_CONSUMED_PRS_NAME;web_tier_provided_prs_name=$WEB_TIER_PROVIDED_PRS_NAME"
 
-#gbp group-update $EXT_POLICY_NAME --consumed-policy-rule-sets "HTTP_TCP_Redirect_To_LB=true"
+#sleep 5
+
+#gbp external-policy-update $EXT_POLICY_NAME --provided-policy-rule-sets "$WEB_TIER_CONSUMED_PRS_NAME=true"
+
+#sleep 2
+#gbp external-policy-update $EXT_POLICY_NAME --consumed-policy-rule-sets "$WEB_TIER_PROVIDED_PRS_NAME=true"
+
 
 set +o xtrace
 echo "*********************************************************************"
