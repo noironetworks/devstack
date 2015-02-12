@@ -22,12 +22,6 @@ parameters:
     description: Name for external segment
     default: 'default'
 
-  external_ptg_name:
-    type: string
-    label: external_ptg_name
-    description: Name of the External Policy
-    default: 'Outside'
-
   physical_network_name:
     type: string
     label: physical_network_name
@@ -45,16 +39,6 @@ parameters:
     label: port_address_translation
     description: True for Neutron rendering, False for APIC rendering
     default: 'False'
-
-#  external_allocation_pool_start:
-#    type: string
-#    label: external_allocation_pool_start
-#    description: Allocation pool start IP address 
-
-#  external_allocation_pool_end:
-#    type: string
-#    label: external_allocation_pool_end
-#    description: Allocation pool end IP address 
 
 resources:
 
@@ -76,10 +60,6 @@ resources:
         network_id: {get_resource: external_network}
         cidr: {get_param: external_network_cidr}
         gateway_ip: {get_param: external_network_gateway}
-#        allocation_pools: [{
-#          "start": {get_param: external_allocation_pool_start},
-#          "end": {get_param: external_allocation_pool_end}
-#        }]
 
     external_segment:
         type: OS::Neutron::ExternalSegment
@@ -91,10 +71,3 @@ resources:
                 - destination: '0.0.0.0/0'
                   nexthop:
             shared: True
-
-    external_ptg:
-        type: OS::Neutron::ExternalPolicy
-        properties:
-            name: { get_param: external_ptg_name }
-            external_segments: [ { get_resource: external_segment } ]
-            shared: False

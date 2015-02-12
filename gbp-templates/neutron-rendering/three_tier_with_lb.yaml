@@ -46,6 +46,27 @@ parameters:
     description: IP Pool used for the Services' Mgmt network
     default: '172.1.0.0/24'
 
+  external_policy_name:
+    type: string
+    label: external_policy_name
+    description: Name of the External Policy
+    default: 'Outside'
+
+  external_segment_id:
+    type: string
+    label: external_segment_id
+    description: ID of the external segment with default name
+
+  web_tier_provided_prs_name:
+    type: string
+    label: web_tier_provided_prs_name
+    description: Name of the PRS provided by the Web Tier
+
+  web_tier_consumed_prs_name:
+    type: string
+    label: web_tier_consumed_prs_name
+    description: Name of the PRS consumed by the Web Tier
+
 resources:
 
 #### Network Setup ####
@@ -54,14 +75,14 @@ resources:
     l3_policy:
         type: OS::Neutron::L3Policy
         properties:
-            name: IP_Policy
+            name: "Datacenter"
             ip_pool: { get_param: app_ip_pool }
             shared: False
 
     mgmt_l3_policy:
         type: OS::Neutron::L3Policy
         properties:
-            name: 'Service Mgmt L3 Policy'
+            name: 'Service Management'
             ip_pool: { get_param: mgmt_ip_pool }
             shared: False
 
@@ -70,7 +91,7 @@ resources:
         type: OS::Neutron::L2Policy
         depends_on: l3_policy
         properties:
-            name: Monitoring_Domain
+            name: "Monitoring Network"
             l3_policy_id: { get_resource: l3_policy }
             shared: False
 
@@ -78,7 +99,7 @@ resources:
         type: OS::Neutron::L2Policy
         depends_on: l3_policy
         properties:
-            name: App_DB_Domain
+            name: "App Network"
             l3_policy_id: { get_resource: l3_policy }
             shared: False
 
@@ -86,7 +107,7 @@ resources:
         type: OS::Neutron::L2Policy
         depends_on: l3_policy
         properties:
-            name: Web_Domain
+            name: "Web Network"
             l3_policy_id: { get_resource: l3_policy }
             shared: False
 
@@ -94,7 +115,7 @@ resources:
         type: OS::Neutron::L2Policy
         depends_on: mgmt_l3_policy
         properties:
-            name: 'Service Mgmt Domain'
+            name: "Service Mgmt Network"
             l3_policy_id: { get_resource: mgmt_l3_policy }
             shared: False
 
@@ -104,7 +125,7 @@ resources:
     sc_lb_node:
         type: OS::Neutron::ServiceChainNode
         properties:
-            name: Loadbalancer_Node
+            name: "Loadbalancer"
             service_type: LOADBALANCER
             config: { get_file: lb_vip_description.template }
 
@@ -113,7 +134,7 @@ resources:
         type: OS::Neutron::ServiceChainSpec
         depends_on: [ sc_lb_node ]
         properties:
-            name: LB_Chain_Spec
+            name: "Loadbalancer Service Chain"
             nodes:
                 - { get_resource: sc_lb_node }
 
@@ -121,12 +142,12 @@ resources:
     vip_ip_policy:
         type: OS::Neutron::NetworkServicePolicy
         properties:
-            name: VIP_Policy
+            name: "VIP Allocation"
             network_service_params: 
                 - type: ip_single
                   name: vip_ip
                   value: self_subnet
-            shared: True
+            shared: False
 
 #### Policy Classifiers, Actions, Rules Setup ####
 
@@ -134,7 +155,7 @@ resources:
     allow_action:
         type: OS::Neutron::PolicyAction
         properties:
-            name: Allow_Action
+            name: "Allow"
             action_type: allow
             shared: False
 
@@ -142,17 +163,17 @@ resources:
     monitoring_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: Monitoring_Classifier
+            name: "Monitoring traffic"
             protocol: tcp
             port_range: '8080'
             direction: in
-            shared: True
+            shared: False
 
     monitoring_traffic_rule:
         type: OS::Neutron::PolicyRule
         depends_on: [ monitoring_classifier, allow_action ]
         properties:
-            name: Allow_Monitoring
+            name: "Monitoring traffic"
             policy_classifier_id: { get_resource: monitoring_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: False
@@ -161,17 +182,17 @@ resources:
     db_tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: MySQL_DB_TCP_Classifier
+            name: "MySQL traffic"
             protocol: tcp
             port_range: '3306'
             direction: in
-            shared: True
+            shared: False
 
     mysql_db_traffic_rule:
         type: OS::Neutron::PolicyRule
         depends_on: [ db_tcp_classifier, allow_action ]
         properties:
-            name: Allow_MySQL
+            name: "MySQL Traffic"
             policy_classifier_id: { get_resource: db_tcp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: False
@@ -180,17 +201,17 @@ resources:
     app_tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: App_TCP_Classifier
+            name: "Application traffic"
             protocol: tcp
             port_range: '8080'
             direction: in
-            shared: True
+            shared: False
 
     app_traffic_rule:
         type: OS::Neutron::PolicyRule
         depends_on: [ app_tcp_classifier, allow_action ]
         properties:
-            name: Allow_Application
+            name: "Application Traffic"
             policy_classifier_id: { get_resource: app_tcp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: False
@@ -199,18 +220,18 @@ resources:
     http_tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: HTTP_TCP_Classifier
+            name: "External traffic"
             protocol: tcp
             port_range: '80'
             direction: in
-            shared: True
+            shared: False
 
 # Create redirect action
     redirect_to_chain:
         type: OS::Neutron::PolicyAction
         depends_on: sc_spec
         properties:
-            name: Redirect_LB_Chain_Action
+            name: "Redirect to LB"
             action_type: redirect
             action_value: { get_resource: sc_spec }
             shared: False
@@ -220,7 +241,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ http_tcp_classifier, allow_action ]
         properties:
-            name: Allow_HTTP
+            name: "Allow external access"
             policy_classifier_id: { get_resource: http_tcp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: False
@@ -230,7 +251,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ http_tcp_classifier, redirect_to_chain ]
         properties:
-            name: Allow_TCP_with_Redirect_Rule
+            name: "HTTP via LB"
             policy_classifier_id: { get_resource: http_tcp_classifier }
             policy_actions: [{ get_resource: redirect_to_chain }]
             shared: False
@@ -242,7 +263,7 @@ resources:
         type: OS::Neutron::PolicyRuleSet
         depends_on: monitoring_traffic_rule
         properties:
-            name: Monitoring
+            name: "Monitoring"
             policy_rules: [{ get_resource: monitoring_traffic_rule }] 
             child_policy_rule_sets: []
             shared: False
@@ -252,7 +273,7 @@ resources:
         type: OS::Neutron::PolicyRuleSet
         depends_on: mysql_db_traffic_rule
         properties:
-            name: MySQL_DB
+            name: "MySQL DB"
             policy_rules: [{ get_resource: mysql_db_traffic_rule }] 
             child_policy_rule_sets: []
             shared: False
@@ -262,7 +283,7 @@ resources:
         type: OS::Neutron::PolicyRuleSet
         depends_on: app_traffic_rule
         properties:
-            name: App_Rule_Set
+            name: "Application"
             policy_rules: [{ get_resource: app_traffic_rule }] 
             child_policy_rule_sets: []
             shared: False
@@ -272,7 +293,7 @@ resources:
         type: OS::Neutron::PolicyRuleSet
         depends_on: http_traffic_rule
         properties:
-            name: HTTP_TCP
+            name: { get_param: web_tier_consumed_prs_name }
             policy_rules: [{ get_resource: http_traffic_rule }] 
             child_policy_rule_sets: []
             shared: False
@@ -282,7 +303,7 @@ resources:
         type: OS::Neutron::PolicyRuleSet
         depends_on: http_redirect_traffic_rule
         properties:
-            name: HTTP_TCP_Redirect_To_LB
+            name: { get_param: web_tier_provided_prs_name }
             policy_rules: [{ get_resource: http_redirect_traffic_rule }] 
             child_policy_rule_sets: []
             shared: False
@@ -293,7 +314,7 @@ resources:
         type: OS::Neutron::PolicyTargetGroup
         depends_on: [ monitoring_rule_set, monitoring_tier_l2_policy ]
         properties:
-            name: Monitoring_PTG
+            name: "Monitoring Tier"
             l2_policy_id: { get_resource: monitoring_tier_l2_policy }
             provided_policy_rule_sets: 
                 - policy_rule_set_id: { get_resource: monitoring_rule_set }
@@ -323,7 +344,7 @@ resources:
         type: OS::Neutron::PolicyTargetGroup
         depends_on: [ mysql_rule_set, app_db_tier_l2_policy ]
         properties:
-            name: DB_PTG
+            name: "DB Tier"
             l2_policy_id: { get_resource: app_db_tier_l2_policy }
             provided_policy_rule_sets: 
                 - policy_rule_set_id: { get_resource: mysql_rule_set }
@@ -356,7 +377,7 @@ resources:
         type: OS::Neutron::PolicyTargetGroup
         depends_on: [ app_rule_set, mysql_rule_set, app_db_tier_l2_policy ]
         properties:
-            name: App_PTG
+            name: "App Tier"
             l2_policy_id: { get_resource: app_db_tier_l2_policy }
             provided_policy_rule_sets: 
                 - policy_rule_set_id: { get_resource: app_rule_set }
@@ -391,7 +412,7 @@ resources:
         type: OS::Neutron::PolicyTargetGroup
         depends_on: [ app_rule_set, http_with_lb_redirect_rule_set, web_tier_l2_policy, http_rule_set ]
         properties:
-            name: Web_PTG
+            name: "Web Tier"
             l2_policy_id: { get_resource: web_tier_l2_policy }
             provided_policy_rule_sets: 
                 - policy_rule_set_id: { get_resource: http_with_lb_redirect_rule_set }
@@ -444,21 +465,12 @@ resources:
 
 #### Outside (External) Tier ####
 
-#    outside_tier_l2_policy:
-#        type: OS::Neutron::L2Policy
-#        depends_on: l3_policy
-#        properties:
-#            name: Outside_Domain
-#            l3_policy_id: { get_resource: l3_policy }
-#            shared: False
-
-#    outside_ptg:
-#        type: OS::Neutron::PolicyTargetGroup
-#        depends_on: [ http_with_lb_redirect_rule_set, outside_tier_l2_policy ]
-#        properties:
-#            name: { get_param: external_policy_name }
-#            l2_policy_id: { get_resource: outside_tier_l2_policy }
-#            shared: False
+    external_policy:
+        type: OS::Neutron::ExternalPolicy
+        properties:
+            name: { get_param: external_policy_name }
+            external_segments: [ { get_param: external_segment_id } ]
+            shared: False
 
 #### Setup Network Services' Mgmt ####
 
@@ -466,6 +478,6 @@ resources:
         type: OS::Neutron::PolicyTargetGroup
         depends_on: [ mgmt_l2_policy ]
         properties:
-            name: 'Service Management PTG'
+            name: 'Service Management Tier'
             l2_policy_id: { get_resource: mgmt_l2_policy }
             shared: False
