@@ -1,0 +1,110 @@
+#!highlight yaml
+
+heat_template_version: 2013-05-23
+
+parameters:
+
+  external_network_cidr:
+    type: string
+    label: external_network_cidr
+    description: CIDR of external network
+    default: '203.0.113.0/24'
+
+  external_network_gateway:
+    type: string
+    label: external_network_gateway
+    description: Gateway for external network
+    default: '203.0.113.1'
+
+  external_segment_name:
+    type: string
+    label: external_segment_name
+    description: Name for external segment
+    default: 'default'
+
+  physical_network_name:
+    type: string
+    label: physical_network_name
+    description: Name of the Physical network to map the external network to
+    default: 'default'
+
+  physical_network_type:
+    type: string
+    label: physical_network_type
+    description: Flat or VLAN
+    default: 'flat'
+
+  port_address_translation:
+    type: string
+    label: port_address_translation
+    description: True for Neutron rendering, False for APIC rendering
+    default: 'False'
+
+  mgmt_ip_pool:
+    type: string
+    label: mgmt_ip_pool
+    description: IP Pool used for the Services' Mgmt network
+    default: '172.1.0.0/24'
+
+  service_management_ptg_name:
+    type: string
+    label: service_management_ptg_name
+    description: Name of the service management PTG
+    default: 'Service Management Tier'
+
+resources:
+
+#    external_network:
+#      type: OS::Neutron::Net
+#      properties:
+#        name: 'External Network'
+#        shared: True
+#        value_specs: {
+#            'router:external': True,
+#            'provider:physical_network': { get_param: physical_network_name },
+#            'provider:network_type': { get_param: physical_network_type }
+#        }
+
+#    external_subnet:
+#      type: OS::Neutron::Subnet
+#      properties:
+#        name: 'External_Subnet'
+#        network_id: {get_resource: external_network}
+#        cidr: {get_param: external_network_cidr}
+#        gateway_ip: {get_param: external_network_gateway}
+
+    external_segment:
+        type: OS::Neutron::ExternalSegment
+        properties:
+            name: { get_param: external_segment_name }
+            port_address_translation: { get_param: port_address_translation }
+#            subnet_id: { get_resource: external_subnet }
+            external_routes:
+                - destination: '0.0.0.0/0'
+                  nexthop:
+            shared: True
+
+    mgmt_l3_policy:
+        type: OS::Neutron::L3Policy
+        properties:
+            name: 'Service Management'
+            ip_pool: { get_param: mgmt_ip_pool }
+            shared: False
+
+    mgmt_l2_policy:
+        type: OS::Neutron::L2Policy
+        depends_on: mgmt_l3_policy
+        properties:
+            name: "Service Mgmt Network"
+            l3_policy_id: { get_resource: mgmt_l3_policy }
+            shared: False
+
+#### Setup Network Services' Mgmt ####
+
+    mgmt_ptg:
+        type: OS::Neutron::PolicyTargetGroup
+        depends_on: [ mgmt_l2_policy ]
+        properties:
+            name: { get_param: service_management_ptg_name }
+            l2_policy_id: { get_resource: mgmt_l2_policy }
+            shared: True
