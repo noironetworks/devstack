@@ -11,9 +11,9 @@
 # ./demo aci or ./demo acix or ./demo neutron
 # Use the "acix" mode for the inserting the transparent "FW + IDS" chain
 
-EXT_POLICY_NAME="Outside"
 
 ACI_RENDERING="aci"
+ACI_TRANSPARENT_SVC_RENDERING="acix"
 NEUTRON_RENDERING="neutron"
 
 PORT_ADDRESS_TRANSLATION=False
@@ -27,6 +27,7 @@ ADMIN_STACK="Admin"
 APP_YAML="app.yaml"
 HR_STACK="HR_Three_Tier"
 FINANCE_STACK="Finance_Three_Tier"
+EXT_POLICY_NAME="Outside"
 
 USAGE="$0 <aci|acix|neutron>"
 
@@ -123,15 +124,15 @@ set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $HR_TENANT_NAME
  
 heat stack-create -f "$APP_YAML" "$HR_STACK" -P "web_vm_image=$WEB_VM_IMAGE_NAME;web_vm_flavor=$WEB_VM_FLAVOR;app_vm_image=$APP_VM_IMAGE_NAME;app_vm_flavor=$APP_VM_FLAVOR;db_vm_image=$DB_VM_IMAGE_NAME;db_vm_flavor=$DB_VM_FLAVOR;mysql_rule_set_id=$MYSQL_RULE_SET_ID;app_rule_set_id=$APP_RULE_SET_ID;web_tier_consumed_prs_id=$APP_TO_OUTSIDE_RULE_SET_ID;web_tier_provided_prs_id=$HTTP_WITH_LB_REDIRECT_RULE_SET_ID;vip_ip_policy_id=$VIP_IP_POLICY_ID;app_l3_policy_id=$APP_L3_POLICY_ID;mgmt_ptg_id=$MGMT_PTG_ID"
 
-if [ "$RENDERING_MODE" == "acix" ]; then
+if [ "$RENDERING_MODE" == "$ACI_TRANSPARENT_SVC_RENDERING" ]; then
     confirm_resource_created "heat stack-show" "$HR_STACK" "CREATE_COMPLETE"
+    APP_L2_POLICY_ID=`heat output-show "$HR_STACK" "app_l2_policy_id" | sed "s/\"//g"`
     DB_PTG_ID=`heat output-show "$HR_STACK" "db_ptg_id" | sed "s/\"//g"`
     APP_PTG_ID=`heat output-show "$HR_STACK" "app_ptg_id" | sed "s/\"//g"`
+    gbp group-update $APP_L2_POLICY_ID --allow-broadcast True
     gbp policy-rule-set-update $DB_PTG_ID --provided-policy-rule-sets "$MYSQL_VIA_FW_IDS_RULE_SET_ID=true"
     gbp policy-rule-set-update $APP_PTG_ID --consumed-policy-rule-sets "$MYSQL_VIA_FW_IDS_RULE_SET_ID=true"
 fi
-
-exit
 
 echo "*********************************************************************"
 echo "SUCCESS: End $0"
