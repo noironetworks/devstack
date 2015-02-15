@@ -1,0 +1,356 @@
+#!highlight yaml
+
+heat_template_version: 2014-10-16
+
+parameters:
+
+  monitoring_rule_set_name:
+    type: string
+    label: monitoring_rule_set_name
+    description: Name of the Monitoring PRS
+    default: 'Monitoring'
+
+  monitoring_to_outside_rule_set_name:
+    type: string
+    label: monitoring_to_outside_rule_set_name
+    description: Name of the Monitoring to Outside PRS
+    default: 'Monitoring_to_outside'
+
+  app_to_outside_rule_set_name:
+    type: string
+    label: app_to_outside_rule_set_name
+    description: Name of the App to Outside PRS
+    default: 'App_to_outside'
+
+  mysql_rule_set_name:
+    type: string
+    label: mysql_rule_set_name
+    description: Name of the MySQL PRS
+    default: 'MySQL'
+
+  mysql_via_fw_ids_rule_set_name:
+    type: string
+    label: mysql_via_fw_ids_rule_set_name
+    description: Name of the MySQL via FW IDS PRS
+    default: 'MySQL_via_FW_IDS'
+
+  app_rule_set_name:
+    type: string
+    label: app_rule_set_name
+    description: Name of the App PRS
+    default: 'App'
+
+  web_tier_provided_prs_name:
+    type: string
+    label: web_tier_provided_prs_name
+    description: Name of the PRS provided by the Web Tier
+    default: "Web_Tier_via_Loadbalancer"
+
+  web_tier_consumed_prs_name:
+    type: string
+    label: web_tier_consumed_prs_name
+    description: Name of the PRS consumed by the Web Tier
+    default: "External_Connectivity"
+
+  monitoring_ptg_name:
+    type: string
+    label: monitoring_ptg_name
+    description: Name of the monitoring PTG
+    default: 'Monitoring'
+
+  service_management_ptg_name:
+    type: string
+    label: service_management_ptg_name
+    description: Name of the service management PTG
+    default: 'Service_Management_Tier'
+
+resources:
+
+#### Network Services' Setup ####
+
+# Create loadbalancer service chain node
+    sc_lb_node:
+        type: OS::Neutron::ServiceChainNode
+        properties:
+            name: "Loadbalancer"
+            service_type: LOADBALANCER
+            config: { get_file: lb_vip_description.template }
+
+# Create firewall service chain node
+    sc_fw_node:
+        type: OS::Neutron::ServiceChainNode
+        properties:
+            name: Transparent_Firewall_Node
+            service_type: FIREWALL_TRANSPARENT
+            config: { get_file: transparent_fw_appliance.yaml }
+
+# Create IDS service chain node
+    sc_ids_node:
+        type: OS::Neutron::ServiceChainNode
+        properties:
+            name: Intrusion_Detection_Service
+            service_type: IDS
+            config: { get_file: transparent_ids_appliance.yaml }
+
+# Tie the service(s) into a chain
+    sc_spec:
+        type: OS::Neutron::ServiceChainSpec
+        depends_on: [ sc_lb_node ]
+        properties:
+            name: "Loadbalancer_Service_Chain"
+            nodes:
+                - { get_resource: sc_lb_node }
+
+# Transparent service chain spec: FW -> IDS
+    fw_ids_sc_spec:
+        type: OS::Neutron::ServiceChainSpec
+        depends_on: [ sc_fw_node, sc_ids_node ]
+        properties:
+            name: FW_IDS_Chain_Spec
+            nodes:
+                - { get_resource: sc_fw_node }
+                - { get_resource: sc_ids_node }
+
+# Create a network service policy for VIP IP assignment
+    vip_ip_policy:
+        type: OS::Neutron::NetworkServicePolicy
+        properties:
+            name: "VIP_Allocation"
+            network_service_params: 
+                - type: ip_single
+                  name: vip_ip
+                  value: self_subnet
+            shared: True
+
+#### Policy Classifiers, Actions, Rules Setup ####
+
+# Create allow action
+    allow_action:
+        type: OS::Neutron::PolicyAction
+        properties:
+            name: "Allow"
+            action_type: allow
+            shared: True
+
+# Create a classifier for monitoring traffic
+    monitoring_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "Monitoring_traffic"
+            protocol: tcp
+            port_range: '80'
+            direction: in
+            shared: True
+
+    monitoring_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ monitoring_classifier, allow_action ]
+        properties:
+            name: "Monitoring_traffic"
+            policy_classifier_id: { get_resource: monitoring_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: True
+
+# Create a classifier for http traffic
+    tcp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "TCP_traffic"
+            protocol: tcp
+            direction: in
+            shared: True
+
+    tcp_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ tcp_classifier, allow_action ]
+        properties:
+            name: "TCP_rule"
+            policy_classifier_id: { get_resource: tcp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: True
+
+# Create a classifier for DB traffic
+    db_tcp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "MySQL_traffic"
+            protocol: tcp
+            port_range: '3306'
+            direction: in
+            shared: True
+
+    mysql_db_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ db_tcp_classifier, allow_action ]
+        properties:
+            name: "MySQL_Traffic"
+            policy_classifier_id: { get_resource: db_tcp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: True
+
+# Redirect action to FW -> IDS spec
+    redirect_to_fw_ids_chain:
+        type: OS::Neutron::PolicyAction
+        depends_on: fw_ids_sc_spec
+        properties:
+            name: "Redirect_to_FW_IDS"
+            action_type: redirect
+            action_value: { get_resource: fw_ids_sc_spec }
+            shared: True
+
+# Redirect  MySQL to transparent services policy rule
+    fw_ids_redirect_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ db_tcp_classifier, redirect_to_lb_chain ]
+        properties:
+            name: "MySQL_via_FW_IDS"
+            policy_classifier_id: { get_resource: db_tcp_classifier }
+            policy_actions: [{ get_resource: redirect_to_fw_ids_chain }]
+            shared: True
+
+# Create a classifier for App traffic
+    app_tcp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "Application_traffic"
+            protocol: tcp
+            port_range: '8000'
+            direction: in
+            shared: True
+
+    app_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ app_tcp_classifier, allow_action ]
+        properties:
+            name: "Application_Traffic"
+            policy_classifier_id: { get_resource: app_tcp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: True
+
+# Create a classifier for http traffic
+    http_tcp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "External_Traffic"
+            protocol: tcp
+            port_range: '80'
+            direction: in
+            shared: True
+
+# Redirect action to LB chain spec
+    redirect_to_lb_chain:
+        type: OS::Neutron::PolicyAction
+        depends_on: sc_spec
+        properties:
+            name: "Redirect_to_LB"
+            action_type: redirect
+            action_value: { get_resource: sc_spec }
+            shared: True
+
+# Redirect HTTP to LB policy rule
+    http_redirect_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ http_tcp_classifier, redirect_to_lb_chain ]
+        properties:
+            name: "HTTP_via_LB"
+            policy_classifier_id: { get_resource: http_tcp_classifier }
+            policy_actions: [{ get_resource: redirect_to_lb_chain }]
+            shared: True
+
+#### Policy-Rules-Sets (Contracts) Setup ####
+
+#  Web tier - allow inbound 80 from external (nginx) via LB
+    http_with_lb_redirect_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: http_redirect_traffic_rule
+        properties:
+            name: { get_param: web_tier_provided_prs_name }
+            policy_rules: [{ get_resource: http_redirect_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: True
+
+# App tier - allow inbound 8000 from web-tier (python server)
+    app_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: app_traffic_rule
+        properties:
+            name: { get_param: app_rule_set_name }
+            policy_rules: [{ get_resource: app_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: True
+
+# DB tier - allow 3306 (mysql)
+    mysql_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: mysql_db_traffic_rule
+        properties:
+            name: { get_param: mysql_rule_set_name }
+            policy_rules: [{ get_resource: mysql_db_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: True
+
+# DB tier - allow 3306 (mysql) via Transparent FW -> IDS
+    mysql_via_fw_ids_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: fw_ids_redirect_traffic_rule
+        properties:
+            name: { get_param: mysql_via_fw_ids_rule_set_name }
+            policy_rules: [{ get_resource: fw_ids_redirect_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: True
+
+# Allow Web tier access to outside world
+    app_to_outside_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: tcp_traffic_rule
+        properties:
+            name: { get_param: app_to_outside_rule_set_name }
+            policy_rules: [{ get_resource: tcp_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: True
+
+# Allow access to monitoring services
+    monitoring_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: monitoring_traffic_rule
+        properties:
+            name: { get_param: monitoring_rule_set_name }
+            policy_rules: [{ get_resource: monitoring_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: True
+
+# Allow Monitoring tier to access outside world
+    monitoring_to_outside_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: tcp_traffic_rule
+        properties:
+            name: { get_param: monitoring_to_outside_rule_set_name }
+            policy_rules: [{ get_resource: tcp_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: True
+
+outputs:
+
+    vip_ip_policy_id:
+        value: { get_resource: vip_ip_policy }
+
+    http_with_lb_redirect_rule_set_id:
+        value: { get_resource: http_with_lb_redirect_rule_set }
+
+    app_rule_set_id:
+        value: { get_resource: app_rule_set }
+
+    mysql_rule_set_id:
+        value: { get_resource: mysql_rule_set }
+
+    mysql_via_fw_ids_rule_set_id:
+        value: { get_resource: mysql_via_fw_ids_rule_set }
+
+    app_to_outside_rule_set_id:
+        value: { get_resource: app_to_outside_rule_set }
+
+    monitoring_rule_set_id:
+        value: { get_resource: mysql_rule_set }
+
+    monitoring_to_outside_rule_set_id:
+        value: { get_resource: monitoring_to_outside_rule_set }
