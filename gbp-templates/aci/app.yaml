@@ -243,5 +243,8 @@ outputs:
     app_ptg_id:
         value: { get_resource: app_ptg }
 
+    app_l2_policy_id:
+        value: { get_resource: app_l2_policy }
+
     db_ptg_id:
         value: { get_resource: db_ptg }
