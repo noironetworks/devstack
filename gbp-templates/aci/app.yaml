@@ -1,0 +1,247 @@
+#!highlight yaml
+
+heat_template_version: 2013-05-23
+
+parameters:
+
+  web_vm_image:
+    type: string
+    label: web_vm_image
+    description: Name of the image for the Web VMs
+    default: 'cirros'
+
+  web_vm_flavor:
+    type: string
+    label: web_vm_flavor
+    description: Name of the flavor for the web VMs
+    default: 'm1.tiny'
+
+  app_vm_image:
+    type: string
+    label: app_vm_image
+    description: Name of the image for the App VMs
+    default: 'cirros'
+
+  app_vm_flavor:
+    type: string
+    label: app_vm_flavor
+    description: Name of the flavor for the App VMs
+    default: 'm1.tiny'
+
+  db_vm_image:
+    type: string
+    label: db_vm_image
+    description: Name of the image for the DB VMs
+    default: 'cirros'
+
+  db_vm_flavor:
+    type: string
+    label: db_vm_flavor
+    description: Name of the flavor for the DB VMs
+    default: 'm1.tiny'
+
+  mysql_rule_set_id:
+    type: string
+    label: mysql_rule_set_id
+    description: ID of the MySQL PRS
+
+  app_rule_set_id:
+    type: string
+    label: mysql_rule_set_id
+    description: ID of the App PRS
+
+  web_tier_provided_prs_id:
+    type: string
+    label: web_tier_provided_prs_id
+    description: ID of the PRS provided by the Web Tier
+
+  web_tier_consumed_prs_id:
+    type: string
+    label: web_tier_consumed_prs_id
+    description: ID of the PRS consumed by the Web Tier
+
+  vip_ip_policy_id:
+    type: string
+    label: vip_ip_policy_id
+    description: ID of the VIP network service policy
+
+  app_l3_policy_id:
+    type: string
+    label: app_l3_policy_id
+    description: ID of the App L3 Policy
+
+  mgmt_ptg_id:
+    type: string
+    label: mgmt_ptg_id
+    description: ID of the management PTG
+
+resources:
+
+#### DB Tier ####
+
+    app_l2_policy:
+        type: OS::Neutron::L2Policy
+        properties:
+            name: "App_Network"
+            l3_policy_id: { get_param: app_l3_policy_id }
+            shared: False
+
+    db_ptg:
+        type: OS::Neutron::PolicyTargetGroup
+        properties:
+            name: "DB_Tier"
+            l2_policy_id: { get_resource: app_l2_policy }
+            provided_policy_rule_sets: 
+                - policy_rule_set_id: { get_param: mysql_rule_set_id }
+                  policy_rule_set_scope: 
+            shared: False
+
+    db_server_pt1:
+        type: OS::Neutron::PolicyTarget
+        depends_on: db_ptg
+        properties:
+            name: db_server_pt1
+            policy_target_group_id: { get_resource: db_ptg }
+
+    db_mgmt_pt:
+        type: OS::Neutron::PolicyTarget
+        properties:
+            name: db_mgmt_pt
+            policy_target_group_id: { get_param: mgmt_ptg_id }
+
+    db_server1:
+        type: OS::Nova::Server
+        depends_on: db_server_pt1
+        properties:
+            name: DB_Server
+            image: { get_param: db_vm_image }
+            flavor: m1.nano
+            networks:
+                - port: {get_attr: [db_server_pt1, port_id]}
+                - port: {get_attr: [db_mgmt_pt, port_id]}
+
+#### App Tier ####
+
+    app_ptg:
+        type: OS::Neutron::PolicyTargetGroup
+        properties:
+            name: "App_Tier"
+            l2_policy_id: { get_resource: app_l2_policy }
+            provided_policy_rule_sets: 
+                - policy_rule_set_id: { get_param: app_rule_set_id }
+                  policy_rule_set_scope: 
+            consumed_policy_rule_sets: 
+                - policy_rule_set_id: { get_param: mysql_rule_set_id }
+                  policy_rule_set_scope: 
+            shared: False
+
+    app_server_pt1:
+        type: OS::Neutron::PolicyTarget
+        depends_on: app_ptg
+        properties:
+            name: app_server_pt1
+            policy_target_group_id: { get_resource: app_ptg }
+
+    app_mgmt_pt:
+        type: OS::Neutron::PolicyTarget
+        properties:
+            name: app_mgmt_pt
+            policy_target_group_id: { get_param: mgmt_ptg_id }
+
+    app_server1:
+        type: OS::Nova::Server
+        depends_on: app_server_pt1
+        properties:
+            name: App_Server
+            image: { get_param: app_vm_image }
+            flavor: m1.nano
+            networks:
+                - port: {get_attr: [app_server_pt1, port_id]}
+                - port: {get_attr: [app_mgmt_pt, port_id]}
+
+#### Web Tier ####
+
+    web_tier_l2_policy:
+        type: OS::Neutron::L2Policy
+        properties:
+            name: "Web_Tier_Network"
+            l3_policy_id: { get_param: app_l3_policy_id }
+            shared: False
+
+    web_ptg:
+        type: OS::Neutron::PolicyTargetGroup
+        properties:
+            name: "Web_Tier"
+            l2_policy_id: { get_resource: web_tier_l2_policy }
+            provided_policy_rule_sets: 
+                - policy_rule_set_id: { get_param: web_tier_provided_prs_id }
+                  policy_rule_set_scope: 
+            consumed_policy_rule_sets: 
+                - policy_rule_set_id: { get_param: app_rule_set_id }
+                  policy_rule_set_scope: 
+                - policy_rule_set_id: { get_param: web_tier_consumed_prs_id }
+                  policy_rule_set_scope: 
+            network_service_policy_id: { get_param: vip_ip_policy_id }
+            shared: False
+
+    web_server1_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: web_ptg
+        properties:
+            name: web_server1_pt
+            description: 'Pool Member'
+            policy_target_group_id: { get_resource: web_ptg }
+
+    web_server1_mgmt_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: web_ptg
+        properties:
+            name: web_server1_mgmt_pt
+            policy_target_group_id: { get_param: mgmt_ptg_id }
+
+    web_server2_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: web_ptg
+        properties:
+            name: web_server2_pt
+            description: 'Pool Member'
+            policy_target_group_id: { get_resource: web_ptg }
+
+    web_server2_mgmt_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: web_ptg
+        properties:
+            name: web_server2_mgmt_pt
+            policy_target_group_id: { get_param: mgmt_ptg_id }
+
+    web_server1:
+        type: OS::Nova::Server
+        depends_on: web_server1_pt
+        depends_on: web_server1_mgmt_pt
+        properties:
+            name: Web_Real_Server_1
+            image: {get_param: web_vm_image}
+            flavor: m1.nano
+            networks:
+                - port: {get_attr: [web_server1_pt, port_id]}
+                - port: {get_attr: [web_server1_mgmt_pt, port_id]}
+
+    web_server2:
+        type: OS::Nova::Server
+        depends_on: web_server2_pt
+        depends_on: web_server2_mgmt_pt
+        properties:
+            name: Web_Real_Server_2
+            image: {get_param: web_vm_image}
+            flavor: m1.nano
+            networks:
+                - port: {get_attr: [web_server2_pt, port_id]}
+                - port: {get_attr: [web_server2_mgmt_pt, port_id]}
+
+outputs:
+
+    app_ptg_id:
+        value: { get_resource: app_ptg }
+
+    db_ptg_id:
+        value: { get_resource: db_ptg }
