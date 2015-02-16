@@ -226,7 +226,7 @@ resources:
             consumed_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: monitoring_to_outside_rule_set_id }
                   policy_rule_set_scope: 
-            shared: True
+            shared: False
 
     monitoring_server_pt1:
         type: OS::Neutron::PolicyTarget
