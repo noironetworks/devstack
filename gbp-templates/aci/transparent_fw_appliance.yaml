@@ -49,13 +49,13 @@ resources:
         type: OS::Neutron::PolicyTarget
         properties:
             name: { get_param: provider_pt_name }
-            policy_target_group_id: { get_param: provider_ptg_id }
+            policy_target_group_id: { get_param: provider_ptg }
 
     consumer_pt:
         type: OS::Neutron::PolicyTarget
         properties:
             name: { get_param: consumer_pt_name }
-            policy_target_group_id: { get_param: provider_ptg_id }
+            policy_target_group_id: { get_param: provider_ptg }
 
     svc_mgmt_pt:
         type: OS::Neutron::PolicyTarget
