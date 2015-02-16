@@ -75,6 +75,7 @@ resources:
             name: "Loadbalancer"
             service_type: LOADBALANCER
             config: { get_file: lb_vip_description.template }
+            shared: True
 
 # Create firewall service chain node
     sc_fw_node:
@@ -83,6 +84,7 @@ resources:
             name: Transparent_Firewall_Node
             service_type: FIREWALL_TRANSPARENT
             config: { get_file: transparent_fw_appliance.yaml }
+            shared: True
 
 # Create IDS service chain node
     sc_ids_node:
@@ -91,6 +93,7 @@ resources:
             name: Intrusion_Detection_Service
             service_type: IDS
             config: { get_file: transparent_ids_appliance.yaml }
+            shared: True
 
 # Tie the service(s) into a chain
     sc_spec:
@@ -100,6 +103,7 @@ resources:
             name: "Loadbalancer_Service_Chain"
             nodes:
                 - { get_resource: sc_lb_node }
+            shared: True
 
 # Transparent service chain spec: FW -> IDS
     fw_ids_sc_spec:
@@ -110,6 +114,7 @@ resources:
             nodes:
                 - { get_resource: sc_fw_node }
                 - { get_resource: sc_ids_node }
+            shared: True
 
 # Create a network service policy for VIP IP assignment
     vip_ip_policy:
@@ -132,22 +137,40 @@ resources:
             action_type: allow
             shared: True
 
-# Create a classifier for monitoring traffic
-    monitoring_classifier:
+# Create a classifiers for monitoring traffic
+    monitoring_classifier_in_5671:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "Monitoring_traffic"
+            name: "Monitoring_traffic_inbound_5671"
             protocol: tcp
-            port_range: '80'
+            port_range: '5671'
             direction: in
             shared: True
 
-    monitoring_traffic_rule:
+    monitoring_traffic_rule_in_5671:
         type: OS::Neutron::PolicyRule
-        depends_on: [ monitoring_classifier, allow_action ]
+        depends_on: [ monitoring_classifier_in_5671, allow_action ]
         properties:
-            name: "Monitoring_traffic"
-            policy_classifier_id: { get_resource: monitoring_classifier }
+            name: "Monitoring_traffic_inbound_5671"
+            policy_classifier_id: { get_resource: monitoring_classifier_in_5671 }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: True
+
+    monitoring_classifier_out_22:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "Monitoring_traffic_outbound_22"
+            protocol: tcp
+            port_range: '22'
+            direction: out
+            shared: True
+
+    monitoring_traffic_rule_out_22:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ monitoring_classifier_out_22, allow_action ]
+        properties:
+            name: "Monitoring_traffic_out_22"
+            policy_classifier_id: { get_resource: monitoring_classifier_out_22 }
             policy_actions: [{ get_resource: allow_action }]
             shared: True
 
@@ -312,10 +335,11 @@ resources:
 # Allow access to monitoring services
     monitoring_rule_set:
         type: OS::Neutron::PolicyRuleSet
-        depends_on: monitoring_traffic_rule
+        depends_on: [monitoring_traffic_rule_in_5671, monitoring_traffic_rule_out_22]
         properties:
             name: { get_param: monitoring_rule_set_name }
-            policy_rules: [{ get_resource: monitoring_traffic_rule }] 
+            policy_rules: [{get_resource: monitoring_traffic_rule_in_5671},
+                           {get_resource: monitoring_traffic_rule_out_22}]
             child_policy_rule_sets: []
             shared: True
 

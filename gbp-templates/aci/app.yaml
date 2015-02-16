@@ -115,7 +115,7 @@ resources:
         properties:
             name: DB_Server
             image: { get_param: db_vm_image }
-            flavor: m1.nano
+            flavor: {get_param: db_vm_flavor}
             networks:
                 - port: {get_attr: [db_server_pt1, port_id]}
                 - port: {get_attr: [db_mgmt_pt, port_id]}
@@ -154,7 +154,7 @@ resources:
         properties:
             name: App_Server
             image: { get_param: app_vm_image }
-            flavor: m1.nano
+            flavor: {get_param: app_vm_flavor}
             networks:
                 - port: {get_attr: [app_server_pt1, port_id]}
                 - port: {get_attr: [app_mgmt_pt, port_id]}
@@ -173,9 +173,6 @@ resources:
         properties:
             name: "Web_Tier"
             l2_policy_id: { get_resource: web_tier_l2_policy }
-            provided_policy_rule_sets: 
-                - policy_rule_set_id: { get_param: web_tier_provided_prs_id }
-                  policy_rule_set_scope: 
             consumed_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: app_rule_set_id }
                   policy_rule_set_scope: 
@@ -221,7 +218,7 @@ resources:
         properties:
             name: Web_Real_Server_1
             image: {get_param: web_vm_image}
-            flavor: m1.nano
+            flavor: {get_param: web_vm_flavor}
             networks:
                 - port: {get_attr: [web_server1_pt, port_id]}
                 - port: {get_attr: [web_server1_mgmt_pt, port_id]}
@@ -233,7 +230,7 @@ resources:
         properties:
             name: Web_Real_Server_2
             image: {get_param: web_vm_image}
-            flavor: m1.nano
+            flavor: {get_param: web_vm_flavor}
             networks:
                 - port: {get_attr: [web_server2_pt, port_id]}
                 - port: {get_attr: [web_server2_mgmt_pt, port_id]}
@@ -248,3 +245,6 @@ outputs:
 
     db_ptg_id:
         value: { get_resource: db_ptg }
+
+    web_ptg_id:
+        value: { get_resource: web_ptg }

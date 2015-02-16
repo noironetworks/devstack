@@ -166,6 +166,9 @@ resources:
         properties:
             name: { get_param: infra_external_policy_name }
             external_segments: [ { get_resource: infra_external_segment } ]
+            provided_policy_rule_sets:
+                - policy_rule_set_id: { get_param: monitoring_to_outside_rule_set_id }
+                  policy_rule_set_scope:
             shared: True
 
     app_external_segment:
@@ -183,9 +186,6 @@ resources:
         properties:
             name: { get_param: app_external_policy_name }
             external_segments: [ { get_resource: app_external_segment } ]
-            provided_policy_rule_sets: 
-                - policy_rule_set_id: { get_param: monitoring_to_outside_rule_set_id }
-                  policy_rule_set_scope: 
             shared: True
 
 #### Setup L3/L2 Resrouces ####
