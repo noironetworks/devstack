@@ -132,7 +132,7 @@ if [ "$RENDERING_MODE" == "$ACI_TRANSPARENT_SVC_RENDERING" ]; then
     APP_L2_POLICY_ID=`heat output-show "$HR_STACK" "app_l2_policy_id" | sed "s/\"//g"`
     DB_PTG_ID=`heat output-show "$HR_STACK" "db_ptg_id" | sed "s/\"//g"`
     APP_PTG_ID=`heat output-show "$HR_STACK" "app_ptg_id" | sed "s/\"//g"`
-    gbp group-update $APP_L2_POLICY_ID --allow-broadcast True
+    gbp l2policy-update $APP_L2_POLICY_ID --allow-broadcast True
     gbp group-update $DB_PTG_ID --provided-policy-rule-sets "$MYSQL_VIA_FW_IDS_RULE_SET_ID=true"
     gbp group-update $APP_PTG_ID --consumed-policy-rule-sets "$MYSQL_VIA_FW_IDS_RULE_SET_ID=true"
 fi
