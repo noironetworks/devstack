@@ -24,10 +24,10 @@ parameters:
     label: Consumer PTG id
     description: Consumer PTG id
 
-  management_ptg:
+  svc_mgmt_ptg:
     type: string
-    label: manangement_ptg
-    description: Managemnt PTG id
+    label: svc_manangement_ptg
+    description: Service Managemnt PTG id
 
   fw_vm_image:
     type: string
@@ -61,7 +61,7 @@ resources:
         type: OS::Neutron::PolicyTarget
         properties:
             name: Svc_Mgmt_FW_PT
-            policy_target_group_id: { get_param: management_ptg }
+            policy_target_group_id: { get_param: svc_mgmt_ptg }
 
 # Launch firewall appliance
 
