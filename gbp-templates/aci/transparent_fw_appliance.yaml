@@ -39,7 +39,7 @@ parameters:
     type: string
     label: fw_vm_flavor
     description: Name of the flavor for the FW VMs
-    default: 'm1.tiny'
+    default: 'm1.medium'
 
 resources:
 

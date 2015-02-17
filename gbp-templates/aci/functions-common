@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+ACTIVE_TIMEOUT=120
+
+function set_user_password_tenant {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    export OS_USERNAME=$1
+    export OS_PASSWORD=$2
+    export OS_TENANT_NAME=$3
+    export PS1='[\u@\h \W(keystone_$1)]\$ '
+    $xtrace
+}
+
+function confirm_resource_created {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    if ! timeout $ACTIVE_TIMEOUT sh -c "while ! $1 \"$2\" | grep \"$3\"; do sleep 1; done"; then
+        set -o xtrace
+        echo "resource '$1 $2' did not become active!"
+        false
+    fi
+    $xtrace
+}

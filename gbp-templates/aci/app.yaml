@@ -50,21 +50,6 @@ parameters:
     label: mysql_rule_set_id
     description: ID of the App PRS
 
-  web_tier_provided_prs_id:
-    type: string
-    label: web_tier_provided_prs_id
-    description: ID of the PRS provided by the Web Tier
-
-  web_tier_consumed_prs_id:
-    type: string
-    label: web_tier_consumed_prs_id
-    description: ID of the PRS consumed by the Web Tier
-
-  vip_ip_policy_id:
-    type: string
-    label: vip_ip_policy_id
-    description: ID of the VIP network service policy
-
   app_l3_policy_id:
     type: string
     label: app_l3_policy_id
@@ -222,9 +207,6 @@ resources:
             consumed_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: app_rule_set_id }
                   policy_rule_set_scope: 
-                - policy_rule_set_id: { get_param: web_tier_consumed_prs_id }
-                  policy_rule_set_scope: 
-            network_service_policy_id: { get_param: vip_ip_policy_id }
             shared: False
 
     web_server1_pt:

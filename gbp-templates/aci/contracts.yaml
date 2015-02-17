@@ -40,6 +40,12 @@ parameters:
     description: Name of the App PRS
     default: 'App'
 
+  http_rule_set_name:
+    type: string
+    label: http_rule_set_name
+    description: Name of the allow HTTP traffic rule set
+    default: "Allow_HTTP_Traffic"
+
   web_tier_provided_prs_name:
     type: string
     label: web_tier_provided_prs_name
@@ -68,7 +74,7 @@ resources:
 
 #### Network Services' Setup ####
 
-# Create loadbalancer service chain node
+# Loadbalancer service chain node
     sc_lb_node:
         type: OS::Neutron::ServiceChainNode
         properties:
@@ -77,7 +83,7 @@ resources:
             config: { get_file: lb_vip_description.template }
             shared: True
 
-# Create firewall service chain node
+# Firewall service chain node
     sc_fw_node:
         type: OS::Neutron::ServiceChainNode
         properties:
@@ -86,7 +92,7 @@ resources:
             config: { get_file: transparent_fw_appliance.yaml }
             shared: True
 
-# Create IDS service chain node
+# IDS service chain node
     sc_ids_node:
         type: OS::Neutron::ServiceChainNode
         properties:
@@ -95,7 +101,7 @@ resources:
             config: { get_file: transparent_ids_appliance.yaml }
             shared: True
 
-# Tie the service(s) into a chain
+# LB service chain spec
     sc_spec:
         type: OS::Neutron::ServiceChainSpec
         depends_on: [ sc_lb_node ]
@@ -116,7 +122,7 @@ resources:
                 - { get_resource: sc_ids_node }
             shared: True
 
-# Create a network service policy for VIP IP assignment
+# Network service policy for VIP IP assignment
     vip_ip_policy:
         type: OS::Neutron::NetworkServicePolicy
         properties:
@@ -129,7 +135,7 @@ resources:
 
 #### Policy Classifiers, Actions, Rules Setup ####
 
-# Create allow action
+# Allow action
     allow_action:
         type: OS::Neutron::PolicyAction
         properties:
@@ -137,7 +143,7 @@ resources:
             action_type: allow
             shared: True
 
-# Create a classifiers for monitoring traffic
+# Classifiers for monitoring traffic
     monitoring_classifier_in_5671:
         type: OS::Neutron::PolicyClassifier
         properties:
@@ -145,15 +151,6 @@ resources:
             protocol: tcp
             port_range: '5671'
             direction: in
-            shared: True
-
-    monitoring_traffic_rule_in_5671:
-        type: OS::Neutron::PolicyRule
-        depends_on: [ monitoring_classifier_in_5671, allow_action ]
-        properties:
-            name: "Monitoring_traffic_inbound_5671"
-            policy_classifier_id: { get_resource: monitoring_classifier_in_5671 }
-            policy_actions: [{ get_resource: allow_action }]
             shared: True
 
     monitoring_classifier_out_22:
@@ -165,6 +162,16 @@ resources:
             direction: out
             shared: True
 
+# Rules for monitoring traffic
+    monitoring_traffic_rule_in_5671:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ monitoring_classifier_in_5671, allow_action ]
+        properties:
+            name: "Monitoring_traffic_inbound_5671"
+            policy_classifier_id: { get_resource: monitoring_classifier_in_5671 }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: True
+
     monitoring_traffic_rule_out_22:
         type: OS::Neutron::PolicyRule
         depends_on: [ monitoring_classifier_out_22, allow_action ]
@@ -174,7 +181,7 @@ resources:
             policy_actions: [{ get_resource: allow_action }]
             shared: True
 
-# Create a classifier for http traffic
+# Classifier for all tcp traffic
     tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
@@ -183,6 +190,7 @@ resources:
             direction: in
             shared: True
 
+# Rule to all all tcp traffic
     tcp_traffic_rule:
         type: OS::Neutron::PolicyRule
         depends_on: [ tcp_classifier, allow_action ]
@@ -192,7 +200,7 @@ resources:
             policy_actions: [{ get_resource: allow_action }]
             shared: True
 
-# Create a classifier for DB traffic
+# MySQL DB traffic classifier
     db_tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
@@ -202,6 +210,7 @@ resources:
             direction: in
             shared: True
 
+# Allow DB traffic rule
     mysql_db_traffic_rule:
         type: OS::Neutron::PolicyRule
         depends_on: [ db_tcp_classifier, allow_action ]
@@ -211,7 +220,7 @@ resources:
             policy_actions: [{ get_resource: allow_action }]
             shared: True
 
-# Redirect action to FW -> IDS spec
+# Redirect to FW -> IDS spec action
     redirect_to_fw_ids_chain:
         type: OS::Neutron::PolicyAction
         depends_on: fw_ids_sc_spec
@@ -221,7 +230,7 @@ resources:
             action_value: { get_resource: fw_ids_sc_spec }
             shared: True
 
-# Redirect  MySQL to transparent services policy rule
+# Redirect MySQL to transparent services rule
     fw_ids_redirect_traffic_rule:
         type: OS::Neutron::PolicyRule
         depends_on: [ db_tcp_classifier, redirect_to_lb_chain ]
@@ -231,7 +240,7 @@ resources:
             policy_actions: [{ get_resource: redirect_to_fw_ids_chain }]
             shared: True
 
-# Create a classifier for App traffic
+# App traffic classifier
     app_tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
@@ -241,6 +250,7 @@ resources:
             direction: in
             shared: True
 
+# Allow App traffic classifier rule
     app_traffic_rule:
         type: OS::Neutron::PolicyRule
         depends_on: [ app_tcp_classifier, allow_action ]
@@ -250,7 +260,7 @@ resources:
             policy_actions: [{ get_resource: allow_action }]
             shared: True
 
-# Create a classifier for http traffic
+# HTTP traffic classifier
     http_tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
@@ -260,7 +270,17 @@ resources:
             direction: in
             shared: True
 
-# Redirect action to LB chain spec
+# Allow HTTP traffic rule
+    http_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ http_tcp_classifier, allow_action ]
+        properties:
+            name: "HTTP_Traffic"
+            policy_classifier_id: { get_resource: http_tcp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: True
+
+# Redirect to LB chain action
     redirect_to_lb_chain:
         type: OS::Neutron::PolicyAction
         depends_on: sc_spec
@@ -270,7 +290,7 @@ resources:
             action_value: { get_resource: sc_spec }
             shared: True
 
-# Redirect HTTP to LB policy rule
+# Redirect HTTP traffic to LB rule
     http_redirect_traffic_rule:
         type: OS::Neutron::PolicyRule
         depends_on: [ http_tcp_classifier, redirect_to_lb_chain ]
@@ -281,6 +301,16 @@ resources:
             shared: True
 
 #### Policy-Rules-Sets (Contracts) Setup ####
+
+#  Web tier - allow inbound 80 from external (nginx)
+    http_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: http_traffic_rule
+        properties:
+            name: { get_param: http_rule_set_name }
+            policy_rules: [{ get_resource: http_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: True
 
 #  Web tier - allow inbound 80 from external (nginx) via LB
     http_with_lb_redirect_rule_set:
@@ -357,6 +387,9 @@ outputs:
 
     vip_ip_policy_id:
         value: { get_resource: vip_ip_policy }
+
+    http_rule_set_id:
+        value: { get_resource: http_rule_set }
 
     http_with_lb_redirect_rule_set_id:
         value: { get_resource: http_with_lb_redirect_rule_set }
