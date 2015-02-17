@@ -237,7 +237,7 @@ resources:
         properties:
             name: "Application_traffic"
             protocol: tcp
-            port_range: '8000'
+            port_range: '8080'
             direction: in
             shared: True
 
@@ -374,7 +374,7 @@ outputs:
         value: { get_resource: app_to_outside_rule_set }
 
     monitoring_rule_set_id:
-        value: { get_resource: mysql_rule_set }
+        value: { get_resource: monitoring_rule_set }
 
     monitoring_to_outside_rule_set_id:
         value: { get_resource: monitoring_to_outside_rule_set }
