@@ -107,6 +107,7 @@ INFRA_EXTERNAL_POLICY_ID=`heat output-show "$ADMIN_STACK" "infra_external_policy
 APP_EXTERNAL_SEGMENT_ID=`heat output-show "$ADMIN_STACK" "app_external_segment_id" | sed "s/\"//g"`
 APP_EXTERNAL_POLICY_ID=`heat output-show "$ADMIN_STACK" "app_external_policy_id" | sed "s/\"//g"`
 INFRA_L3_POLICY_ID=`heat output-show "$ADMIN_STACK" "infra_l3_policy_id" | sed "s/\"//g"`
+MONITORING_IP=`heat output-show "$ADMIN_STACK" "monitoring_ip" | sed "s/\"//g"`
 APP_L3_POLICY_ID=`heat output-show "$ADMIN_STACK" "app_l3_policy_id" | sed "s/\"//g"`
 
 gbp external-policy-update $INFRA_EXTERNAL_POLICY_ID --external-segments "$INFRA_EXTERNAL_SEGMENT_ID"
@@ -117,7 +118,7 @@ gbp external-policy-update $APP_EXTERNAL_POLICY_ID --external-segments "$APP_EXT
 
 set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $HR_TENANT_NAME
  
-heat stack-create -f "$APP_YAML" "$HR_STACK" -P "web_vm_image=$WEB_VM_IMAGE_NAME;web_vm_flavor=$WEB_VM_FLAVOR;app_vm_image=$APP_VM_IMAGE_NAME;app_vm_flavor=$APP_VM_FLAVOR;db_vm_image=$DB_VM_IMAGE_NAME;db_vm_flavor=$DB_VM_FLAVOR;mysql_rule_set_id=$MYSQL_RULE_SET_ID;app_rule_set_id=$APP_RULE_SET_ID;web_tier_consumed_prs_id=$APP_TO_OUTSIDE_RULE_SET_ID;web_tier_provided_prs_id=$HTTP_WITH_LB_REDIRECT_RULE_SET_ID;vip_ip_policy_id=$VIP_IP_POLICY_ID;app_l3_policy_id=$APP_L3_POLICY_ID;mgmt_ptg_id=$MGMT_PTG_ID"
+heat stack-create -f "$APP_YAML" "$HR_STACK" -P "web_vm_image=$WEB_VM_IMAGE_NAME;web_vm_flavor=$WEB_VM_FLAVOR;app_vm_image=$APP_VM_IMAGE_NAME;app_vm_flavor=$APP_VM_FLAVOR;db_vm_image=$DB_VM_IMAGE_NAME;db_vm_flavor=$DB_VM_FLAVOR;mysql_rule_set_id=$MYSQL_RULE_SET_ID;app_rule_set_id=$APP_RULE_SET_ID;web_tier_consumed_prs_id=$APP_TO_OUTSIDE_RULE_SET_ID;web_tier_provided_prs_id=$HTTP_WITH_LB_REDIRECT_RULE_SET_ID;vip_ip_policy_id=$VIP_IP_POLICY_ID;app_l3_policy_id=$APP_L3_POLICY_ID;mgmt_ptg_id=$MGMT_PTG_ID;monitoring_ip=$MONITORING_IP"
 
 confirm_resource_created "heat stack-show" "$HR_STACK" "CREATE_COMPLETE"
 
