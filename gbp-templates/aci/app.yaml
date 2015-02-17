@@ -75,6 +75,11 @@ parameters:
     label: mgmt_ptg_id
     description: ID of the management PTG
 
+  monitoring_ip:
+    type: string
+    label: monitoring_ip
+    description: IP of the monitoring server
+
 resources:
 
 #### DB Tier ####
@@ -119,6 +124,27 @@ resources:
             networks:
                 - port: {get_attr: [db_server_pt1, port_id]}
                 - port: {get_attr: [db_mgmt_pt, port_id]}
+            user_data_format: RAW
+            user_data:
+                str_replace:
+                    params:
+                        __monserver__: {get_param: monitoring_ip}
+                    template: |
+                        #!/bin/bash
+                        set -e
+                        HOSTNAME=`hostname`
+                        MONSERVER=__monserver__
+                        sudo sed -i -e 's/127.0.0.1/0.0.0.0/g' /etc/mysql/my.cnf
+                        cat <<'EOF' | mysql -u root
+                        CREATE USER 'root'@'%';
+                        GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+                        EOF
+                        sudo service mysql restart
+                        sudo sed -i -e '/monserver/d' /etc/hosts
+                        echo "${MONSERVER} monserver" | sudo tee -a /etc/hosts
+                        sudo sed -i -e "s/hostname/${HOSTNAME}/" /etc/sensu/conf.d/client.json
+                        sudo service sensu-client restart
+                        echo '**** Done ****'
 
 #### App Tier ####
 
@@ -158,7 +184,27 @@ resources:
             networks:
                 - port: {get_attr: [app_server_pt1, port_id]}
                 - port: {get_attr: [app_mgmt_pt, port_id]}
-
+            user_data_format: RAW
+            user_data:
+                str_replace:
+                    params:
+                        __monserver__: {get_param: monitoring_ip}
+                        __dbserver__: {get_attr: [ db_server1, first_address ]}
+                    template: |
+                        #!/bin/bash
+                        set -e
+                        HOSTNAME=`hostname`
+                        MONSERVER=__monserver__
+                        DBSERVER=__dbserver__
+                        sudo sed -i -e '/dbserver/d' /etc/hosts
+                        echo "${MONSERVER} monserver" | sudo tee -a /etc/hosts
+                        sudo sed -i -e "s/hostname/${HOSTNAME}/" /etc/sensu/conf.d/client.json
+                        echo "${DBSERVER} dbserver" | sudo tee -a /etc/hosts
+                        sudo sed -i -e '/monserver/d' /etc/hosts
+                        sudo service sensu-client restart
+                        sudo service webapp restart
+                        echo '**** Done ****'
+ 
 #### Web Tier ####
 
     web_tier_l2_policy:
@@ -222,6 +268,26 @@ resources:
             networks:
                 - port: {get_attr: [web_server1_pt, port_id]}
                 - port: {get_attr: [web_server1_mgmt_pt, port_id]}
+            user_data_format: RAW
+            user_data:
+                str_replace:
+                    params:
+                        __monserver__: {get_param: monitoring_ip}
+                        __appserver__: {get_attr: [ app_server1, first_address ]}
+                    template: |
+                        #!/bin/bash
+                        set -e
+                        HOSTNAME=`hostname`
+                        MONSERVER=__monserver__
+                        APPSERVER=__appserver__
+                        sudo sed -i -e '/monserver/d' /etc/hosts
+                        echo "${MONSERVER} monserver" | sudo tee -a /etc/hosts
+                        sudo sed -i -e '/appserver/d' /etc/hosts
+                        echo "${APPSERVER} appserver" | sudo tee -a /etc/hosts
+                        sudo sed -i -e "s/hostname/${HOSTNAME}/" /etc/sensu/conf.d/client.json
+                        sudo service nginx restart
+                        sudo service sensu-client start
+                        echo '**** Done ****'
 
     web_server2:
         type: OS::Nova::Server
@@ -234,6 +300,26 @@ resources:
             networks:
                 - port: {get_attr: [web_server2_pt, port_id]}
                 - port: {get_attr: [web_server2_mgmt_pt, port_id]}
+            user_data_format: RAW
+            user_data:
+                str_replace:
+                    params:
+                        __monserver__: {get_param: monitoring_ip}
+                        __appserver__: {get_attr: [ app_server1, first_address ]}
+                    template: |
+                        #!/bin/bash
+                        set -e
+                        HOSTNAME=`hostname`
+                        MONSERVER=__monserver__
+                        APPSERVER=__appserver__
+                        sudo sed -i -e '/monserver/d' /etc/hosts
+                        echo "${MONSERVER} monserver" | sudo tee -a /etc/hosts
+                        sudo sed -i -e '/appserver/d' /etc/hosts
+                        echo "${APPSERVER} appserver" | sudo tee -a /etc/hosts
+                        sudo sed -i -e "s/hostname/${HOSTNAME}/" /etc/sensu/conf.d/client.json
+                        sudo service nginx restart
+                        sudo service sensu-client start
+                        echo '**** Done ****'
 
 outputs:
 

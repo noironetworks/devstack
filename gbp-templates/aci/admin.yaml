@@ -244,6 +244,17 @@ resources:
             flavor: { get_param: monitoring_vm_flavor }
             networks:
                 - port: {get_attr: [monitoring_server_pt1, port_id]}
+            user_data_format: RAW
+            user_data: |
+                #!/bin/bash
+                set -e
+                HOSTNAME=`hostname`
+                sudo sed -i -e "s/hostname/${HOSTNAME}/" /etc/sensu/conf.d/client.json
+                sudo service sensu-server restart
+                sudo service sensu-client restart
+                sudo service sensu-api restart
+                sudo service uchiwa restart
+                echo '**** Done ****'
 
 #### Management Group ####
 
@@ -330,6 +341,9 @@ outputs:
 
     infra_l3_policy_id:
         value: { get_resource: infra_l3_policy }
+
+    monitoring_ip:
+        value: { get_attr: [ monitoring_server1, first_address ] }
 
     app_l3_policy_id:
         value: { get_resource: app_l3_policy }
