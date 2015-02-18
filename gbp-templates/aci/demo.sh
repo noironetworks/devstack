@@ -12,21 +12,8 @@
 # Use the "acix" mode for inserting the transparent "FW + IDS" chain
 
 
-ACI_RENDERING="aci"
-ACI_TRANSPARENT_SVC_RENDERING="acix"
-
-PORT_ADDRESS_TRANSLATION=False
-
-CONTRACTS_YAML="contracts.yaml"
-CONTRACTS_STACK="Contracts"
-ADMIN_YAML="admin.yaml"
-ADMIN_STACK="Admin"
-APP_YAML="app.yaml"
-HR_STACK="HR_Three_Tier"
-ENG_STACK="Eng_Three_Tier"
-EXT_POLICY_NAME="Outside"
-
-USAGE="$0 <aci|acix>"
+source demo.conf
+source functions-common
 
 # Process args
 RENDERING_MODE=$1
@@ -35,9 +22,6 @@ if [ "${RENDERING_MODE}"x = ""x ] ; then
     echo "  >  No rendering mode specified." 1>&2
     exit 1
 fi
-
-source demo.conf
-source functions-common
 
 echo "*********************************************************************"
 echo "GBP demo: $1 rendering"

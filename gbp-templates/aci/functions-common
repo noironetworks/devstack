@@ -15,10 +15,32 @@ function set_user_password_tenant {
 function confirm_resource_created {
     local xtrace=$(set +o | grep xtrace)
     set +o xtrace
-    if ! timeout $ACTIVE_TIMEOUT sh -c "while ! $1 \"$2\" | grep \"$3\"; do sleep 1; done"; then
+    if ! timeout $ACTIVE_TIMEOUT sh -c "while ! $1 \"$2\" | grep -i \"$3\"; do sleep 1; done"; then
         set -o xtrace
         echo "resource '$1 $2' did not become active!"
         false
     fi
+    $xtrace
+}
+
+function confirm_resource_deleted {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    confirm_resource_created "$1" "$2" "$3\|not found"
+    $xtrace
+}
+
+function get_field {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    local data field
+    while read data; do
+        if [ "$1" -lt 0 ]; then
+            field="(\$(NF$1))"
+        else
+            field="\$$(($1 + 1))"
+        fi
+        echo "$data" | awk -F'[ \t]*\\|[ \t]*' "{print $field}"
+    done
     $xtrace
 }
