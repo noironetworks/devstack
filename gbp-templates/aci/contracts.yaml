@@ -143,6 +143,25 @@ resources:
             action_type: allow
             shared: True
 
+# Classifier for icmp traffic
+    icmp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "ICMP_Traffic"
+            protocol: icmp
+            direction: bi
+            shared: True
+
+# Rule to allow all icmp traffic
+    icmp_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ icmp_classifier, allow_action ]
+        properties:
+            name: "ICMP_rule"
+            policy_classifier_id: { get_resource: icmp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: True
+
 # Classifiers for monitoring traffic
     monitoring_classifier_in_5671:
         type: OS::Neutron::PolicyClassifier
@@ -190,7 +209,7 @@ resources:
             direction: in
             shared: True
 
-# Rule to all all tcp traffic
+# Rule to allow all tcp traffic
     tcp_traffic_rule:
         type: OS::Neutron::PolicyRule
         depends_on: [ tcp_classifier, allow_action ]
@@ -305,70 +324,70 @@ resources:
 #  Web tier - allow inbound 80 from external (nginx)
     http_rule_set:
         type: OS::Neutron::PolicyRuleSet
-        depends_on: http_traffic_rule
+        depends_on: [icmp_traffic_rule, http_traffic_rule]
         properties:
             name: { get_param: http_rule_set_name }
-            policy_rules: [{ get_resource: http_traffic_rule }] 
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: http_traffic_rule }] 
             child_policy_rule_sets: []
             shared: True
 
 #  Web tier - allow inbound 80 from external (nginx) via LB
     http_with_lb_redirect_rule_set:
         type: OS::Neutron::PolicyRuleSet
-        depends_on: http_redirect_traffic_rule
+        depends_on: [icmp_traffic_rule, http_redirect_traffic_rule]
         properties:
             name: { get_param: web_tier_provided_prs_name }
-            policy_rules: [{ get_resource: http_redirect_traffic_rule }] 
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: http_redirect_traffic_rule }] 
             child_policy_rule_sets: []
             shared: True
 
 # App tier - allow inbound 8000 from web-tier (python server)
     app_rule_set:
         type: OS::Neutron::PolicyRuleSet
-        depends_on: app_traffic_rule
+        depends_on: [icmp_traffic_rule, app_traffic_rule]
         properties:
             name: { get_param: app_rule_set_name }
-            policy_rules: [{ get_resource: app_traffic_rule }] 
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: app_traffic_rule }] 
             child_policy_rule_sets: []
             shared: True
 
 # DB tier - allow 3306 (mysql)
     mysql_rule_set:
         type: OS::Neutron::PolicyRuleSet
-        depends_on: mysql_db_traffic_rule
+        depends_on: [icmp_traffic_rule, mysql_db_traffic_rule]
         properties:
             name: { get_param: mysql_rule_set_name }
-            policy_rules: [{ get_resource: mysql_db_traffic_rule }] 
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: mysql_db_traffic_rule }] 
             child_policy_rule_sets: []
             shared: True
 
 # DB tier - allow 3306 (mysql) via Transparent FW -> IDS
     mysql_via_fw_ids_rule_set:
         type: OS::Neutron::PolicyRuleSet
-        depends_on: fw_ids_redirect_traffic_rule
+        depends_on: [icmp_traffic_rule, fw_ids_redirect_traffic_rule]
         properties:
             name: { get_param: mysql_via_fw_ids_rule_set_name }
-            policy_rules: [{ get_resource: fw_ids_redirect_traffic_rule }] 
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: fw_ids_redirect_traffic_rule }] 
             child_policy_rule_sets: []
             shared: True
 
 # Allow Web tier access to outside world
     app_to_outside_rule_set:
         type: OS::Neutron::PolicyRuleSet
-        depends_on: tcp_traffic_rule
+        depends_on: [icmp_traffic_rule, tcp_traffic_rule]
         properties:
             name: { get_param: app_to_outside_rule_set_name }
-            policy_rules: [{ get_resource: tcp_traffic_rule }] 
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: tcp_traffic_rule }] 
             child_policy_rule_sets: []
             shared: True
 
 # Allow access to monitoring services
     monitoring_rule_set:
         type: OS::Neutron::PolicyRuleSet
-        depends_on: [monitoring_traffic_rule_in_5671, monitoring_traffic_rule_out_22]
+        depends_on: [icmp_traffic_rule, monitoring_traffic_rule_in_5671, monitoring_traffic_rule_out_22]
         properties:
             name: { get_param: monitoring_rule_set_name }
-            policy_rules: [{get_resource: monitoring_traffic_rule_in_5671},
+            policy_rules: [{ get_resource: icmp_traffic_rule }, {get_resource: monitoring_traffic_rule_in_5671},
                            {get_resource: monitoring_traffic_rule_out_22}]
             child_policy_rule_sets: []
             shared: True
@@ -376,10 +395,10 @@ resources:
 # Allow Monitoring tier to access outside world
     monitoring_to_outside_rule_set:
         type: OS::Neutron::PolicyRuleSet
-        depends_on: tcp_traffic_rule
+        depends_on: [icmp_traffic_rule, tcp_traffic_rule]
         properties:
             name: { get_param: monitoring_to_outside_rule_set_name }
-            policy_rules: [{ get_resource: tcp_traffic_rule }] 
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: tcp_traffic_rule }] 
             child_policy_rule_sets: []
             shared: True
 
