@@ -88,7 +88,7 @@ confirm_resource_created "heat stack-show" "$ENG_STACK" "CREATE_COMPLETE"
 
 WEB_PTG_ID=`heat output-show "$ENG_STACK" "web_ptg_id" | sed "s/\"//g"`
 gbp group-update $WEB_PTG_ID --provided-policy-rule-sets "$HTTP_RULE_SET_ID=true"
-gbp group-update $WEB_PTG_ID --consumed-policy-rule-sets "$APP_TO_OUTSIDE_RULE_SET_ID=true"
+gbp group-update $WEB_PTG_ID --consumed-policy-rule-sets "$APP_TO_OUTSIDE_RULE_SET_ID=true,$APP_RULE_SET_ID=true"
 
 set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $ADMIN_TENANT_NAME
 gbp external-policy-update $APP_EXTERNAL_POLICY_ID --consumed-policy-rule-sets "$HTTP_RULE_SET_ID=true"
@@ -104,7 +104,7 @@ confirm_resource_created "heat stack-show" "$HR_STACK" "CREATE_COMPLETE"
 WEB_PTG_ID=`heat output-show "$HR_STACK" "web_ptg_id" | sed "s/\"//g"`
 gbp group-update $WEB_PTG_ID --network-service-policy "$VIP_IP_POLICY_ID"
 gbp group-update $WEB_PTG_ID --provided-policy-rule-sets "$HTTP_WITH_LB_REDIRECT_RULE_SET_ID=true"
-gbp group-update $WEB_PTG_ID --consumed-policy-rule-sets "$APP_TO_OUTSIDE_RULE_SET_ID=true"
+gbp group-update $WEB_PTG_ID --consumed-policy-rule-sets "$APP_TO_OUTSIDE_RULE_SET_ID=true,$APP_RULE_SET_ID=true"
 
 set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $ADMIN_TENANT_NAME
 gbp external-policy-update $APP_EXTERNAL_POLICY_ID --consumed-policy-rule-sets "$HTTP_WITH_LB_REDIRECT_RULE_SET_ID=true"
