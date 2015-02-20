@@ -3,10 +3,6 @@
 # **demo.sh**
 # Prior to running this script check the following:
 # 1. Set the name and path of the keystone_admin file in demo.conf OPENSTACK_ENV_FILE var
-# 2. The script assumes two users with the names: admin and demo
-# 3. The script requires three tenants to be present, their names are set in
-#    demo.conf as the following variables:
-#    ADMIN_TENANT_NAME, HR_TENANT_NAME, FINANCE_TENANT_NAME
 # Usage:
 # ./clean.sh
 
@@ -94,25 +90,25 @@ set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $HR_TENANT_NAME
 unset_prs_for_groups
 if [ -n "`heat stack-show $HR_STACK | grep 'id'`" ]; then
     heat stack-delete "$HR_STACK"
-    confirm_resource_deleted "heat stack-show" "$HR_STACK" "DELETE_COMPLETE"
+    confirm_resource_deleted "heat stack-show" "$HR_STACK"
 fi
 
 set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $ENG_TENANT_NAME
 unset_prs_for_groups
 if [ -n "`heat stack-show $ENG_STACK | grep 'id'`" ]; then
     heat stack-delete "$ENG_STACK"
-    confirm_resource_deleted "heat stack-show" "$ENG_STACK" "DELETE_COMPLETE"
+    confirm_resource_deleted "heat stack-show" "$ENG_STACK"
 fi
 
 set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $ADMIN_TENANT_NAME
 unset_prs_for_groups
 if [ -n "`heat stack-show $ADMIN_STACK | grep 'id'`" ]; then
     heat stack-delete "$ADMIN_STACK"
-    confirm_resource_deleted "heat stack-show" "$ADMIN_STACK" "DELETE_COMPLETE"
+    confirm_resource_deleted "heat stack-show" "$ADMIN_STACK"
 fi
 if [ -n "`heat stack-show $CONTRACTS_STACK | grep 'id'`" ]; then
     heat stack-delete "$CONTRACTS_STACK"
-    confirm_resource_deleted "heat stack-show" "$CONTRACTS_STACK" "DELETE_COMPLETE"
+    confirm_resource_deleted "heat stack-show" "$CONTRACTS_STACK"
 fi
 delete_external_segments
 

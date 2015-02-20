@@ -26,7 +26,11 @@ function confirm_resource_created {
 function confirm_resource_deleted {
     local xtrace=$(set +o | grep xtrace)
     set +o xtrace
-    confirm_resource_created "$1" "$2" "$3\|not found"
+    if ! timeout $ACTIVE_TIMEOUT sh -c "while $1 \"$2\" | grep -i \"id\"; do sleep 1; done"; then
+        set -o xtrace
+        echo "resource '$1 $2' did not become active!"
+        false
+    fi
     $xtrace
 }
 
