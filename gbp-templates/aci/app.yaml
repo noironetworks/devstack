@@ -72,7 +72,7 @@ resources:
     app_l2_policy:
         type: OS::Neutron::L2Policy
         properties:
-            name: "App_Network"
+            name: "App_Tier_Network"
             l3_policy_id: { get_param: app_l3_policy_id }
             shared: False
 
