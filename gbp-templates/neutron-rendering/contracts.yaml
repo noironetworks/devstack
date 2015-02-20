@@ -1,0 +1,369 @@
+#!highlight yaml
+
+heat_template_version: 2014-10-16
+
+parameters:
+
+  monitoring_rule_set_name:
+    type: string
+    label: monitoring_rule_set_name
+    description: Name of the Monitoring PRS
+    default: 'Monitoring'
+
+  monitoring_to_outside_rule_set_name:
+    type: string
+    label: monitoring_to_outside_rule_set_name
+    description: Name of the Monitoring to Outside PRS
+    default: 'Monitoring_to_outside'
+
+  app_to_outside_rule_set_name:
+    type: string
+    label: app_to_outside_rule_set_name
+    description: Name of the App to Outside PRS
+    default: 'App_to_outside'
+
+  mysql_rule_set_name:
+    type: string
+    label: mysql_rule_set_name
+    description: Name of the MySQL PRS
+    default: 'MySQL'
+
+  app_rule_set_name:
+    type: string
+    label: app_rule_set_name
+    description: Name of the App PRS
+    default: 'App'
+
+  http_rule_set_name:
+    type: string
+    label: http_rule_set_name
+    description: Name of the allow HTTP traffic rule set
+    default: "Allow_HTTP_Traffic"
+
+  web_tier_provided_prs_name:
+    type: string
+    label: web_tier_provided_prs_name
+    description: Name of the PRS provided by the Web Tier
+    default: "Web_Tier_via_Loadbalancer"
+
+  web_tier_consumed_prs_name:
+    type: string
+    label: web_tier_consumed_prs_name
+    description: Name of the PRS consumed by the Web Tier
+    default: "External_Connectivity"
+
+  monitoring_ptg_name:
+    type: string
+    label: monitoring_ptg_name
+    description: Name of the monitoring PTG
+    default: 'Monitoring'
+
+  service_management_ptg_name:
+    type: string
+    label: service_management_ptg_name
+    description: Name of the service management PTG
+    default: 'Service_Management_Tier'
+
+  external_network_cidr:
+    type: string
+    label: external_network_cidr
+    description: CIDR of external network
+    default: '203.0.113.0/24'
+
+  external_network_gateway:
+    type: string
+    label: external_network_gateway
+    description: Gateway for external network
+    default: '203.0.113.1'
+
+  physical_network_name:
+    type: string
+    label: physical_network_name
+    description: Name of the Physical network to map the external network to
+    default: 'default'
+
+  physical_network_type:
+    type: string
+    label: physical_network_type
+    description: Flat or VLAN
+    default: 'flat'
+
+resources:
+
+#### Network Services' Setup ####
+
+# Loadbalancer service chain node
+    sc_lb_node:
+        type: OS::Neutron::ServiceChainNode
+        properties:
+            name: "Loadbalancer"
+            service_type: LOADBALANCER
+            config: { get_file: lb_vip_description.template }
+            shared: False
+
+# LB service chain spec
+    sc_spec:
+        type: OS::Neutron::ServiceChainSpec
+        depends_on: [ sc_lb_node ]
+        properties:
+            name: "Loadbalancer_Service_Chain"
+            nodes:
+                - { get_resource: sc_lb_node }
+            shared: False
+
+# Network service policy for VIP IP assignment
+    vip_ip_policy:
+        type: OS::Neutron::NetworkServicePolicy
+        properties:
+            name: "VIP_Allocation"
+            network_service_params: 
+                - type: ip_single
+                  name: vip_ip
+                  value: self_subnet
+            shared: False
+
+#### Policy Classifiers, Actions, Rules Setup ####
+
+# Allow action
+    allow_action:
+        type: OS::Neutron::PolicyAction
+        properties:
+            name: "Allow"
+            action_type: allow
+            shared: False
+
+# Classifiers for monitoring traffic
+    monitoring_classifier_in_5671:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "Monitoring_traffic_inbound_5671"
+            protocol: tcp
+            port_range: '5671'
+            direction: in
+            shared: False
+
+    monitoring_classifier_out_22:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "Monitoring_traffic_outbound_22"
+            protocol: tcp
+            port_range: '22'
+            direction: out
+            shared: False
+
+# Rules for monitoring traffic
+    monitoring_traffic_rule_in_5671:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ monitoring_classifier_in_5671, allow_action ]
+        properties:
+            name: "Monitoring_traffic_inbound_5671"
+            policy_classifier_id: { get_resource: monitoring_classifier_in_5671 }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: False
+
+    monitoring_traffic_rule_out_22:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ monitoring_classifier_out_22, allow_action ]
+        properties:
+            name: "Monitoring_traffic_out_22"
+            policy_classifier_id: { get_resource: monitoring_classifier_out_22 }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: False
+
+# Classifier for all tcp traffic
+    tcp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "TCP_traffic"
+            protocol: tcp
+            direction: in
+            shared: False
+
+# Rule to all all tcp traffic
+    tcp_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ tcp_classifier, allow_action ]
+        properties:
+            name: "TCP_rule"
+            policy_classifier_id: { get_resource: tcp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: False
+
+# MySQL DB traffic classifier
+    db_tcp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "MySQL_traffic"
+            protocol: tcp
+            port_range: '3306'
+            direction: in
+            shared: False
+
+# Allow DB traffic rule
+    mysql_db_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ db_tcp_classifier, allow_action ]
+        properties:
+            name: "MySQL_Traffic"
+            policy_classifier_id: { get_resource: db_tcp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: False
+
+# App traffic classifier
+    app_tcp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "Application_traffic"
+            protocol: tcp
+            port_range: '8080'
+            direction: in
+            shared: False
+
+# Allow App traffic classifier rule
+    app_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ app_tcp_classifier, allow_action ]
+        properties:
+            name: "Application_Traffic"
+            policy_classifier_id: { get_resource: app_tcp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: False
+
+# HTTP traffic classifier
+    http_tcp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "External_Traffic"
+            protocol: tcp
+            port_range: '80'
+            direction: in
+            shared: False
+
+# Allow HTTP traffic rule
+    http_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ http_tcp_classifier, allow_action ]
+        properties:
+            name: "HTTP_Traffic"
+            policy_classifier_id: { get_resource: http_tcp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: False
+
+# Redirect to LB chain action
+    redirect_to_lb_chain:
+        type: OS::Neutron::PolicyAction
+        depends_on: sc_spec
+        properties:
+            name: "Redirect_to_LB"
+            action_type: redirect
+            action_value: { get_resource: sc_spec }
+            shared: False
+
+# Redirect HTTP traffic to LB rule
+    http_redirect_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ http_tcp_classifier, redirect_to_lb_chain ]
+        properties:
+            name: "HTTP_via_LB"
+            policy_classifier_id: { get_resource: http_tcp_classifier }
+            policy_actions: [{ get_resource: redirect_to_lb_chain }]
+            shared: False
+
+#### Policy-Rules-Sets (Contracts) Setup ####
+
+#  Web tier - allow inbound 80 from external (nginx)
+    http_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: http_traffic_rule
+        properties:
+            name: { get_param: http_rule_set_name }
+            policy_rules: [{ get_resource: http_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: False
+
+#  Web tier - allow inbound 80 from external (nginx) via LB
+    http_with_lb_redirect_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: http_redirect_traffic_rule
+        properties:
+            name: { get_param: web_tier_provided_prs_name }
+            policy_rules: [{ get_resource: http_redirect_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: False
+
+# App tier - allow inbound 8000 from web-tier (python server)
+    app_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: app_traffic_rule
+        properties:
+            name: { get_param: app_rule_set_name }
+            policy_rules: [{ get_resource: app_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: False
+
+# DB tier - allow 3306 (mysql)
+    mysql_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: mysql_db_traffic_rule
+        properties:
+            name: { get_param: mysql_rule_set_name }
+            policy_rules: [{ get_resource: mysql_db_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: False
+
+# Allow Web tier access to outside world
+    app_to_outside_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: tcp_traffic_rule
+        properties:
+            name: { get_param: app_to_outside_rule_set_name }
+            policy_rules: [{ get_resource: tcp_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: False
+
+# Allow access to monitoring services
+    monitoring_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: [monitoring_traffic_rule_in_5671, monitoring_traffic_rule_out_22]
+        properties:
+            name: { get_param: monitoring_rule_set_name }
+            policy_rules: [{get_resource: monitoring_traffic_rule_in_5671},
+                           {get_resource: monitoring_traffic_rule_out_22}]
+            child_policy_rule_sets: []
+            shared: False
+
+# Allow Monitoring tier to access outside world
+    monitoring_to_outside_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: tcp_traffic_rule
+        properties:
+            name: { get_param: monitoring_to_outside_rule_set_name }
+            policy_rules: [{ get_resource: tcp_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: False
+
+outputs:
+
+    vip_ip_policy_id:
+        value: { get_resource: vip_ip_policy }
+
+    http_rule_set_id:
+        value: { get_resource: http_rule_set }
+
+    http_with_lb_redirect_rule_set_id:
+        value: { get_resource: http_with_lb_redirect_rule_set }
+
+    app_rule_set_id:
+        value: { get_resource: app_rule_set }
+
+    mysql_rule_set_id:
+        value: { get_resource: mysql_rule_set }
+
+    app_to_outside_rule_set_id:
+        value: { get_resource: app_to_outside_rule_set }
+
+    monitoring_rule_set_id:
+        value: { get_resource: monitoring_rule_set }
+
+    monitoring_to_outside_rule_set_id:
+        value: { get_resource: monitoring_to_outside_rule_set }
