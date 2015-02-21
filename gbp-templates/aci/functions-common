@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ACTIVE_TIMEOUT=600
+ACTIVE_TIMEOUT=300
 
 function set_user_password_tenant {
     local xtrace=$(set +o | grep xtrace)
