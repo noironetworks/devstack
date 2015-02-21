@@ -33,7 +33,7 @@ parameters:
     type: string
     label: fw_vm_image
     description: Name of the image for the FW VMs
-    default: 'cirros'
+    default: 'transparent'
 
   fw_vm_flavor:
     type: string

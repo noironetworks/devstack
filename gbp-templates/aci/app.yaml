@@ -102,6 +102,7 @@ resources:
     db_server1:
         type: OS::Nova::Server
         depends_on: db_server_pt1
+        depends_on: db_mgmt_pt
         properties:
             name: DB_Server
             image: { get_param: db_vm_image }
@@ -162,6 +163,8 @@ resources:
     app_server1:
         type: OS::Nova::Server
         depends_on: app_server_pt1
+        depends_on: app_mgmt_pt
+        depends_on: db_server1
         properties:
             name: App_Server
             image: { get_param: app_vm_image }
@@ -174,22 +177,22 @@ resources:
                 str_replace:
                     params:
                         __monserver__: {get_param: monitoring_ip}
-                        __dbserver__: {get_attr: [db_server1, first_address]}
+                        __dbserver__: {get_attr: [db_server1, networks, l2p_App_Tier_Network, 0]}
                     template: |
                         #!/bin/bash
                         set -e
                         HOSTNAME=`hostname`
                         MONSERVER=__monserver__
                         DBSERVER=__dbserver__
-                        sudo sed -i -e '/dbserver/d' /etc/hosts
-                        echo "${MONSERVER} monserver" | sudo tee -a /etc/hosts
-                        sudo sed -i -e "s/hostname/${HOSTNAME}/" /etc/sensu/conf.d/client.json
-                        echo "${DBSERVER} dbserver" | sudo tee -a /etc/hosts
                         sudo sed -i -e '/monserver/d' /etc/hosts
+                        echo "${MONSERVER} monserver" | sudo tee -a /etc/hosts
+                        sudo sed -i -e '/dbserver/d' /etc/hosts
+                        echo "${DBSERVER} dbserver" | sudo tee -a /etc/hosts
+                        sudo sed -i -e "s/hostname/${HOSTNAME}/" /etc/sensu/conf.d/client.json
                         sudo service sensu-client restart
                         sudo service webapp restart
                         echo '**** Done ****'
- 
+
 #### Web Tier ####
 
     web_tier_l2_policy:
@@ -243,6 +246,7 @@ resources:
         type: OS::Nova::Server
         depends_on: web_server1_pt
         depends_on: web_server1_mgmt_pt
+        depends_on: app_server1
         properties:
             name: Web_Real_Server_1
             image: {get_param: web_vm_image}
@@ -255,7 +259,7 @@ resources:
                 str_replace:
                     params:
                         __monserver__: {get_param: monitoring_ip}
-                        __appserver__: {get_attr: [app_server1, first_address]}
+                        __appserver__: {get_attr: [app_server1, networks, l2p_App_Tier_Network, 0]}
                     template: |
                         #!/bin/bash
                         set -e
@@ -275,6 +279,7 @@ resources:
         type: OS::Nova::Server
         depends_on: web_server2_pt
         depends_on: web_server2_mgmt_pt
+        depends_on: app_server1
         properties:
             name: Web_Real_Server_2
             image: {get_param: web_vm_image}
@@ -287,7 +292,7 @@ resources:
                 str_replace:
                     params:
                         __monserver__: {get_param: monitoring_ip}
-                        __appserver__: {get_attr: [app_server1, first_address]}
+                        __appserver__: {get_attr: [app_server1, networks, l2p_App_Tier_Network, 0]}
                     template: |
                         #!/bin/bash
                         set -e

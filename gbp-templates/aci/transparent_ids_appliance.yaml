@@ -33,7 +33,7 @@ parameters:
     type: string
     label: ids_vm_image
     description: Name of the image for the IDS VMs
-    default: 'cirros'
+    default: 'transparent'
 
   ids_vm_flavor:
     type: string
