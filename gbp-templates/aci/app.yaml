@@ -164,7 +164,7 @@ resources:
         type: OS::Nova::Server
         depends_on: app_server_pt1
         depends_on: app_mgmt_pt
-        depends_on: db_server1
+        depends_on: db_server_pt1
         properties:
             name: "Application-Server"
             image: { get_param: app_vm_image }
@@ -177,7 +177,7 @@ resources:
                 str_replace:
                     params:
                         __monserver__: {get_param: monitoring_ip}
-                        __dbserver__: {get_attr: [db_server1, networks, l2p_App_Tier_Network, 0]}
+                        __dbserver__: {get_attr: [db_server_pt1, fixed_ips, 0, ip_address]}
                     template: |
                         #!/bin/bash
                         set -e
@@ -246,7 +246,7 @@ resources:
         type: OS::Nova::Server
         depends_on: web_server1_pt
         depends_on: web_server1_mgmt_pt
-        depends_on: app_server1
+        depends_on: app_server_pt1
         properties:
             name: "Web-Server-1"
             image: {get_param: web_vm_image}
@@ -259,7 +259,7 @@ resources:
                 str_replace:
                     params:
                         __monserver__: {get_param: monitoring_ip}
-                        __appserver__: {get_attr: [app_server1, networks, l2p_App_Tier_Network, 0]}
+                        __appserver__: {get_attr: [app_server_pt1, fixed_ips, 0, ip_address]}
                     template: |
                         #!/bin/bash
                         set -e
@@ -279,7 +279,7 @@ resources:
         type: OS::Nova::Server
         depends_on: web_server2_pt
         depends_on: web_server2_mgmt_pt
-        depends_on: app_server1
+        depends_on: app_server_pt1
         properties:
             name: "Web-Server-2"
             image: {get_param: web_vm_image}
@@ -292,7 +292,7 @@ resources:
                 str_replace:
                     params:
                         __monserver__: {get_param: monitoring_ip}
-                        __appserver__: {get_attr: [app_server1, networks, l2p_App_Tier_Network, 0]}
+                        __appserver__: {get_attr: [app_server_pt1, fixed_ips, 0, ip_address]}
                     template: |
                         #!/bin/bash
                         set -e
