@@ -60,7 +60,7 @@ resources:
     svc_mgmt_pt:
         type: OS::Neutron::PolicyTarget
         properties:
-            name: Svc_Mgmt_IDS_PT
+            name: "Svc-Mgmt-IDS-PT"
             policy_target_group_id: { get_param: svc_mgmt_ptg }
 
 # Launch IDS appliance
@@ -68,7 +68,7 @@ resources:
     ids_appliance:
         type: OS::Nova::Server
         properties:
-            name: ids_appliance
+            name: "Transparent-IDS"
             image: { get_param: ids_vm_image }
             flavor: { get_param: ids_vm_flavor }
             networks:

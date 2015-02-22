@@ -16,12 +16,6 @@ parameters:
     description: Name of the Monitoring to Outside PRS
     default: 'Monitoring_to_outside'
 
-  app_to_outside_rule_set_name:
-    type: string
-    label: app_to_outside_rule_set_name
-    description: Name of the App to Outside PRS
-    default: 'App_to_outside'
-
   mysql_rule_set_name:
     type: string
     label: mysql_rule_set_name
@@ -51,12 +45,6 @@ parameters:
     label: web_tier_provided_prs_name
     description: Name of the PRS provided by the Web Tier
     default: "Web_Tier_via_Loadbalancer"
-
-  web_tier_consumed_prs_name:
-    type: string
-    label: web_tier_consumed_prs_name
-    description: Name of the PRS consumed by the Web Tier
-    default: "External_Connectivity"
 
   monitoring_ptg_name:
     type: string
@@ -106,7 +94,7 @@ resources:
         type: OS::Neutron::ServiceChainSpec
         depends_on: [ sc_lb_node ]
         properties:
-            name: "Loadbalancer_Service_Chain"
+            name: "Loadbalancer-Service-Chain"
             nodes:
                 - { get_resource: sc_lb_node }
             shared: True
@@ -126,7 +114,7 @@ resources:
     vip_ip_policy:
         type: OS::Neutron::NetworkServicePolicy
         properties:
-            name: "VIP_Allocation"
+            name: "VIP-Allocation"
             network_service_params: 
                 - type: ip_single
                   name: vip_ip
@@ -147,7 +135,7 @@ resources:
     icmp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "ICMP_Traffic"
+            name: "ICMP-Traffic"
             protocol: icmp
             direction: bi
             shared: True
@@ -157,7 +145,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ icmp_classifier, allow_action ]
         properties:
-            name: "ICMP_rule"
+            name: "ICMP-BI"
             policy_classifier_id: { get_resource: icmp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: True
@@ -166,7 +154,7 @@ resources:
     monitoring_classifier_in_5671:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "Monitoring_traffic_inbound_5671"
+            name: "Monitoring-Traffic"
             protocol: tcp
             port_range: '5671'
             direction: in
@@ -175,7 +163,7 @@ resources:
     monitoring_classifier_out_22:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "Monitoring_traffic_outbound_22"
+            name: "Monitoring-Traffic"
             protocol: tcp
             port_range: '22'
             direction: out
@@ -186,7 +174,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ monitoring_classifier_in_5671, allow_action ]
         properties:
-            name: "Monitoring_traffic_inbound_5671"
+            name: "Monitoring-IN"
             policy_classifier_id: { get_resource: monitoring_classifier_in_5671 }
             policy_actions: [{ get_resource: allow_action }]
             shared: True
@@ -195,7 +183,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ monitoring_classifier_out_22, allow_action ]
         properties:
-            name: "Monitoring_traffic_out_22"
+            name: "Monitoring-OUT"
             policy_classifier_id: { get_resource: monitoring_classifier_out_22 }
             policy_actions: [{ get_resource: allow_action }]
             shared: True
@@ -204,7 +192,7 @@ resources:
     tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "TCP_traffic"
+            name: "TCP-Traffic"
             protocol: tcp
             direction: in
             shared: True
@@ -214,7 +202,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ tcp_classifier, allow_action ]
         properties:
-            name: "TCP_rule"
+            name: "TCP-IN"
             policy_classifier_id: { get_resource: tcp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: True
@@ -223,7 +211,7 @@ resources:
     db_tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "MySQL_traffic"
+            name: "MySQL-Traffic"
             protocol: tcp
             port_range: '3306'
             direction: in
@@ -234,7 +222,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ db_tcp_classifier, allow_action ]
         properties:
-            name: "MySQL_Traffic"
+            name: "MySQL-IN"
             policy_classifier_id: { get_resource: db_tcp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: True
@@ -244,7 +232,7 @@ resources:
         type: OS::Neutron::PolicyAction
         depends_on: fw_ids_sc_spec
         properties:
-            name: "Redirect_to_FW_IDS"
+            name: "Redirect-FW-IDS"
             action_type: redirect
             action_value: { get_resource: fw_ids_sc_spec }
             shared: True
@@ -254,7 +242,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ db_tcp_classifier, redirect_to_lb_chain ]
         properties:
-            name: "MySQL_via_FW_IDS"
+            name: "MySQL-IN-VIA-FW-IDS"
             policy_classifier_id: { get_resource: db_tcp_classifier }
             policy_actions: [{ get_resource: redirect_to_fw_ids_chain }]
             shared: True
@@ -263,7 +251,7 @@ resources:
     app_tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "Application_traffic"
+            name: "Application-Traffic"
             protocol: tcp
             port_range: '8080'
             direction: in
@@ -274,7 +262,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ app_tcp_classifier, allow_action ]
         properties:
-            name: "Application_Traffic"
+            name: "Application-IN"
             policy_classifier_id: { get_resource: app_tcp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: True
@@ -283,7 +271,7 @@ resources:
     http_tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "External_Traffic"
+            name: "External-Traffic"
             protocol: tcp
             port_range: '80'
             direction: in
@@ -294,7 +282,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ http_tcp_classifier, allow_action ]
         properties:
-            name: "HTTP_Traffic"
+            name: "HTTP-IN"
             policy_classifier_id: { get_resource: http_tcp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: True
@@ -304,7 +292,7 @@ resources:
         type: OS::Neutron::PolicyAction
         depends_on: sc_spec
         properties:
-            name: "Redirect_to_LB"
+            name: "Redirect-LB"
             action_type: redirect
             action_value: { get_resource: sc_spec }
             shared: True
@@ -314,7 +302,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ http_tcp_classifier, redirect_to_lb_chain ]
         properties:
-            name: "HTTP_via_LB"
+            name: "HTTP-IN-VIA-LB"
             policy_classifier_id: { get_resource: http_tcp_classifier }
             policy_actions: [{ get_resource: redirect_to_lb_chain }]
             shared: True
@@ -371,16 +359,6 @@ resources:
             child_policy_rule_sets: []
             shared: True
 
-# Allow Web tier access to outside world
-    app_to_outside_rule_set:
-        type: OS::Neutron::PolicyRuleSet
-        depends_on: [icmp_traffic_rule, tcp_traffic_rule]
-        properties:
-            name: { get_param: app_to_outside_rule_set_name }
-            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: tcp_traffic_rule }] 
-            child_policy_rule_sets: []
-            shared: True
-
 # Allow access to monitoring services
     monitoring_rule_set:
         type: OS::Neutron::PolicyRuleSet
@@ -421,9 +399,6 @@ outputs:
 
     mysql_via_fw_ids_rule_set_id:
         value: { get_resource: mysql_via_fw_ids_rule_set }
-
-    app_to_outside_rule_set_id:
-        value: { get_resource: app_to_outside_rule_set }
 
     monitoring_rule_set_id:
         value: { get_resource: monitoring_rule_set }

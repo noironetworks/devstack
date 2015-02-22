@@ -60,7 +60,7 @@ resources:
     svc_mgmt_pt:
         type: OS::Neutron::PolicyTarget
         properties:
-            name: Svc_Mgmt_FW_PT
+            name: "Svc-Mgmt-FW-PT"
             policy_target_group_id: { get_param: svc_mgmt_ptg }
 
 # Launch firewall appliance
@@ -68,7 +68,7 @@ resources:
     firewall_appliance:
         type: OS::Nova::Server
         properties:
-            name: firewall_appliance
+            name: "Transparent-FW"
             image: { get_param: fw_vm_image }
             flavor: { get_param: fw_vm_flavor }
             networks:

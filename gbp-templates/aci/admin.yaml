@@ -201,7 +201,7 @@ resources:
         type: OS::Neutron::L2Policy
         depends_on: infra_l3_policy
         properties:
-            name: "Infrastructure_Network"
+            name: "Control-Domain"
             l3_policy_id: { get_resource: infra_l3_policy }
             shared: True
 
@@ -232,14 +232,14 @@ resources:
         type: OS::Neutron::PolicyTarget
         depends_on: monitoring_ptg
         properties:
-            name: monitoring_server_pt1
+            name: "Monitoring-server-pt1"
             policy_target_group_id: { get_resource: monitoring_ptg }
 
     monitoring_server1:
         type: OS::Nova::Server
         depends_on: monitoring_server_pt1
         properties:
-            name: "Monitoring_Server"
+            name: "Monitoring-Server"
             image: { get_param: monitoring_vm_image }
             flavor: { get_param: monitoring_vm_flavor }
             networks:
@@ -273,14 +273,14 @@ resources:
         type: OS::Neutron::PolicyTarget
         depends_on: mgmt_ptg
         properties:
-            name: mgmt_server_pt1
+            name: "Mgmt-server-pt1"
             policy_target_group_id: { get_resource: mgmt_ptg }
 
     mgmt_server1:
         type: OS::Nova::Server
         depends_on: mgmt_server_pt1
         properties:
-            name: "Management_Server"
+            name: "Management-Server"
             image: { get_param: mgmt_vm_image }
             flavor: { get_param: mgmt_vm_flavor }
             networks:
@@ -303,14 +303,14 @@ resources:
         type: OS::Neutron::PolicyTarget
         depends_on: svc_mgmt_ptg
         properties:
-            name: svc_mgmt_server_pt1
+            name: "Svc-mgmt-server-pt1"
             policy_target_group_id: { get_resource: svc_mgmt_ptg }
 
     svc_mgmt_server1:
         type: OS::Nova::Server
         depends_on: svc_mgmt_server_pt1
         properties:
-            name: "Service_Management_Server"
+            name: "Service-Management-Server"
             image: { get_param: svc_mgmt_vm_image }
             flavor: { get_param: svc_mgmt_vm_flavor }
             networks:
