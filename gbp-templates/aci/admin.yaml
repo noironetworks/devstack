@@ -81,6 +81,11 @@ parameters:
     label: web_tier_consumed_prs_id
     description: ID of the PRS consumed by the Web Tier
 
+  web_access_prs_id:
+    type: string
+    label: web_tier_consumed_prs_id
+    description: ID of the PRS provided by the Monitoring Tier
+
   monitoring_ptg_name:
     type: string
     label: monitoring_ptg_name
@@ -169,6 +174,9 @@ resources:
             provided_policy_rule_sets:
                 - policy_rule_set_id: { get_param: monitoring_to_outside_rule_set_id }
                   policy_rule_set_scope:
+            consumed_policy_rule_sets:
+                - policy_rule_set_id: { get_param: web_access_prs_id }
+                  policy_rule_set_scope:
             shared: True
 
     app_external_segment:
@@ -222,7 +230,9 @@ resources:
             l2_policy_id: { get_resource: infra_l2_policy }
             provided_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: monitoring_rule_set_id }
-                  policy_rule_set_scope: 
+                  policy_rule_set_scope:
+                - policy_rule_set_id: { get_param: web_access_prs_id }
+                  policy_rule_set_scope:
             consumed_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: monitoring_to_outside_rule_set_id }
                   policy_rule_set_scope: 
