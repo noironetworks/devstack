@@ -72,14 +72,14 @@ resources:
     app_l2_policy:
         type: OS::Neutron::L2Policy
         properties:
-            name: "App_Tier_Network"
+            name: "Application-Domain"
             l3_policy_id: { get_param: app_l3_policy_id }
             shared: False
 
     db_ptg:
         type: OS::Neutron::PolicyTargetGroup
         properties:
-            name: "DB_Tier"
+            name: "Database-Tier"
             l2_policy_id: { get_resource: app_l2_policy }
             provided_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: mysql_rule_set_id }
@@ -90,13 +90,13 @@ resources:
         type: OS::Neutron::PolicyTarget
         depends_on: db_ptg
         properties:
-            name: db_server_pt1
+            name: "Db-server-pt1"
             policy_target_group_id: { get_resource: db_ptg }
 
     db_mgmt_pt:
         type: OS::Neutron::PolicyTarget
         properties:
-            name: db_mgmt_pt
+            name: "Db-mgmt-pt"
             policy_target_group_id: { get_param: mgmt_ptg_id }
 
     db_server1:
@@ -104,7 +104,7 @@ resources:
         depends_on: db_server_pt1
         depends_on: db_mgmt_pt
         properties:
-            name: DB_Server
+            name: "Database-Server"
             image: { get_param: db_vm_image }
             flavor: {get_param: db_vm_flavor}
             networks:
@@ -137,7 +137,7 @@ resources:
     app_ptg:
         type: OS::Neutron::PolicyTargetGroup
         properties:
-            name: "App_Tier"
+            name: "Application-Tier"
             l2_policy_id: { get_resource: app_l2_policy }
             provided_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: app_rule_set_id }
@@ -151,13 +151,13 @@ resources:
         type: OS::Neutron::PolicyTarget
         depends_on: app_ptg
         properties:
-            name: app_server_pt1
+            name: "App-server-pt1"
             policy_target_group_id: { get_resource: app_ptg }
 
     app_mgmt_pt:
         type: OS::Neutron::PolicyTarget
         properties:
-            name: app_mgmt_pt
+            name: "App-mgmt-pt"
             policy_target_group_id: { get_param: mgmt_ptg_id }
 
     app_server1:
@@ -166,7 +166,7 @@ resources:
         depends_on: app_mgmt_pt
         depends_on: db_server1
         properties:
-            name: App_Server
+            name: "Application-Server"
             image: { get_param: app_vm_image }
             flavor: {get_param: app_vm_flavor}
             networks:
@@ -198,14 +198,14 @@ resources:
     web_tier_l2_policy:
         type: OS::Neutron::L2Policy
         properties:
-            name: "Web_Tier_Network"
+            name: "Web-Domain"
             l3_policy_id: { get_param: app_l3_policy_id }
             shared: False
 
     web_ptg:
         type: OS::Neutron::PolicyTargetGroup
         properties:
-            name: "Web_Tier"
+            name: "Web-Tier"
             l2_policy_id: { get_resource: web_tier_l2_policy }
             consumed_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: app_rule_set_id }
@@ -216,7 +216,7 @@ resources:
         type: OS::Neutron::PolicyTarget
         depends_on: web_ptg
         properties:
-            name: web_server1_pt
+            name: "Web-server1-pt"
             description: 'Pool Member'
             policy_target_group_id: { get_resource: web_ptg }
 
@@ -224,14 +224,14 @@ resources:
         type: OS::Neutron::PolicyTarget
         depends_on: web_ptg
         properties:
-            name: web_server1_mgmt_pt
+            name: "Web-server1-mgmt_pt"
             policy_target_group_id: { get_param: mgmt_ptg_id }
 
     web_server2_pt:
         type: OS::Neutron::PolicyTarget
         depends_on: web_ptg
         properties:
-            name: web_server2_pt
+            name: "Web-server2-pt"
             description: 'Pool Member'
             policy_target_group_id: { get_resource: web_ptg }
 
@@ -239,7 +239,7 @@ resources:
         type: OS::Neutron::PolicyTarget
         depends_on: web_ptg
         properties:
-            name: web_server2_mgmt_pt
+            name: "Web-server2-mgmt-pt"
             policy_target_group_id: { get_param: mgmt_ptg_id }
 
     web_server1:
@@ -248,7 +248,7 @@ resources:
         depends_on: web_server1_mgmt_pt
         depends_on: app_server1
         properties:
-            name: Web_Real_Server_1
+            name: "Web-Server-1"
             image: {get_param: web_vm_image}
             flavor: {get_param: web_vm_flavor}
             networks:
@@ -281,7 +281,7 @@ resources:
         depends_on: web_server2_mgmt_pt
         depends_on: app_server1
         properties:
-            name: Web_Real_Server_2
+            name: "Web-Server-2"
             image: {get_param: web_vm_image}
             flavor: {get_param: web_vm_flavor}
             networks:
