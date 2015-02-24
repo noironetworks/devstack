@@ -106,7 +106,7 @@ resources:
         type: OS::Neutron::ServiceChainSpec
         depends_on: [ sc_lb_node ]
         properties:
-            name: "Loadbalancer_Service_Chain"
+            name: "Loadbalancer-Service-Chain"
             nodes:
                 - { get_resource: sc_lb_node }
             shared: False
@@ -115,7 +115,7 @@ resources:
     vip_ip_policy:
         type: OS::Neutron::NetworkServicePolicy
         properties:
-            name: "VIP_Allocation"
+            name: "VIP-Allocation"
             network_service_params: 
                 - type: ip_single
                   name: vip_ip
@@ -136,7 +136,7 @@ resources:
     monitoring_classifier_in_5671:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "Monitoring_traffic_inbound_5671"
+            name: "Monitoring-Traffic"
             protocol: tcp
             port_range: '5671'
             direction: in
@@ -145,7 +145,7 @@ resources:
     monitoring_classifier_out_22:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "Monitoring_traffic_outbound_22"
+            name: "SSH-Traffic"
             protocol: tcp
             port_range: '22'
             direction: out
@@ -156,7 +156,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ monitoring_classifier_in_5671, allow_action ]
         properties:
-            name: "Monitoring_traffic_inbound_5671"
+            name: "Monitoring-IN"
             policy_classifier_id: { get_resource: monitoring_classifier_in_5671 }
             policy_actions: [{ get_resource: allow_action }]
             shared: False
@@ -165,7 +165,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ monitoring_classifier_out_22, allow_action ]
         properties:
-            name: "Monitoring_traffic_out_22"
+            name: "SSH-OUT"
             policy_classifier_id: { get_resource: monitoring_classifier_out_22 }
             policy_actions: [{ get_resource: allow_action }]
             shared: False
@@ -174,7 +174,7 @@ resources:
     tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "TCP_traffic"
+            name: "TCP-Traffic"
             protocol: tcp
             direction: in
             shared: False
@@ -184,7 +184,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ tcp_classifier, allow_action ]
         properties:
-            name: "TCP_rule"
+            name: "TCP-IN"
             policy_classifier_id: { get_resource: tcp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: False
@@ -193,7 +193,7 @@ resources:
     db_tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "MySQL_traffic"
+            name: "MySQL-Traffic"
             protocol: tcp
             port_range: '3306'
             direction: in
@@ -204,7 +204,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ db_tcp_classifier, allow_action ]
         properties:
-            name: "MySQL_Traffic"
+            name: "MySQL-IN"
             policy_classifier_id: { get_resource: db_tcp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: False
@@ -213,7 +213,7 @@ resources:
     app_tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "Application_traffic"
+            name: "Application-Traffic"
             protocol: tcp
             port_range: '8080'
             direction: in
@@ -224,7 +224,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ app_tcp_classifier, allow_action ]
         properties:
-            name: "Application_Traffic"
+            name: "Application-IN"
             policy_classifier_id: { get_resource: app_tcp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: False
@@ -233,7 +233,7 @@ resources:
     http_tcp_classifier:
         type: OS::Neutron::PolicyClassifier
         properties:
-            name: "External_Traffic"
+            name: "HTTP-Traffic"
             protocol: tcp
             port_range: '80'
             direction: in
@@ -244,7 +244,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ http_tcp_classifier, allow_action ]
         properties:
-            name: "HTTP_Traffic"
+            name: "HTTP-IN"
             policy_classifier_id: { get_resource: http_tcp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: False
@@ -254,7 +254,7 @@ resources:
         type: OS::Neutron::PolicyAction
         depends_on: sc_spec
         properties:
-            name: "Redirect_to_LB"
+            name: "Redirect-LB"
             action_type: redirect
             action_value: { get_resource: sc_spec }
             shared: False
@@ -264,7 +264,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ http_tcp_classifier, redirect_to_lb_chain ]
         properties:
-            name: "HTTP_via_LB"
+            name: "HTTP-IN-VIA-LB"
             policy_classifier_id: { get_resource: http_tcp_classifier }
             policy_actions: [{ get_resource: redirect_to_lb_chain }]
             shared: False

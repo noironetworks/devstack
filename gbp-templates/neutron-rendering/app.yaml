@@ -73,14 +73,14 @@ resources:
     db_l2_policy:
         type: OS::Neutron::L2Policy
         properties:
-            name: "DB_Tier_Network"
+            name: "Database-Network"
             l3_policy_id: { get_param: app_l3_policy_id }
             shared: False
 
     db_ptg:
         type: OS::Neutron::PolicyTargetGroup
         properties:
-            name: "DB_Tier"
+            name: "Database-Tier"
             l2_policy_id: { get_resource: db_l2_policy }
             provided_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: mysql_rule_set_id }
@@ -104,7 +104,7 @@ resources:
         type: OS::Nova::Server
         depends_on: db_server_pt1
         properties:
-            name: DB_Server
+            name: "Database-Server"
             image: { get_param: db_vm_image }
             flavor: {get_param: db_vm_flavor}
             networks:
@@ -137,14 +137,14 @@ resources:
     app_l2_policy:
         type: OS::Neutron::L2Policy
         properties:
-            name: "App_Tier_Network"
+            name: "Application-Network"
             l3_policy_id: { get_param: app_l3_policy_id }
             shared: False
 
     app_ptg:
         type: OS::Neutron::PolicyTargetGroup
         properties:
-            name: "App_Tier"
+            name: "Application-Tier"
             l2_policy_id: { get_resource: app_l2_policy }
             provided_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: app_rule_set_id }
@@ -171,7 +171,7 @@ resources:
         type: OS::Nova::Server
         depends_on: app_server_pt1
         properties:
-            name: App_Server
+            name: "Application-Server"
             image: { get_param: app_vm_image }
             flavor: {get_param: app_vm_flavor}
             networks:
@@ -182,7 +182,7 @@ resources:
                 str_replace:
                     params:
                         __monserver__: {get_param: monitoring_ip}
-                        __dbserver__: {get_attr: [db_server1, first_address]}
+                        __dbserver__: {get_attr: [db_server_pt1, fixed_ips, 0, ip_address]}
                     template: |
                         #!/bin/bash
                         set -e
@@ -203,14 +203,14 @@ resources:
     web_tier_l2_policy:
         type: OS::Neutron::L2Policy
         properties:
-            name: "Web_Tier_Network"
+            name: "Web-Network"
             l3_policy_id: { get_param: app_l3_policy_id }
             shared: False
 
     web_ptg:
         type: OS::Neutron::PolicyTargetGroup
         properties:
-            name: "Web_Tier"
+            name: "Web-Tier"
             l2_policy_id: { get_resource: web_tier_l2_policy }
             consumed_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: app_rule_set_id }
@@ -252,7 +252,7 @@ resources:
         depends_on: web_server1_pt
         depends_on: web_server1_mgmt_pt
         properties:
-            name: Web_Real_Server_1
+            name: "Web-Server-1"
             image: {get_param: web_vm_image}
             flavor: {get_param: web_vm_flavor}
             networks:
@@ -263,7 +263,7 @@ resources:
                 str_replace:
                     params:
                         __monserver__: {get_param: monitoring_ip}
-                        __appserver__: {get_attr: [app_server1, first_address]}
+                        __appserver__: {get_attr: [app_server_pt1, fixed_ips, 0, ip_address]}
                     template: |
                         #!/bin/bash
                         set -e
@@ -284,7 +284,7 @@ resources:
         depends_on: web_server2_pt
         depends_on: web_server2_mgmt_pt
         properties:
-            name: Web_Real_Server_2
+            name: "Web-Server-2"
             image: {get_param: web_vm_image}
             flavor: {get_param: web_vm_flavor}
             networks:
