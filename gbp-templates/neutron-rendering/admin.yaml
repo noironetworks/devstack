@@ -4,17 +4,37 @@ heat_template_version: 2013-05-23
 
 parameters:
 
+  external_network_name:
+    type: string
+    label: external_network_name
+    description: Name of external network
+    default: 'External_Network'
+
+  external_subnet_name:
+    type: string
+    label: external_subnet_name
+    description: Name of external subnet
+    default: 'External_Subnet'
+
   external_network_cidr:
     type: string
     label: external_network_cidr
     description: CIDR of external network
-    default: '203.0.113.0/24'
 
   external_network_gateway:
     type: string
     label: external_network_gateway
     description: Gateway for external network
-    default: '203.0.113.1'
+
+  external_subnet_allocation_pool_start:
+    type: string
+    label: external_subnet_allocation_pool_start
+    description: Start IP of the external subnet's allocation pool
+
+  external_subnet_allocation_pool_end:
+    type: string
+    label: external_subnet_allocation_pool_end
+    description: Last IP of the external subnet's allocation pool
 
   physical_network_name:
     type: string
@@ -87,6 +107,11 @@ parameters:
     label: web_tier_consumed_prs_id
     description: ID of the PRS consumed by the Web Tier
 
+  web_access_prs_id:
+    type: string
+    label: web_tier_consumed_prs_id
+    description: ID of the PRS provided by the Monitoring Tier
+
   monitoring_ptg_name:
     type: string
     label: monitoring_ptg_name
@@ -154,7 +179,7 @@ resources:
     external_network:
       type: OS::Neutron::Net
       properties:
-        name: 'External Network'
+        name: {get_param: external_network_name}
         shared: False
         value_specs: {
             'router:external': True,
@@ -165,10 +190,14 @@ resources:
     external_subnet:
       type: OS::Neutron::Subnet
       properties:
-        name: 'External_Subnet'
+        name: {get_param: external_subnet_name}
         network_id: {get_resource: external_network}
         cidr: {get_param: external_network_cidr}
         gateway_ip: {get_param: external_network_gateway}
+        enable_dhcp: False
+        allocation_pools:
+            - start: {get_param: external_subnet_allocation_pool_start}
+              end: {get_param: external_subnet_allocation_pool_end}
 
     infra_external_segment:
         type: OS::Neutron::ExternalSegment
@@ -189,6 +218,9 @@ resources:
             provided_policy_rule_sets:
                 - policy_rule_set_id: { get_param: monitoring_to_outside_rule_set_id }
                   policy_rule_set_scope:
+            consumed_policy_rule_sets:
+                - policy_rule_set_id: { get_param: web_access_prs_id }
+                  policy_rule_set_scope:
             shared: False
 
 #### Setup L3/L2 Resrouces ####
@@ -204,7 +236,7 @@ resources:
         type: OS::Neutron::L2Policy
         depends_on: infra_l3_policy
         properties:
-            name: "Monitoring_Network"
+            name: "Monitoring-Network"
             l3_policy_id: { get_resource: infra_l3_policy }
             shared: False
 
@@ -212,7 +244,7 @@ resources:
         type: OS::Neutron::L2Policy
         depends_on: infra_l3_policy
         properties:
-            name: "Management_Network"
+            name: "Management-Network"
             l3_policy_id: { get_resource: infra_l3_policy }
             shared: False
 
@@ -220,7 +252,7 @@ resources:
         type: OS::Neutron::L2Policy
         depends_on: infra_l3_policy
         properties:
-            name: "Service_Management_Network"
+            name: "Service-Management-Network"
             l3_policy_id: { get_resource: infra_l3_policy }
             shared: False
 
@@ -235,6 +267,8 @@ resources:
             provided_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: monitoring_rule_set_id }
                   policy_rule_set_scope: 
+                - policy_rule_set_id: { get_param: web_access_prs_id }
+                  policy_rule_set_scope:
             consumed_policy_rule_sets: 
                 - policy_rule_set_id: { get_param: monitoring_to_outside_rule_set_id }
                   policy_rule_set_scope: 
@@ -251,7 +285,7 @@ resources:
         type: OS::Nova::Server
         depends_on: monitoring_server_pt1
         properties:
-            name: "Monitoring_Server"
+            name: "Monitoring-Server"
             image: { get_param: monitoring_vm_image }
             flavor: { get_param: monitoring_vm_flavor }
             networks:
@@ -292,7 +326,7 @@ resources:
         type: OS::Nova::Server
         depends_on: mgmt_server_pt1
         properties:
-            name: "Management_Server"
+            name: "Management-Server"
             image: { get_param: mgmt_vm_image }
             flavor: { get_param: mgmt_vm_flavor }
             networks:
@@ -322,7 +356,7 @@ resources:
         type: OS::Nova::Server
         depends_on: svc_mgmt_server_pt1
         properties:
-            name: "Service_Management_Server"
+            name: "Service-Management-Server"
             image: { get_param: svc_mgmt_vm_image }
             flavor: { get_param: svc_mgmt_vm_flavor }
             networks:
