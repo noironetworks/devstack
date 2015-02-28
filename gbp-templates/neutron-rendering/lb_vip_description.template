@@ -7,26 +7,18 @@
             "Description": "Pool Subnet CIDR, on which VIP port should be created",
             "Type": "String"
         },
-        "PoolMemberIP1": {
-            "Description": "Pool Member IP Address",
-            "Type": "String"
+        "vip_ip": {
+            "Description": "VIP IP Address",
+                "Type": "String"
         },
-	"PoolMemberIP2": {
-            "Description": "Pool Member IP Address",
-            "Type": "String"
+        "service_chain_metadata": {
+            "Description": "Service chain contextual information",
+                "Type": "String"
         },
-	"vip_ip": {
-	    "Description": "VIP IP Address",
-            "Type": "String"
-	},
-	"service_chain_metadata": {
-	    "Description": "Service chain contextual information",
-            "Type": "String"
-	},
-	"provider_ptg": {
-	    "Description": "VIP description set with LB pool PTG uuid",
-            "Type": "String"
-	}
+        "provider_ptg": {
+            "Description": "VIP description set with LB pool PTG uuid",
+                "Type": "String"
+        }
     },
 
     "Resources" : {
@@ -70,26 +62,6 @@
                 "pool_id": {"Ref":"HaproxyPool"},
                 "protocol_port": 80
             }
-        },
-        "Member1": {
-        "Type": "OS::Neutron::PoolMember",
-        "Properties": {
-            "address": {"Ref":"PoolMemberIP1"},
-            "admin_state_up": true,
-            "pool_id": {"Ref":"HaproxyPool"},
-            "protocol_port": 80,
-	    "weight": 1
-          }
-        },
-	"Member2": {
-        "Type": "OS::Neutron::PoolMember",
-        "Properties": {
-            "address": {"Ref":"PoolMemberIP2"},
-            "admin_state_up": true,
-            "pool_id": {"Ref":"HaproxyPool"},
-            "protocol_port": 80,
-	    "weight": 1
-          }
         }
     }
 }
