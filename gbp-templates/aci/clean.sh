@@ -64,6 +64,32 @@ function delete_external_segments {
     $xtrace
 }
 
+function delete_vms {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    uuids="$(echo $(nova list | get_field 1) | sed 's/id //g')"
+    for id in $uuids
+    do
+        set -o xtrace
+        nova delete $id
+        set +o xtrace
+    done
+    $xtrace
+}
+
+function delete_policy_targets {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    uuids="$(echo $(gbp policy-target-list | get_field 1) | sed 's/id //g')"
+    for id in $uuids
+    do
+        set -o xtrace
+        gbp policy-target-delete $id
+        set +o xtrace
+    done
+    $xtrace
+}
+
 # This script exits on an error so that errors don't compound and you see
 # only the first error that occurred.
 #set -o errexit
@@ -82,11 +108,15 @@ if [ -z "$NON_ADMIN_PASSWORD" ]; then
 fi
 
 set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $ADMIN_TENANT_NAME
+delete_vms
+delete_policy_targets
 unset_prs_and_external_segments_for_external_policies
 unset_external_segment_for_l3_policies
 delete_external_segments
 
 set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $HR_TENANT_NAME
+delete_vms
+delete_policy_targets
 unset_prs_for_groups
 if [ -n "`heat stack-show $HR_STACK | grep 'id'`" ]; then
     heat stack-delete "$HR_STACK"
@@ -94,6 +124,8 @@ if [ -n "`heat stack-show $HR_STACK | grep 'id'`" ]; then
 fi
 
 set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $ENG_TENANT_NAME
+delete_vms
+delete_policy_targets
 unset_prs_for_groups
 if [ -n "`heat stack-show $ENG_STACK | grep 'id'`" ]; then
     heat stack-delete "$ENG_STACK"

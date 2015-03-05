@@ -104,7 +104,7 @@ resources:
         depends_on: db_server_pt1
         depends_on: db_mgmt_pt
         properties:
-            name: "Database-Server"
+            name: "Database-Demo-1"
             image: { get_param: db_vm_image }
             flavor: {get_param: db_vm_flavor}
             networks:
@@ -118,18 +118,9 @@ resources:
                     template: |
                         #!/bin/bash
                         set -e
-                        HOSTNAME=`hostname`
                         MONSERVER=__monserver__
-                        sudo sed -i -e 's/127.0.0.1/0.0.0.0/g' /etc/mysql/my.cnf
-                        cat <<'EOF' | mysql -u root
-                        CREATE USER 'root'@'%';
-                        GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
-                        EOF
-                        sudo service mysql restart
                         sudo sed -i -e '/monserver/d' /etc/hosts
                         echo "${MONSERVER} monserver" | sudo tee -a /etc/hosts
-                        sudo sed -i -e "s/hostname/${HOSTNAME}/" /etc/sensu/conf.d/client.json
-                        sudo service sensu-client restart
                         echo '**** Done ****'
 
 #### App Tier ####
@@ -164,9 +155,8 @@ resources:
         type: OS::Nova::Server
         depends_on: app_server_pt1
         depends_on: app_mgmt_pt
-        depends_on: db_server_pt1
         properties:
-            name: "Application-Server"
+            name: "Application-Demo-1"
             image: { get_param: app_vm_image }
             flavor: {get_param: app_vm_flavor}
             networks:
@@ -177,19 +167,12 @@ resources:
                 str_replace:
                     params:
                         __monserver__: {get_param: monitoring_ip}
-                        __dbserver__: {get_attr: [db_server_pt1, fixed_ips, 0, ip_address]}
                     template: |
                         #!/bin/bash
                         set -e
-                        HOSTNAME=`hostname`
                         MONSERVER=__monserver__
-                        DBSERVER=__dbserver__
                         sudo sed -i -e '/monserver/d' /etc/hosts
                         echo "${MONSERVER} monserver" | sudo tee -a /etc/hosts
-                        sudo sed -i -e '/dbserver/d' /etc/hosts
-                        echo "${DBSERVER} dbserver" | sudo tee -a /etc/hosts
-                        sudo sed -i -e "s/hostname/${HOSTNAME}/" /etc/sensu/conf.d/client.json
-                        sudo service sensu-client restart
                         sudo service webapp restart
                         echo '**** Done ****'
 
@@ -246,9 +229,8 @@ resources:
         type: OS::Nova::Server
         depends_on: web_server1_pt
         depends_on: web_server1_mgmt_pt
-        depends_on: app_server_pt1
         properties:
-            name: "Web-Server-1"
+            name: "Web-Demo-1"
             image: {get_param: web_vm_image}
             flavor: {get_param: web_vm_flavor}
             networks:
@@ -259,29 +241,20 @@ resources:
                 str_replace:
                     params:
                         __monserver__: {get_param: monitoring_ip}
-                        __appserver__: {get_attr: [app_server_pt1, fixed_ips, 0, ip_address]}
                     template: |
                         #!/bin/bash
                         set -e
-                        HOSTNAME=`hostname`
                         MONSERVER=__monserver__
-                        APPSERVER=__appserver__
                         sudo sed -i -e '/monserver/d' /etc/hosts
                         echo "${MONSERVER} monserver" | sudo tee -a /etc/hosts
-                        sudo sed -i -e '/appserver/d' /etc/hosts
-                        echo "${APPSERVER} appserver" | sudo tee -a /etc/hosts
-                        sudo sed -i -e "s/hostname/${HOSTNAME}/" /etc/sensu/conf.d/client.json
-                        sudo service nginx restart
-                        sudo service sensu-client start
                         echo '**** Done ****'
 
     web_server2:
         type: OS::Nova::Server
         depends_on: web_server2_pt
         depends_on: web_server2_mgmt_pt
-        depends_on: app_server_pt1
         properties:
-            name: "Web-Server-2"
+            name: "Web-Demo-2"
             image: {get_param: web_vm_image}
             flavor: {get_param: web_vm_flavor}
             networks:
@@ -292,20 +265,12 @@ resources:
                 str_replace:
                     params:
                         __monserver__: {get_param: monitoring_ip}
-                        __appserver__: {get_attr: [app_server_pt1, fixed_ips, 0, ip_address]}
                     template: |
                         #!/bin/bash
                         set -e
-                        HOSTNAME=`hostname`
                         MONSERVER=__monserver__
-                        APPSERVER=__appserver__
                         sudo sed -i -e '/monserver/d' /etc/hosts
                         echo "${MONSERVER} monserver" | sudo tee -a /etc/hosts
-                        sudo sed -i -e '/appserver/d' /etc/hosts
-                        echo "${APPSERVER} appserver" | sudo tee -a /etc/hosts
-                        sudo sed -i -e "s/hostname/${HOSTNAME}/" /etc/sensu/conf.d/client.json
-                        sudo service nginx restart
-                        sudo service sensu-client start
                         echo '**** Done ****'
 
 outputs:

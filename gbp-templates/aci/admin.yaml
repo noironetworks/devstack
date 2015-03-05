@@ -249,7 +249,7 @@ resources:
         type: OS::Nova::Server
         depends_on: monitoring_server_pt1
         properties:
-            name: "Monitoring-Server"
+            name: "Monitoring-Demo-1"
             image: { get_param: monitoring_vm_image }
             flavor: { get_param: monitoring_vm_flavor }
             networks:
