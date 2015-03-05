@@ -106,7 +106,7 @@ gbp group-update $WEB_PTG_ID --provided-policy-rule-sets "$HTTP_WITH_LB_REDIRECT
 gbp group-update $WEB_PTG_ID --consumed-policy-rule-sets "$APP_RULE_SET_ID=true"
 
 set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $ADMIN_TENANT_NAME
-gbp external-policy-update $APP_EXTERNAL_POLICY_ID --consumed-policy-rule-sets "$HTTP_WITH_LB_REDIRECT_RULE_SET_ID=true"
+gbp external-policy-update $APP_EXTERNAL_POLICY_ID --consumed-policy-rule-sets "$HTTP_WITH_LB_REDIRECT_RULE_SET_ID=true,$HTTP_RULE_SET_ID=true"
 
 set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $HR_TENANT_NAME
 if [ "$RENDERING_MODE" == "$ACI_TRANSPARENT_SVC_RENDERING" ]; then
