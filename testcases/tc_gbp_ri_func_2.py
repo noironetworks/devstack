@@ -40,8 +40,6 @@ class test_gbp_ri_func_2(object):
       self.ptg_name = 'demo_ptg'	
 
     def cleanup(self,cfgobj,uuid_name,tc_name='',fail=0):
-        if fail == 1:
-           self._log.info("\n## %s: FAILED" %(tc_name))
         if isinstance(cfgobj,str):
            cfgobj=[cfgobj]
         if isinstance(uuid_name,str):
@@ -51,6 +49,10 @@ class test_gbp_ri_func_2(object):
              self._log.info('Success in Clean-up/Delete of Policy Object %s\n' %(obj))
           else:
              self._log.info('Failed to Clean-up/Delete of Policy Object %s\n' %(obj))
+        if fail != 0:
+           self._log.info("\n## TESTCASE_GBP_RI_FUNC_2: FAILED")
+           report_results('test_gbp_ri_func_2','test_results.txt')
+           sys.exit(1)
 
     def run(self):
         self._log.info("\n## TESTCASE_GBP_RI_FUNC_2A: RESOURCE INTEGRITY AMONG L2POLICY and L3POLICY OBJs")

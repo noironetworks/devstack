@@ -39,10 +39,12 @@ class test_gbp_ri_func_4(object):
       self.lb_name = 'demo_lb'
 
     def cleanup(self,fail=0):
-        if fail != 0:
-           self._log.info("\n## TESTCASE_GBP_RI_FUNC_4: FAILED")
         for obj in ['node','spec']:
             self.gbpcfg.gbp_del_all_anyobj(obj)
+        if fail != 0:
+           self._log.info("\n## TESTCASE_GBP_RI_FUNC_4: FAILED")
+           report_results('test_gbp_ri_func_4','test_results.txt')
+           sys.exit(1)
 
     def run(self):
         self._log.info("\n## TESTCASE_GBP_RI_FUNC_4: RESOURCE INTEGRITY AMONG SERVICE-CHAIN OBJECTS")

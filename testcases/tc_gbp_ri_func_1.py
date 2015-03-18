@@ -42,8 +42,6 @@ class test_gbp_ri_func_1(object):
       self.tg_name= 'tg_icmp'
 
     def cleanup(self,cfgobj,uuid_name,fail=0):
-        if fail == 1:
-           self._log.info("\n## TESTCASE_GBP_RI_FUNC_1: FAILED")
         if isinstance(cfgobj,str):
            cfgobj=[cfgobj]
         if isinstance(uuid_name,str):
@@ -53,6 +51,10 @@ class test_gbp_ri_func_1(object):
              self._log.info('Success in Clean-up/Delete of Policy Object %s\n' %(obj))
           else:
              self._log.info('Failed to Clean-up/Delete of Policy Object %s\n' %(obj))
+        if fail != 0:
+           self._log.info("\n## TESTCASE_GBP_RI_FUNC_1: FAILED")
+           report_results('test_gbp_ri_func_1','test_results.txt')
+           sys.exit(1)
 
     def run(self):
         self._log.info("\n## TESTCASE_GBP_RI_FUNC_1: RESOURCE INTEGRITY AMONG GBP's PA,PC,PR,PRS,PTG,PT OBJs")

@@ -5,13 +5,14 @@ from commands import *
 def run_func_neg():
     # Assumption is all files are in current directory
     if 'Ubuntu' in platform.linux_distribution():
-        directory = "/usr/local/lib/python2.7/dist-packages/noirogbptests/"
+        directory = "/usr/local/lib/python2.7/dist-packages/gbpfunctests/"
     else:
-        directory = "/usr/lib/python2.7/site-packages/noirogbptests/" ## in RHEL
-    cmd_list=["cat /dev/null > test_results.txt",\
-              "cat /dev/null > func_neg.txt",\
-              "ls %s/*func*.py > func_neg.txt" %(directory),\
-              "ls %s/*_neg.py >> func_neg.txt" %(directory)]
+        directory = "/usr/lib/python2.7/site-packages/gbpfunctests/" ## in RHEL
+    cmd_list=["sudo sh -c 'cat /dev/null > test_results.txt'",\
+              "sudo sh -c 'cat /dev/null > func_neg.txt'",\
+              "sudo sh -c 'ls %s/*func*.py > func_neg.txt'" %(directory),\
+              "sudo sh -c 'ls %s/*_neg.py >> func_neg.txt'" %(directory),\
+              "sudo chmod 777 %s/*" %(directory)]
     for cmd in cmd_list:
         getoutput(cmd)
     return "func_neg.txt"

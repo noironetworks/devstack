@@ -81,7 +81,7 @@ class test_gbp_nsp_func(object):
                                                 network_service_params='{"type": "ip_single", "name": "vip_ip1", "value": "self_subnet"}')==0:
            self._log.info("\n## Step 2A: Verify NSPolicy demo_nsp_1 with valued attributes, Failed")
            return 0
-        if self.gbpverify.gbp_l2l3ntk_pol_ver_all(1,'nsp',nsp1_uuid,name='demo_nsp_2',\
+        if self.gbpverify.gbp_l2l3ntk_pol_ver_all(1,'nsp',nsp2_uuid,name='demo_nsp_2',\
                                                 network_service_params='{"type": "ip_single", "name": "vip_ip2", "value": "self_subnet"}')==0:
            self._log.info("\n## Step 2A: Verify NSPolicy demo_nsp_2 with valued attributes, Failed")
            return 0

@@ -38,8 +38,6 @@ class test_gbp_ri_func_3(object):
       self.spec_name = 'demo_sc_spec'
 
     def cleanup(self,cfgobj,uuid_name,fail=0):
-        if fail == 1:
-           self._log.info("\n## TESTCASE_GBP_RI_FUNC_3: FAILED")
         if isinstance(cfgobj,str):
            cfgobj=[cfgobj]
         if isinstance(uuid_name,str):
@@ -51,6 +49,10 @@ class test_gbp_ri_func_3(object):
           else:
              if self.gbpcfg.gbp_sc_cfg_all(0,obj,_id) == 0:
                 self._log.info('Failed to Clean-up/Delete of Policy Object %s\n' %(obj))
+        if fail != 0:
+           self._log.info("\n## TESTCASE_GBP_RI_FUNC_3: FAILED")
+           report_results('test_gbp_ri_func_3','test_results.txt')
+           sys.exit(1)
 
     def run(self):
         self._log.info("\n## TESTCASE_GBP_RI_FUNC_3: RESOURCE INTEGRITY AMONG POLICY ACTION and SC OBJs")
