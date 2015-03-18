@@ -8,6 +8,7 @@ from gbp_conf_libs import *
 from gbp_verify_libs import *
 from gbp_heat_libs import *
 from gbp_nova_libs import * 
+from gbp_def_traffic import *
 
 def main():
 
@@ -32,6 +33,7 @@ class test_gbp_icmp_dp_1(object):
       self.gbpverify = Gbp_Verify()
       self.gbpnova = Gbp_Nova('172.28.184.65')
       self.gbpheat = Gbp_Heat('172.28.184.65')
+      self.gbpdeftraff = Gbp_def_traff()
       self.heat_temp_demo = 'same_ptg_L2p_L3p.yaml' # Assumption the temp is co-located with the testcase
       self.heat_temp_com = 'common.yaml' # Assumption as above
       self.nova_agg1 = 'gbp_agg1'
@@ -72,37 +74,73 @@ class test_gbp_icmp_dp_1(object):
                vm[key] = port[1]
             print vm
         if self.gbpnova.vm_create_cli(vm['name'],vm['ssh_key'],[vm['mgmt'],vm['data']],avail_zone=vm['az']) == 0: ## VM create
-           self._log.info("\n ABORTING THE TESTSUITE RUN, VM CREATION FAILED")
+           self._log.info("\n ABORTING THE TESTSUITE RUN, VM CREATION Failed")
            self.cleanup()
            return 0
 
     def cleanup(self):
         ##Need to call for instance delete if there is an instance
         self.gbpcfg.gbp_heat_cfg_all(0,heat_template,self.heatstack_name) ## Calling stack delete
+    
+    def test_traff_with_no_contract(self):
+        """
+        Run traff test when PTG is with NO Contract
+        """
+        return self.gbpdeftraff.test_run()  ##TODO:Ensure that test_run() returns 0/1
 
-    def test_icmp_udp_1(self):
-        return 1   
-    def test_icmp_tcp_2(self):
-        return 1
-    def test_tcp_udp_3(self):
-        return 1 
-    def test_icmp_udp_4(self):
-        return 1
-    def test_icmp_tcp_5(self):
-        return 1
-    def test_tcp_udp_6(self):
-        return 1
+    def test_traff_apply_contract(self,ptg,prs)
+        """
+        Apply Policy-RuleSet to the in-use PTG
+        Send traffic
+        """
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+           return self.gbpdeftraff.test_run()
+        else:
+           return 0
+    
+    def test_traff_upd_pr_new_pc(self,rule,classifier):
+        """
+        Update the in-use PR with new PC
+        Send traff
+        """
+        if self.gbpcfg.gbp_policy_cfg_all(2,'rule',rule,classifier=classifier)!=0:
+           self.gbpdeftraff.test_run()
+        else:
+           return 0
+   
+    def test_traff_upd_contract_new_pr(self,ruleset,rule):
+        """
+        Update the in-use PRS with new PR
+        Send traffic
+        """
+        if self.gbpcfg.gbp_policy_cfg_all(2,'ruleset',ruleset,policy_rule=rule)!=0:
+           self.gbpdeftraff.test_run()
+        else:
+           return 0
+
+    def test_traff_upd_ptg_new_contract(self,ptg,prs):
+        """
+        Update the PTG with new Contract
+        Send traffic
+        """
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+           self.gbpdeftraff.test_run() ## TODO
+        else:
+           return 0
+         
     def run_test(self):
         """
-        Run test
+        Setup VMs and Run test
         """
-        ## Setup the TestConfig
+        ## Setup the VMs
         ptgs = {}
-        #self.test_heat_create()
+        self.test_heat_create()
         ptgs['mgmt']=self.gbpheat.get_output_cli('common-stack',self.heat_temp_com)['mgmt_ptg_id']
         ptgs['data']=self.gbpheat.get_output_cli('demo-stack',self.heat_temp_demo)['demo_ptg_id']
         print ptgs
         self.test_create_vm(ptgs)
-
+        ## Start Test now
+        
+  
 if __name__ == '__main__':
     main()
