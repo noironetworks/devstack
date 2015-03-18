@@ -1,7 +1,0 @@
-qemu-utils
-lvm2 # NOPRIME
-open-iscsi
-genisoimage
-sysfsutils
-sg3-utils
-python-guestfs # NOPRIME

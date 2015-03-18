@@ -1,6 +1,0 @@
-tgt
-lvm2
-qemu-utils
-libpq-dev
-open-iscsi
-open-iscsi-utils # Deprecated since quantal dist:precise
