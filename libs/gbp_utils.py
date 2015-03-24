@@ -3,8 +3,11 @@ import sys, time
 import paramiko
 import subprocess
 import re
+import os
+import sys
 import itertools
 from prettytable import PrettyTable
+from Crypto.PublicKey import RSA
 
 def sshconnect(hostname, user, passwd):
     sshclient = paramiko.SSHClient()
@@ -74,3 +77,15 @@ def gen_tc_header():
         table.add_row(["TESTCASE_DP_%s" %(i+1),"TBA","%s" %(final_headers[i])])
     print table
 #tc_gen= gen_tc_header()
+
+def gen_ssh_key(keyname):
+    key = RSA.generate(2048)
+    with open("~/%s_private.key" %(keyname), 'w') as keyfile:
+         chmod("~/%s_private.key" %(keyname), 0600)
+         keyfile.write(key.exportKey('PEM'))
+    pubkey = key.publickey()
+    with open("~/%s_public.pub" %(keyname), 'w') as keyfile:
+         keyfile.write(pubkey.exportKey('OpenSSH'))
+    pubkeypath="~/%s_public.pub" %(keyname)  
+    return pubkeypath
+     

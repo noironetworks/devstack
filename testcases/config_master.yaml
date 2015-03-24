@@ -69,6 +69,14 @@ resources:
             direction: in
             shared: False
 
+    demo_class_any_udp_dup:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: demo_class_any_udp_dup
+            protocol: udp
+            direction: in
+            shared: False
+
     demo_rule_any_udp:
         type: OS::Neutron::PolicyRule
         properties:
@@ -77,11 +85,27 @@ resources:
             policy_actions: [{ get_resource: demo_act }]
             shared: False
 
+    demo_rule_any_udp_dup:
+        type: OS::Neutron::PolicyRule
+        properties:
+            name: demo_rule_any_udp_dup
+            policy_classifier_id: { get_resource: demo_class_any_udp_dup }
+            policy_actions: [{ get_resource: demo_act }]
+            shared: False
+
     demo_ruleset_any_udp:
         type: OS::Neutron::PolicyRuleSet
         properties:
             name: demo_ruleset_any_udp
             policy_rules: [{ get_resource: demo_rule_any_udp }]
+            child_policy_rule_sets: []
+            shared: False
+
+    demo_ruleset_any_udp_dup:
+        type: OS::Neutron::PolicyRuleSet
+        properties:
+            name: demo_ruleset_any_udp_dup
+            policy_rules: [{ get_resource: demo_rule_any_udp_dup }]
             child_policy_rule_sets: []
             shared: False
 

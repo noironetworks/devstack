@@ -10,6 +10,7 @@ from commands import *
 from keystoneclient.auth.identity import v2
 from keystoneclient import session
 from novaclient.v1_1 import client as nvclient
+from gbp_utils import gen_ssh_key as gensshkey
 
 # Initialize logging
 logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
@@ -102,8 +103,10 @@ class Gbp_Nova(object):
                        [{'port-id':'33f4f198-24ef-4f6e-b40c-93e952e17155','net-id': 'd436c32c-4973-4031-862d-723a65109ae1'},
                         {'port-id':'50336f51-0a3c-4730-80ed-800493225eaa','net-id':'77144ab1-4ff2-4b9c-b809-c70fba4415c9'}]
         """
+        ## Create and Upload ssh keypair
+        keypath=gensshkey("testkey")
         if not self.nova.keypairs.findall(name="testkey"):
-           with open(os.path.expanduser('~/.ssh/id_rsa.pub')) as publickey:
+           with open(os.path.expanduser(keypath)) as publickey:
              self.nova.keypairs.create(name="testkey", public_key=publickey.read())
         vm_image = self.nova.images.find(name=vm_image)
         vm_flavor = self.nova.flavors.find(name=flavor_name)
@@ -127,11 +130,16 @@ class Gbp_Nova(object):
         return 1
 
 
-    def vm_create_cli(self,vmname,sshkey,ports,avail_zone=''):
+    def vm_create_cli(self,vmname,ports,avail_zone=''):
         """
         Creates VM and checks for ACTIVE status
         """
-        cmd = 'nova boot --image ubuntu-tools --flavor m1.medium --key_name %s' %(sshkey)
+        ## Create and Upload SSH keypair
+        keypath=gensshkey("testkey")
+        cmd = 'nova keypair-add --pub-key '+'%s ' %(keypath)+ "testkey"
+        if self.cmd_error_check(getoutput(cmd)) == 0:
+           return 0 #SSH Key upload failed
+        cmd = 'nova boot --image ubuntu-tools --flavor m1.medium --key_name testkey'
         if isinstance(ports,str):
            ports = [ports]
         for port in ports:
