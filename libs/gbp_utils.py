@@ -8,8 +8,9 @@ import sys
 import itertools
 from prettytable import PrettyTable
 from Crypto.PublicKey import RSA
+from raise_exceptions import *
 
-def sshconnect(hostname, user, passwd):
+def sshClient(hostname, user, passwd,scp=0,file_name=''):
     sshclient = paramiko.SSHClient()
     sshclient.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
@@ -17,7 +18,16 @@ def sshconnect(hostname, user, passwd):
     except Exception, e:
         raise ErrorConnectingToServer("Error connecting to server %s: %s" % (hostname, e))
         sshclient = None
+        return None 
+    if scp!=0:
+       _scp=SCPClient(sshclient.get_transport())
+       try:
+          _scp.put()
+       except Exception, e:
+           raise ErrorCoyFilesToServer("Error copying files from the server %s: %s" %((hostname, e))
+           return None
     return sshclient
+
 
 def report_table(suite_name):
     ps = subprocess.Popen(['grep', '-r', 'TESTCASE', '/tmp/%s.log' %(suite_name)], stdout=subprocess.PIPE)
