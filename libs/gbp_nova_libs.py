@@ -104,16 +104,16 @@ class Gbp_Nova(object):
                         {'port-id':'50336f51-0a3c-4730-80ed-800493225eaa','net-id':'77144ab1-4ff2-4b9c-b809-c70fba4415c9'}]
         """
         ## Create and Upload ssh keypair
-        keypath=gensshkey("testkey")
-        if not self.nova.keypairs.findall(name="testkey"):
+        keypath=gensshkey("gbpkey")
+        if not self.nova.keypairs.findall(name="gbpkey"):
            with open(os.path.expanduser(keypath)) as publickey:
-             self.nova.keypairs.create(name="testkey", public_key=publickey.read())
+             self.nova.keypairs.create(name="gbpkey", public_key=publickey.read())
         vm_image = self.nova.images.find(name=vm_image)
         vm_flavor = self.nova.flavors.find(name=flavor_name)
         if avail_zone != '':
-           instance = self.nova.servers.create(name=vmname, image=vm_image, flavor=vm_flavor, key_name="testkey", nics=ports,availability_zone=avail_zone)
+           instance = self.nova.servers.create(name=vmname, image=vm_image, flavor=vm_flavor, key_name="gbpkey", nics=ports,availability_zone=avail_zone)
         else:
-           instance = self.nova.servers.create(name=vmname, image=vm_image, flavor=vm_flavor, key_name="testkey", nics=ports)
+           instance = self.nova.servers.create(name=vmname, image=vm_image, flavor=vm_flavor, key_name="gbpkey", nics=ports)
         # Polling at 5 second intervals, until the status is 'ACTIVE'
         vm_status = instance.status
         status_try=1
@@ -135,11 +135,11 @@ class Gbp_Nova(object):
         Creates VM and checks for ACTIVE status
         """
         ## Create and Upload SSH keypair
-        keypath=gensshkey("testkey")
-        cmd = 'nova keypair-add --pub-key '+'%s ' %(keypath)+ "testkey"
+        keypath=gensshkey("gbpkey")
+        cmd = 'nova keypair-add --pub-key '+'%s ' %(keypath)+ "gbpkey"
         if self.cmd_error_check(getoutput(cmd)) == 0:
            return 0 #SSH Key upload failed
-        cmd = 'nova boot --image ubuntu-tools --flavor m1.medium --key_name testkey'
+        cmd = 'nova boot --image ubuntu-tools --flavor m1.medium --key_name gbpkey'
         if isinstance(ports,str):
            ports = [ports]
         for port in ports:

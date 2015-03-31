@@ -2,6 +2,31 @@
 
 heat_template_version: 2013-05-23
 
+parameters:
+    vm_image:
+      type: string
+      label: vm_image
+      description: Image for all VMs
+      default: trusty-multi-if
+
+    vm_flavor:
+      type: string
+      label: vm_flavor
+      description: Flavor for all VMs
+      default: m1.medium
+
+    availability_zone:
+      type: string
+      label: availability_zone
+      description: The Availability Zone to Launch Instance
+      default: 'gbp-zone'
+
+    key_name:
+      type: string
+      label: key_name
+      description: Name of an existing key pair to enable SSH access to the instance.
+      default: 'gbpkey'
+
 resources:
 # Creating allow action
     demo_act:
@@ -9,14 +34,46 @@ resources:
         properties:
             name: demo_act
             action_type: allow
-           shared: False
+            shared: False
 
     demo_act_dup:
         type: OS::Neutron::PolicyAction
         properties:
             name: demo_act_dup
             action_type: allow
-           shared: False
+            shared: False
+
+    mgmt_act:
+        type: OS::Neutron::PolicyAction
+        properties:
+            name: mgmt_act
+            action_type: allow
+            shared: True
+
+# Creating "shared" resource i.e.Mgmt PTG for rendering Mgmt-dhcp-ips to each Instance
+
+    mgmt_l3_policy:
+        type: OS::Neutron::L3Policy
+        properties:
+            name: mgmt_subnet
+            ip_pool: "15.15.15.0/24"
+            subnet_prefix_length: 28
+            shared: True
+
+    mgmt_l2_policy:
+        type: OS::Neutron::L2Policy
+        depends_on: mgmt_l3_policy
+        properties:
+            name: mgmt_bd
+            l3_policy_id: { get_resource: mgmt_l3_policy }
+            shared: True
+
+    mgmt_ptg:
+        type: OS::Neutron::PolicyTargetGroup
+        properties:
+            name: mgmt_ptg
+            l2_policy_id: {get_resource: mgmt_l2_policy}
+            shared: True
 
 # Creating a classifier,policy-rule,policy-ruleset(Contract) for any tcp traffic
     demo_class_any_tcp:
@@ -95,31 +152,15 @@ resources:
 
 # Creating a classifier,policy-rule,policy-ruleset(Contract) for allow all protocol(ICMP,TCP,UDP)
 
-    demo_class_all:
-        type: OS::Neutron::PolicyClassifier
-        properties:
-            name: demo_class_icmp
-            protocol: [icmp,tcp,udp]
-            direction: bi
-            shared: False
-
-    demo_rule_all:
-        type: OS::Neutron::PolicyRule
-        properties:
-            name: demo_rule_all
-            policy_classifier_id: { get_resource: demo_class_all }
-            policy_actions: [{ get_resource: demo_act }]
-            shared: False
-
     demo_ruleset_all:
         type: OS::Neutron::PolicyRuleSet
         properties:
             name: demo_ruleset_all
-            policy_rules: [{ get_resource: demo_rule_all }]
+            policy_rules: [{ get_resource: demo_rule_icmp }, { get_resource: demo_rule_any_tcp }, { get_resource: demo_rule_any_udp }]
             child_policy_rule_sets: []
             shared: False
 
-# Creating L3Policy,L2Policy and PTG for header SamePTG_SameL2P_SameL3P
+# Creating L3Policy,L2Policy and PTG and VMs for header SamePTG_SameL2P_SameL3P
     demo_sameptgl2pl3p_l3_policy:
         type: OS::Neutron::L3Policy
         properties:
@@ -142,6 +183,71 @@ resources:
             name: demo_sameptgl2pl3p_ptg
             l2_policy_id: {get_resource: demo_sameptgl2pl3p_l2_policy}
             shared: False
+
+    vm1_mgmt_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: mgmt_ptg
+        properties:
+            name: vm1_mgmt_pt
+            description: 'VM1 Mgmt PT'
+            policy_target_group_id: { get_resource: mgmt_ptg }
+
+    vm1_data_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: demo_sameptgl2pl3p_ptg
+        properties:
+            name: vm1_data_pt
+            description: 'VM1 Data PT'
+            policy_target_group_id: { get_resource: demo_sameptgl2pl3p_ptg }
+
+    vm2_mgmt_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: mgmt_ptg
+        properties:
+            name: vm2_mgmt_pt
+            description: 'VM2 Mgmt PT'
+            policy_target_group_id: { get_resource: mgmt_ptg }
+
+    vm2_data_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: demo_sameptgl2pl3p_ptg
+        properties:
+            name: vm2_data_pt
+            description: 'VM2 Data PT'
+            policy_target_group_id: { get_resource: demo_sameptgl2pl3p_ptg }
+
+    vm9_mgmt_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: mgmt_ptg
+        properties:
+            name: vm9_mgmt_pt
+            description: 'VM9 Mgmt PT'
+            policy_target_group_id: { get_resource: mgmt_ptg }
+
+    vm9_data_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: demo_sameptgl2pl3p_ptg
+        properties:
+            name: vm9_data_pt
+            description: 'VM9 Data PT'
+            policy_target_group_id: { get_resource: demo_sameptgl2pl3p_ptg }
+
+    vm10_mgmt_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: mgmt_ptg
+        properties:
+            name: vm10_mgmt_pt
+            description: 'VM10 Mgmt PT'
+            policy_target_group_id: { get_resource: mgmt_ptg }
+
+    vm10_data_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: demo_sameptgl2pl3p_ptg
+        properties:
+            name: vm10_data_pt
+            description: 'VM10 Data PT'
+            policy_target_group_id: { get_resource: demo_sameptgl2pl3p_ptg }
+
 
 # Creating L3Policy,L2Policy and PTG for header DiffPTG_SameL2P_SameL3P
     demo_diffptgsamel2pl3p_l3_policy:
@@ -224,21 +330,68 @@ resources:
             l3_policy_id: { get_resource: demo_clnt_l3_policy }
             shared: False
 
-# Create EPGs for DHCP rendering by Admin
-    server_ptg:
-        type: OS::Neutron::PolicyTargetGroup
+# VM/Instance launch
+
+    vm1:
+        type: OS::Nova::Server
+        depends_on: vm1_mgmt_pt
+        depends_on: vm1_data_pt
         properties:
-            name: server_ptg_1
-            l2_policy_id: {get_resource: demo_srvr_l2_policy}
-            shared: False
-            
-    client_ptg:
-        type: OS::Neutron::PolicyTargetGroup
+            name: vm1
+            availability_zone: { get_param: availability_zone }
+            image: {get_param: vm_image}
+            flavor: {get_param: vm_flavor}
+            key_name: { get_param: key_name }
+            networks:
+                - port: {get_attr: [vm1_mgmt_pt, port_id]}
+                - port: {get_attr: [vm1_data_pt, port_id]}
+            user_data_format: RAW
+
+    vm2:
+        type: OS::Nova::Server
+        depends_on: vm2_mgmt_pt
+        depends_on: vm2_data_pt
         properties:
-            name: client_ptg_1
-            l2_policy_id: {get_resource: demo_clnt_l2_policy}
-            consumed_policy_rule_sets:
-            shared: False    
+            name: vm2
+            availability_zone: { get_param: availability_zone }
+            image: {get_param: vm_image}
+            flavor: {get_param: vm_flavor}
+            key_name: { get_param: key_name }
+            networks:
+                - port: {get_attr: [vm2_mgmt_pt, port_id]}
+                - port: {get_attr: [vm2_data_pt, port_id]}
+            user_data_format: RAW
+
+    vm9:
+        type: OS::Nova::Server
+        depends_on: vm1_mgmt_pt
+        depends_on: vm1_data_pt
+        properties:
+            name: vm9
+            availability_zone: { get_param: availability_zone }
+            image: {get_param: vm_image}
+            flavor: {get_param: vm_flavor}
+            key_name: { get_param: key_name }
+            networks:
+                - port: {get_attr: [vm9_mgmt_pt, port_id]}
+                - port: {get_attr: [vm9_data_pt, port_id]}
+            user_data_format: RAW
+
+    vm10:
+        type: OS::Nova::Server
+        depends_on: vm10_mgmt_pt
+        depends_on: vm10_data_pt
+        properties:
+            name: vm10
+            availability_zone: { get_param: availability_zone }
+            image: {get_param: vm_image}
+            flavor: {get_param: vm_flavor}
+            key_name: { get_param: key_name }
+            networks:
+                - port: {get_attr: [vm10_mgmt_pt, port_id]}
+                - port: {get_attr: [vm10_data_pt, port_id]}
+            user_data_format: RAW
+
 
 outputs:
 
