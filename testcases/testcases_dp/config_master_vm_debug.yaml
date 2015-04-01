@@ -224,6 +224,70 @@ resources:
             l2_policy_id: {get_resource: demo_sameptgl2pl3p_l2_policy}
             shared: False
 
+    vm1_mgmt_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: mgmt_ptg
+        properties:
+            name: vm1_mgmt_pt
+            description: 'VM1 Mgmt PT'
+            policy_target_group_id: { get_resource: mgmt_ptg }
+
+    vm1_data_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: demo_sameptgl2pl3p_ptg
+        properties:
+            name: vm1_data_pt
+            description: 'VM1 Data PT'
+            policy_target_group_id: { get_resource: demo_sameptgl2pl3p_ptg }
+
+    vm2_mgmt_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: mgmt_ptg
+        properties:
+            name: vm2_mgmt_pt
+            description: 'VM2 Mgmt PT'
+            policy_target_group_id: { get_resource: mgmt_ptg }
+
+    vm2_data_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: demo_sameptgl2pl3p_ptg
+        properties:
+            name: vm2_data_pt
+            description: 'VM2 Data PT'
+            policy_target_group_id: { get_resource: demo_sameptgl2pl3p_ptg }
+
+    vm9_mgmt_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: mgmt_ptg
+        properties:
+            name: vm9_mgmt_pt
+            description: 'VM9 Mgmt PT'
+            policy_target_group_id: { get_resource: mgmt_ptg }
+
+    vm9_data_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: demo_sameptgl2pl3p_ptg
+        properties:
+            name: vm9_data_pt
+            description: 'VM9 Data PT'
+            policy_target_group_id: { get_resource: demo_sameptgl2pl3p_ptg }
+
+    vm10_mgmt_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: mgmt_ptg
+        properties:
+            name: vm10_mgmt_pt
+            description: 'VM10 Mgmt PT'
+            policy_target_group_id: { get_resource: mgmt_ptg }
+
+    vm10_data_pt:
+        type: OS::Neutron::PolicyTarget
+        depends_on: demo_sameptgl2pl3p_ptg
+        properties:
+            name: vm10_data_pt
+            description: 'VM10 Data PT'
+            policy_target_group_id: { get_resource: demo_sameptgl2pl3p_ptg }
+
 
 # Creating L3Policy,L2Policy and PTG for header DiffPTG_SameL2P_SameL3P
     demo_diffptgsamel2pl3p_l3_policy:
@@ -319,6 +383,69 @@ resources:
             name: demo_diffptgl2pl3p_ptg_2
             l2_policy_id: {get_resource: demo_l2_policy_2}
             shared: False
+
+
+# VM/Instance launch
+
+    vm1:
+        type: OS::Nova::Server
+        depends_on: vm1_mgmt_pt
+        depends_on: vm1_data_pt
+        properties:
+            name: vm1
+            availability_zone: { get_param: availability_zone }
+            image: {get_param: vm_image}
+            flavor: {get_param: vm_flavor}
+            key_name: { get_param: key_name }
+            networks:
+                - port: {get_attr: [vm1_mgmt_pt, port_id]}
+                - port: {get_attr: [vm1_data_pt, port_id]}
+            user_data_format: RAW
+
+    vm2:
+        type: OS::Nova::Server
+        depends_on: vm2_mgmt_pt
+        depends_on: vm2_data_pt
+        properties:
+            name: vm2
+            availability_zone: { get_param: availability_zone }
+            image: {get_param: vm_image}
+            flavor: {get_param: vm_flavor}
+            key_name: { get_param: key_name }
+            networks:
+                - port: {get_attr: [vm2_mgmt_pt, port_id]}
+                - port: {get_attr: [vm2_data_pt, port_id]}
+            user_data_format: RAW
+
+    vm9:
+        type: OS::Nova::Server
+        depends_on: vm9_mgmt_pt
+        depends_on: vm9_data_pt
+        properties:
+            name: vm9
+            availability_zone: { get_param: availability_zone }
+            image: {get_param: vm_image}
+            flavor: {get_param: vm_flavor}
+            key_name: { get_param: key_name }
+            networks:
+                - port: {get_attr: [vm9_mgmt_pt, port_id]}
+                - port: {get_attr: [vm9_data_pt, port_id]}
+            user_data_format: RAW
+
+    vm10:
+        type: OS::Nova::Server
+        depends_on: vm10_mgmt_pt
+        depends_on: vm10_data_pt
+        properties:
+            name: vm10
+            availability_zone: { get_param: availability_zone }
+            image: {get_param: vm_image}
+            flavor: {get_param: vm_flavor}
+            key_name: { get_param: key_name }
+            networks:
+                - port: {get_attr: [vm10_mgmt_pt, port_id]}
+                - port: {get_attr: [vm10_data_pt, port_id]}
+            user_data_format: RAW
 
 
 outputs:

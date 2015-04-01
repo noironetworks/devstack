@@ -35,7 +35,6 @@ class gbp_main_config(object):
       self.gbpverify = Gbp_Verify()
       self.gbpheat = Gbp_Heat('172.28.184.65')
       self.heat_temp_test = 'config_master.yaml' # Assumption the heat temp is co-located with the testcase
-      self.heat_temp_shared = 'common.yaml' # Assumption as above
     
     def setup(self):
       """

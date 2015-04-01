@@ -117,10 +117,11 @@ class Gbp_def_traff(object):
     def test_mcast(self):
         return 1
 
-    def test_run(self,protocols=[]):
+    def test_run(self,protocols=['icmp','tcp','udp']):
         """
         Run the traffic tests
         """
+        #By default run tests for implicit rules(arp,dhcp,dns) and for protocolc:icmp,tcp,udp
         results = {}
         results['arp']=self.test_arp()
         results['dhcp']=self.test_arp()

@@ -181,9 +181,3 @@ class header4(object):
         ##Need to call for instance delete if there is an instance
         self.gbpcfg.gbp_heat_cfg_all(0,heat_template,self.heatstack_name) ## Calling stack delete
 
-
-
-
-  
-if __name__ == '__main__':
-    main()

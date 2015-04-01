@@ -18,13 +18,12 @@ def sshClient(hostname, user, passwd,scp=0,file_name=''):
     except Exception, e:
         raise ErrorConnectingToServer("Error connecting to server %s: %s" % (hostname, e))
         sshclient = None
-        return None 
     if scp!=0:
        _scp=SCPClient(sshclient.get_transport())
        try:
           _scp.put()
        except Exception, e:
-           raise ErrorCoyFilesToServer("Error copying files from the server %s: %s" %((hostname, e))
+           raise ErrorCoyFilesToServer("Error copying files from the server %s: %s" %(hostname, e))
            return None
     return sshclient
 

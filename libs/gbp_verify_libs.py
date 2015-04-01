@@ -321,18 +321,21 @@ class Gbp_Verify(object):
         #_log.info("All attributes & values found Valid for the object Policy %s" %(cfgobj))
         return 1
 
-    def get_uuid_from_stack(yaml_file,heat_stack_name):
+    def get_uuid_from_stack(self,yaml_file,heat_stack_name):
         """
         Fetches the UUID of the GBP Objects created by Heat
         """
-        f = (yaml_file, 'rt')
-        heat_conf = yaml.load(f)
+        with open(yaml_file,'rt') as f:
+           heat_conf = yaml.load(f)
         obj_uuid = {}
         outputs_dict = heat_conf["outputs"] # This comprise dictionary with keys as in [outputs] block of yaml-based heat template
+        print outputs_dict
         for key in outputs_dict.iterkeys():
             cmd = 'heat stack-show %s | grep -B 2 %s' %(heat_stack_name,key)
+            print cmd
             cmd_out = getoutput(cmd)
-            match = re.search('\"\\boutput_value\\b\": \"(.*)\"' ,cmd,re.I)
+            print cmd_out
+            match = re.search('\"\\boutput_value\\b\": \"(.*)\"' ,cmd_out,re.I)
             if match != None:
                obj_uuid[key] = match.group(1)
         return obj_uuid

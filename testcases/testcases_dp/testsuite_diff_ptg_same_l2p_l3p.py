@@ -4,11 +4,11 @@ import sys
 import logging
 import os
 import datetime
-from gbp_conf_libs import *
-from gbp_verify_libs import *
-from gbp_def_traffic import *
+from libs.gbp_conf_libs import Gbp_Config
+from libs.gbp_verify_libs import Gbp_Verify
+from libs.gbp_def_traffic import Gbp_def_traff
 
-class TestDiffptgSamel2pl3p(object):
+class TestSameptgl2pl3p(object):
     """
     This is a TestCase Class comprising
     all Datapath testcases for the Test Header:   
@@ -19,7 +19,10 @@ class TestDiffptgSamel2pl3p(object):
     # Initialize logging
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
     _log = logging.getLogger( __name__ )
-    hdlr = logging.FileHandler('/tmp/testdiffptgsamel2l3p.log')
+    hdlr = logging.FileHandler('/tmp/testsuite_same_ptg_l2p_l3p.log')
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    hdlr.setFormatter(formatter)
+    _log.addHandler(hdlr)
     _log.setLevel(logging.INFO)
     _log.setLevel(logging.DEBUG)
 
@@ -28,165 +31,171 @@ class TestDiffptgSamel2pl3p(object):
       self.gbpcfg = Gbp_Config()
       self.gbpverify = Gbp_Verify()
       self.gbpdeftraff = Gbp_def_traff()
-    
+      self.objs_uuid = self.gbpverify.get_uuid_from_stack('config_master.yaml','setup')
+      self.ptg = self.objs_uuid['demo_diffptgsamel2pl3p_ptg_id']
+      self.test_2_prs = self.objs_uuid['demo_ruleset_norule_id']
+      self.test_3_prs = self.objs_uuid['demo_ruleset_icmp_id']
+      self.test_4_prs = self.objs_uuid['demo_ruleset_tcp_id']
+      self.test_5_prs = self.objs_uuid['demo_ruleset_udp_id']
+      self.test_6_prs = self.objs_uuid['demo_ruleset_icmp_tcp_id']
+      self.test_7_prs = self.objs_uuid['demo_ruleset_icmp_udp_id']
+      self.test_8_prs = self.objs_uuid['demo_ruleset_tcp_udp_id']
+      self.test_9_prs = self.objs_uuid['demo_ruleset_all_id']
+
+
     def test_runner(self):
         """
         Method to run all testcases
         """
         #TODO: How to cleanup in case of failure of any of the below tests
-        test_traff_with_no_prs()
-        test_traff_apply_prs(ptg,prs)
-        test_traff_upd_pr_new_pc(rule,classifier)
-        test_traff_upd_prs_new_pr(ruleset,rule)
-        test_traff_upd_ptg_new_prs(ptg,prs)
+        test_list = [self.test_1_traff_with_no_prs,
+                    self.test_2_traff_app_prs_no_rule,
+                    self.test_3_traff_apply_prs_icmp,
+                    self.test_4_traff_apply_prs_tcp,
+                    self.test_5_traff_apply_prs_udp,
+                    self.test_6_traff_apply_prs_icmp_tcp,
+                    self.test_7_traff_apply_prs_icmp_udp,
+                    self.test_8_traff_apply_prs_tcp_udp,
+                    self.test_9_traff_apply_prs_all_proto,
+                    self.test_10_traff_rem_prs
+                    ]
+                 
+        for test in test_list:
+            if test() == 0:
+               self._log.info("%s == FAILED" %(string.upper(test.lstrip('self.'))))
+            else:
+               self._log.info("%s == PASSED" %(string.upper(test.lstrip('self.'))))
+            
 
-    def test_traff_with_no_prs(self):
+    def verify_traff(self,proto=['all']):
+        """
+        Verifies thes expected traffic result per testcase
+        """
+        #Incase of Same PTG all traffic is allowed irrespective what Policy-Ruleset is applied
+        # Hence verify_traff will check for all protocols including the implicit ones
+        results=self.gbpdeftraff.test_run()
+        failed={}
+        if proto[0] == 'all':
+           failed = {key: val for key,val in results.iteritems() if val == 0}
+           if len(failed) > 0:
+              print 'Following traffic_types %s = FAILED' %(failed)
+              return 0
+           else:
+              return 1
+        else:
+            implicit_allow = ['arp','dhcp','dns']
+            allow_list = implicit_allow + proto
+            failed = {key: val for key,val in results.iteritems() if val == 0 and val in allow_list}
+            failed.update({key: val for key,val in results.iteritems() if val == 1 and val not in allow_list})
+            if len(failed) > 0:
+               print 'Following traffic_types %s = FAILED' %(failed)
+               return 0
+            else:
+               return 1
+
+    def test_1_traff_with_no_prs(self):
         """
         Run traff test when PTG is with NO Contract
         """
-        return self.gbpdeftraff.test_run()  ##TODO:Ensure that test_run() returns 0/1
+        return verify_traff()
 
-    def test_traff_apply_prs(self,ptg1,ptg2,prs):
+    def test_2_traff_app_prs_no_rule(self):
         """
-        Apply Policy-RuleSet as Provided and Consumed to PTG1 & PTG2 resp
+        Update the in-use PTG with a PRS which has NO-Rule
+        Send traff
+        """
+        prs = self.test_2_prs
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+           return verify_traff()
+        else:
+           print 'Updating PTG = FAILED'
+           return 0
+ 
+    def test_3_traff_apply_prs_icmp(self):
+        """
+        Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',ptg1,provided_policy_rule_sets=prs)
-           and self.gbpcfg.gbp_policy_cfg_all(2,'group',ptg2,consumed_policy_rule_sets=prs) !=0:
-           return self.gbpdeftraff.test_run()
+        prs = self.test_3_prs
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+           return verify_traff(proto=['icmp'])
         else:
+           print 'Updating PTG == FAILED'
            return 0
-    
-    def test_traff_apply_prs_no_pr(self,ptg1,ptg2,prs):
+
+    def test_4_traff_apply_prs_tcp(self):
         """
-        Apply Policy-RuleSet with no Policy-Rule to the in-use PTG1 and PTG2
+        Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',ptg1,provided_policy_rule_sets=prs)
-           and self.gbpcfg.gbp_policy_cfg_all(2,'group',ptg2,consumed_policy_rule_sets=prs) !=0:
-           return self.gbpdeftraff.test_run()
+        prs = self.test_4_prs
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+           return verify_traff(proto=['tcp'])
         else:
+           print 'Updating PTG = FAILED'
            return 0
 
-    def test_traffic_apply_prs_apply_pr_icmp(self,prs,pr,traff_only=0):
+    def test_5_traff_apply_prs_udp(self):
         """
-        Apply Policy-Rule for ICMP on PolicyRuleSet
-        Send traffic ICMP,TCP,UDP,ARP,DHCP
-        """
-        if traff_only==0:
-         if self.gbpcfg.gbp_policy_cfg_all(2,'ruleset',prs,policy_rule=pr)!=0:
-           if self.gbpdeftraff.test_icmp_1() !=1:
-              return 0
-           if self.gbpdeftraff.test_tcp_2() == 1:
-              return 0
-           if self.gbpdeftraff.test_udp_3() == 1:
-              return 0
-           if self.gbpdeftraff.test_arp_4() != 1:
-              return 0
-           if self.gbpdeftraff.test_dhcp_7() != 1:
-              return 0
-         else:
-           return 0
-        else:
-           if self.gbpdeftraff.test_icmp_1() !=1:
-              return 0
-           if self.gbpdeftraff.test_tcp_2() == 1:
-              return 0
-           if self.gbpdeftraff.test_udp_3() == 1:
-              return 0
-           if self.gbpdeftraff.test_arp_4() != 1:
-              return 0
-           if self.gbpdeftraff.test_dhcp_7() != 1:
-              return 0
-
-
-    def test_traffic_apply_prs_apply_pr_tcp(self,prs,pr,traff_only=0):
-        """
-        Apply Policy-Rule for TCP on PolicyRuleSet
-        Send traffic ICMP,TCP,UDP,ARP,DHCP
-        """
-        if traff_only == 0:
-         if self.gbpcfg.gbp_policy_cfg_all(2,'ruleset',prs,policy_rule=pr)!=0:
-           if self.gbpdeftraff.test_tcp_2() !=1:
-              return 0
-           if self.gbpdeftraff.test_icmp_1() == 1:
-              return 0
-           if self.gbpdeftraff.test_udp_3() == 1:
-              return 0
-           if self.gbpdeftraff.test_arp_4() != 1:
-              return 0
-           if self.gbpdeftraff.test_dhcp_7() != 1:
-              return 0
-         else:
-           return 0
-        else:
-           if self.gbpdeftraff.test_icmp_1() !=1:
-              return 0
-           if self.gbpdeftraff.test_tcp_2() == 1:
-              return 0
-           if self.gbpdeftraff.test_udp_3() == 1:
-              return 0
-           if self.gbpdeftraff.test_arp_4() != 1:
-              return 0
-           if self.gbpdeftraff.test_dhcp_7() != 1:
-              return 0
-
-    def test_traffic_apply_prs_apply_pr_udp(self,prs,pr):
-        """
-        Apply Policy-Rule for UDP on PolicyRuleSet
-        Send traffic ICMP,TCP,UDP,ARP,DHCP
-        """
-        if self.gbpcfg.gbp_policy_cfg_all(2,'ruleset',prs,policy_rule=pr)!=0:
-           if self.gbpdeftraff.test_udp_3() !=1:
-              return 0
-           if self.gbpdeftraff.test_icmp_1() == 1:
-              return 0
-           if self.gbpdeftraff.test_tcp_2() == 1:
-              return 0
-           if self.gbpdeftraff.test_arp_4() != 1:
-              return 0
-           if self.gbpdeftraff.test_dhcp_7() != 1:
-              return 0
-        else:
-           return 0
-
-
-    def test_traff_apply_prs_icmp(self,ptg,prs):
-        """
-        Update the in-use PTG with new PRS with ICMP
+        Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
-        if self.gbpcfg.gbp_policy_cfg_all(2,'rule',rule,classifier=classifier)!=0:
-           self.gbpdeftraff.test_run()
-        else:
-           return 0
-   
-    def test_traff_upd_prs_new_pr(self,ruleset,rule):
-        """
-        Update the in-use PRS with new PR(duplicate of the existing policy-rule)
-        Send traffic
-        """
-        if self.gbpcfg.gbp_policy_cfg_all(2,'ruleset',ruleset,policy_rule=rule)!=0:
-           self.gbpdeftraff.test_run()
+        prs = self.test_5_prs
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+           return verify_traff(proto=['udp'])
         else:
            return 0
 
-    def test_traff_upd_ptg_new_prs(self,ptg,prs):
+    def test_6_traff_apply_prs_icmp_tcp(self):
         """
-        Update the PTG with new Contract(duplicate of the existing ptg)
+        Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
-           self.gbpdeftraff.test_run() ## TODO
+        prs = self.test_6_prs
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+           return verify_traff(proto=['icmp','tcp'])
         else:
            return 0
-    
-    def test_traff_rem_prs(self,ptg):
+
+    def test_7_traff_apply_prs_icmp_udp(self):
+        """
+        Apply Policy-RuleSet to the in-use PTG
+        Send traffic
+        """
+        prs = self.test_7_prs
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+           return verify_traff(proto=['icmp','udp'])
+        else:
+           return 0
+
+    def test_8_traff_apply_prs_tcp_udp(self):
+        """
+        Apply Policy-RuleSet to the in-use PTG
+        Send traffic
+        """
+        prs = self.test_8_prs
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+           return verify_traff(proto=['udp','tcp'])
+        else:
+           return 0
+
+    def test_9_traff_apply_prs_all_proto(self):
+        """
+        Apply Policy-RuleSet to the in-use PTG
+        Send traffic
+        """
+        prs = self.test_9_prs
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+           return verify_traff(proto=['icmp','tcp','udp'])
+        else:
+           return 0
+
+    def test_10_traff_rem_prs(self):
         """
         Remove the PRS/Contract from the PTG
         Test all traffic types
         """
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',ptg,provided_policy_rule_sets="",consumed_policy_rule_sets="")!=0:
-           return self.gbpdeftraff.test_run()
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets="",consumed_policy_rule_sets="")!=0:
+           return verify_traff()
         else:
            return 0
