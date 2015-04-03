@@ -87,7 +87,7 @@ def gen_tc_header():
     print table
 #tc_gen= gen_tc_header()
 
-def gen_ssh_key(keyname):
+def gen_ssh_key(keyname): #TODO
     key = RSA.generate(2048)
     with open("~/%s_private.key" %(keyname), 'w') as keyfile:
          chmod("~/%s_private.key" %(keyname), 0600)

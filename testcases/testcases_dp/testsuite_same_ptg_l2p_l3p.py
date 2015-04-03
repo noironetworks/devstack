@@ -8,7 +8,7 @@ from libs.gbp_conf_libs import Gbp_Config
 from libs.gbp_verify_libs import Gbp_Verify
 from libs.gbp_def_traffic import Gbp_def_traff
 
-class TestSameptgl2pl3p(object):
+class same_ptg_same_l2p_same_l3p(object):
     """
     This is a TestCase Class comprising
     all Datapath testcases for the Test Header:   

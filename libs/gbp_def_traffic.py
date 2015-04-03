@@ -95,7 +95,7 @@ class Gbp_def_traff(object):
           run(cmd)
           return 1
     
-    def test_dns(self):
+    def test_dns(self,src_vm_ip):
         env.host = src_vm_ip
         env.user = user
         env.pwd = pwd
@@ -117,22 +117,22 @@ class Gbp_def_traff(object):
     def test_mcast(self):
         return 1
 
-    def test_run(self,protocols=['icmp','tcp','udp']):
+    def test_run(self,src_vm_ip,target_ip,protocols=['icmp','tcp','udp']):
         """
         Run the traffic tests
         """
         #By default run tests for implicit rules(arp,dhcp,dns) and for protocolc:icmp,tcp,udp
         results = {}
-        results['arp']=self.test_arp()
-        results['dhcp']=self.test_arp()
-        results['dns']=self.test_dns() 
+        results['arp']=self.test_arp(src_vm_ip,target_ip)
+        results['dhcp']=self.test_dhcp(src_vm_ip,target_ip)
+        results['dns']=self.test_dns(src_vm_ip) 
         for protocol in protocols:
          if protocol=='icmp':
-            results['icmp']=self.test_icmp()
+            results['icmp']=self.test_icmp(src_vm_ip,target_ip)
          if protocol=='tcp':
-            results['tcp']=self.test_tcp()
+            results['tcp']=self.test_tcp(src_vm_ip,target_ip)
          if protocol=='udp':
-            results['udp']=self.test_udp()
+            results['udp']=self.test_udp(src_vm_ip,target_ip)
          if protocol =='uu':
             results['uu']=self.test_uu()
          if protocol == 'l3bcast':
