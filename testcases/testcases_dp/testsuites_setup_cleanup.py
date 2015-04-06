@@ -11,7 +11,7 @@ from libs.gbp_heat_libs import Gbp_Heat
 from libs.gbp_nova_libs import Gbp_Nova
 
 
-class __header__(object):
+class super_hdr(object):
 
   with open('test_var_def.yaml','rt') as f:
            conf = yaml.load(f)
@@ -41,13 +41,13 @@ class __header__(object):
         if self.gbpnova.vm_create_cli(vm['name'],self.vm_image,[vm['mgmt'],vm['data']],'gbpssh',avail_zone=vm['az']) == 0: ## VM create
            return 0
 
-class header1(__header__):
-
+class header1(super_hdr):
+    suite_name
     def __init__(self):
       """
       Initial Heat-based Config setup 
       """
-      self.dhr = __header__()
+      self.dhr = super_hdr()
       self.gbpcfg = self.dhr.gbpcfg
       self.gbpnova = self.dhr.gbpnova
       self.gbpheat = self.dhr.gbpheat
@@ -83,7 +83,7 @@ class header1(__header__):
         self.gbpcfg.gbp_del_all_anyobj('target')     
     
 
-class header2(__header__):
+class header2(super_hdr):
 
     def __init__(self):
       """
@@ -91,8 +91,8 @@ class header2(__header__):
       """
       self.gbpnova = Gbp_Nova(self.cntlr_ip)
       self.gbpheat = Gbp_Heat(self.cntlr_ip)
-      self.stack_name = __header__.stack_name
-      self.heat_temp = __header__.heat_temp
+      self.stack_name = super_hdr.stack_name
+      self.heat_temp = super_hdr.heat_temp
 
     def setup(self):
       """
@@ -110,7 +110,7 @@ class header2(__header__):
       vm3 = {'name':'VM11','az':self.nova_az}
       vm4 = {'name':'VM12','az':''}
       vm_list = [vm1,vm2,vm3,vm14]
-      if __header__.vm_az_create(ptgs,vm_list) == 0:
+      if super_hdr.vm_az_create(ptgs,vm_list) == 0:
          print "TEST RUN ABORT" #TODO: raise custom exception
          self.cleanup([vm1['name'],vm2['name'],vm3['name'],vm4['name']])
 
@@ -122,7 +122,7 @@ class header2(__header__):
                sys.exit(1)
         self.gbpcfg.gbp_del_all_anyobj('target')
 
-class header3(__header__):
+class header3(super_hdr):
 
     def __init__(self):
       """
@@ -130,10 +130,10 @@ class header3(__header__):
       """
       self.gbpnova = Gbp_Nova(self.cntlr_ip)
       self.gbpheat = Gbp_Heat(self.cntlr_ip)
-      self.stack_name = __header__.stack_name
-      self.heat_temp = __header__.heat_temp
-      nova_az = __header__.nova_az
-      nova_agg = __header__.nova_agg
+      self.stack_name = super_hdr.stack_name
+      self.heat_temp = super_hdr.heat_temp
+      nova_az = super_hdr.nova_az
+      nova_agg = super_hdr.nova_agg
 
     def setup(self):
       """
@@ -151,7 +151,7 @@ class header3(__header__):
       vm3 = {'name':'VM9','az':self.nova_az}
       vm4 = {'name':'VM10','az':''}
       vm_list = [vm1,vm2,vm3,vm4]
-      if __header__.vm_az_create(ptgs,vm_list) == 0:
+      if super_hdr.vm_az_create(ptgs,vm_list) == 0:
          print "TEST RUN ABORT" #TODO: raise custom exception
          self.cleanup([vm1['name'],vm2['name'],vm3['name'],vm4['name']])
 
@@ -163,7 +163,7 @@ class header3(__header__):
                sys.exit(1)
         self.gbpcfg.gbp_del_all_anyobj('target')
 
-class header4(__header__):
+class header4(super_hdr):
 
     def __init__(self):
       """
@@ -171,10 +171,10 @@ class header4(__header__):
       """
       self.gbpnova = Gbp_Nova(self.cntlr_ip)
       self.gbpheat = Gbp_Heat(self.cntlr_ip)
-      self.stack_name = __header__.stack_name
-      self.heat_temp = __header__.heat_temp
-      nova_az = __header__.nova_az
-      nova_agg = __header__.nova_agg
+      self.stack_name = super_hdr.stack_name
+      self.heat_temp = super_hdr.heat_temp
+      nova_az = super_hdr.nova_az
+      nova_agg = super_hdr.nova_agg
 
     def setup(self):
       """
@@ -192,7 +192,7 @@ class header4(__header__):
       vm3 = {'name':'VM9','az':self.nova_az}
       vm4 = {'name':'VM10','az':''}
       vm_list = [vm1,vm2,vm3,vm4]
-      if __header__.vm_az_create(ptgs,vm_list) == 0:
+      if super_hdr.vm_az_create(ptgs,vm_list) == 0:
          print "TEST RUN ABORT" #TODO: raise custom exception
          self.cleanup([vm1['name'],vm2['name'],vm3['name'],vm4['name']])
 

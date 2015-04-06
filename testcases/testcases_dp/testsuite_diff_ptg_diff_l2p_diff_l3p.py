@@ -13,14 +13,14 @@ class test_same_ptg_same_l2p_same_l3p(object):
     """
     This is a TestCase Class comprising
     all Datapath testcases for the Test Header:   
-    same_ptg_same_l2p_same_l3p
+    diff_ptg_diff_l2p_diff_l3p
     Every new testcases should be added as a new method in this class
     and call the testcase method inside the 'test_runner' method
     """
     # Initialize logging
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
     _log = logging.getLogger( __name__ )
-    hdlr = logging.FileHandler('/tmp/testsuite_same_ptg_l2p_l3p.log')
+    hdlr = logging.FileHandler('/tmp/testsuite_diff_ptg_diff_l2p_diff_l3p.log')
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     hdlr.setFormatter(formatter)
     _log.addHandler(hdlr)
@@ -50,7 +50,7 @@ class test_same_ptg_same_l2p_same_l3p(object):
         """
         Method to run all testcases
         """
-        #Note: Cleanup per testcases is not required,since every testcase updates the PTG, hence over-writing previous attr vals
+        #TODO: How to cleanup in case of failure of any of the below tests
         test_list = [self.test_1_traff_with_no_prs,
                     self.test_2_traff_app_prs_no_rule,
                     self.test_3_traff_apply_prs_icmp,
@@ -70,17 +70,17 @@ class test_same_ptg_same_l2p_same_l3p(object):
                else:
                   self._log.info("%s == PASSED" %(string.upper(test.lstrip('self.'))))
             except TestFailed as err:
-               print err
+               print err 
 
     def verify_traff(self):
         """
         Verifies thes expected traffic result per testcase
         """
-        #Incase of Same PTG all traffic is allowed irrespective what Policy-Ruleset is applied
+        #Incase of Diff PTG Diff L2P and DIff L3P all traffic is allowed irrespective what Policy-Ruleset is applied
         # Hence verify_traff will check for all protocols including the implicit ones
         results=self.gbpdeftraff.test_run()
         failed={}
-        failed = {key: val for key,val in results.iteritems() if val == 0}
+        failed = {key: val for key,val in results.iteritems() if val == 1}
         if len(failed) > 0:
             print 'Following traffic_types %s = FAILED' %(failed)
             return 0

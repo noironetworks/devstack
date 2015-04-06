@@ -47,7 +47,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         """
         Method to run all testcases
         """
-        #TODO: How to cleanup in case of failure of any of the below tests
+        #Note: Cleanup per testcases is not required,since every testcase updates the PTG, hence over-writing previous attr vals
         test_list = [self.test_1_traff_with_no_prs,
                     self.test_2_traff_app_prs_no_rule,
                     self.test_3_traff_apply_prs_icmp,
@@ -61,22 +61,24 @@ class test_diff_ptg_same_l2p_l3p(object):
                     ]
                  
         for test in test_list:
-            if test() == 0:
-               self._log.info("%s == FAILED" %(string.upper(test.lstrip('self.'))))
-            else:
-               self._log.info("%s == PASSED" %(string.upper(test.lstrip('self.'))))
-            
+            try:
+               if test() == 0:
+                  raise TestFailed("%s" %(string.upper(test.lstrip('self.'))))
+               else:
+                  self._log.info("%s == PASSED" %(string.upper(test.lstrip('self.'))))
+            except TestFailed as err:
+               print err 
 
     def verify_traff(self,proto=['all']):
         """
         Verifies thes expected traffic result per testcase
         """
-        #Incase of Same PTG all traffic is allowed irrespective what Policy-Ruleset is applied
+        #Incase of Diff PTG Same L2 &L3P all traffic is dis-allowed irrespective what Policy-Ruleset is applied
         # Hence verify_traff will check for all protocols including the implicit ones
         results=self.gbpdeftraff.test_run()
         failed={}
         if proto[0] == 'all':
-           failed = {key: val for key,val in results.iteritems() if val == 0}
+           failed = {key: val for key,val in results.iteritems() if val == 1}
            if len(failed) > 0:
               print 'Following traffic_types %s = FAILED' %(failed)
               return 0
@@ -105,7 +107,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Send traff
         """
         prs = self.test_2_prs
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets="%s=scope" %(prs),consumed_policy_rule_sets="%s=scope" %(prs))!=0:
            return verify_traff()
         else:
            print 'Updating PTG = FAILED'
@@ -117,7 +119,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Send traffic
         """
         prs = self.test_3_prs
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets="%s=scope" %(prs),consumed_policy_rule_sets="%s=scope" %(prs))!=0:
            return verify_traff(proto=['icmp'])
         else:
            print 'Updating PTG == FAILED'
@@ -129,7 +131,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Send traffic
         """
         prs = self.test_4_prs
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets="%s=scope" %(prs),consumed_policy_rule_sets="%s=scope" %(prs))!=0:
            return verify_traff(proto=['tcp'])
         else:
            print 'Updating PTG = FAILED'
@@ -141,7 +143,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Send traffic
         """
         prs = self.test_5_prs
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets="%s=scope" %(prs),consumed_policy_rule_sets="%s=scope" %(prs))!=0:
            return verify_traff(proto=['udp'])
         else:
            return 0
@@ -152,7 +154,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Send traffic
         """
         prs = self.test_6_prs
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets="%s=scope" %(prs),consumed_policy_rule_sets="%s=scope" %(prs))!=0:
            return verify_traff(proto=['icmp','tcp'])
         else:
            return 0
@@ -163,7 +165,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Send traffic
         """
         prs = self.test_7_prs
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets="%s=scope" %(prs),consumed_policy_rule_sets="%s=scope" %(prs))!=0:
            return verify_traff(proto=['icmp','udp'])
         else:
            return 0
@@ -174,7 +176,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Send traffic
         """
         prs = self.test_8_prs
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets="%s=scope" %(prs),consumed_policy_rule_sets="%s=scope" %(prs))!=0:
            return verify_traff(proto=['udp','tcp'])
         else:
            return 0
@@ -185,7 +187,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Send traffic
         """
         prs = self.test_9_prs
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets=prs,consumed_policy_rule_sets=prs)!=0:
+        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg,provided_policy_rule_sets="%s=scope" %(prs),consumed_policy_rule_sets="%s=scope" %(prs))!=0:
            return verify_traff(proto=['icmp','tcp','udp'])
         else:
            return 0
