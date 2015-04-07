@@ -29,10 +29,11 @@ def main():
        #Initialize Testsuite class to run its testcases
        testsuite = val[1]()
        #now run the loop of test-combos
-       for bdtype in ['vlan','vxlan']:
+       for bdtype in ['vxlan','vlan']:
            for location in ['same_host','diff_host_same_leaf','diff_host_diff_leaf']:
                    #Run the testcases specific to the initialized testsuite
-                   testsuite.test_runner()
+                   log_string = "%s_%s" %(bdtype,location)
+                   testsuite.test_runner(log_string)
        #Testsuite specific cleanup
        header.cleanup()
     testbed_cfg.cleanup()

@@ -48,7 +48,7 @@ class test_same_ptg_same_l2p_same_l3p(object):
       self.test_9_prs = self.objs_uuid['demo_ruleset_all_id']
 
 
-    def test_runner(self):
+    def test_runner(self,log_string):
         """
         Method to run all testcases
         """
@@ -67,12 +67,16 @@ class test_same_ptg_same_l2p_same_l3p(object):
                  
         for test in test_list:
             try:
-               if test() == 0:
-                  raise TestFailed("%s" %(string.upper(test.__name__.lstrip('self.'))))
+               if test()!=1:
+                  raise TestFailed("%s_%s_%s == FAILED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
                else:
-                  self._log.info("%s == PASSED" %(string.upper(test.__name__.lstrip('self.'))))
+                  if 'test_1' in test.__name__ or 'test_2' in test.__name__:
+                     self._log.info("%s_%s_%s 10 subtestcases == PASSED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
+                  else:
+                     self._log.info("%s_%s_%s == PASSED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
             except TestFailed as err:
                print err
+
 
     def verify_traff(self):
         """
@@ -86,7 +90,7 @@ class test_same_ptg_same_l2p_same_l3p(object):
         failed = {key: val for key,val in results.iteritems() if val == 0}
         if len(failed) > 0:
             print 'Following traffic_types %s = FAILED' %(failed)
-            return 0
+            return failed
         else:
             return 1
 

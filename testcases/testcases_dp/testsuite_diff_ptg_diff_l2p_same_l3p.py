@@ -49,7 +49,7 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
       self.test_9_prs = self.objs_uuid['demo_ruleset_all_id']
 
 
-    def test_runner(self):
+    def test_runner(self,log_string):
         """
         Method to run all testcases
         """
@@ -67,12 +67,16 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
                  
         for test in test_list:
             try:
-               if test() == 0:
-                  raise TestFailed("%s" %(string.upper(test.__name__.lstrip('self.'))))
+               if test()!=1:
+                  raise TestFailed("%s_%s_%s == FAILED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
                else:
-                  self._log.info("%s == PASSED" %(string.upper(test.__name__.lstrip('self.'))))
+                  if 'test_1' in test.__name__ or 'test_2' in test.__name__:
+                     self._log.info("%s_%s_%s 10 subtestcases == PASSED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
+                  else:
+                     self._log.info("%s_%s_%s == PASSED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
             except TestFailed as err:
-               print err 
+               print err
+
 
     def verify_traff(self,proto=['all']):
         """
@@ -86,7 +90,7 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
         if proto[0] == 'all':
            failed = {key: val for key,val in results.iteritems() if val == 0}
            if len(failed) > 0:
-              print 'Following traffic_types %s = FAILED' %(failed)
+              print 'Following traffic_types %s = Failed' %(failed)
               return 0
            else:
               return 1
@@ -96,7 +100,7 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
             failed = {key: val for key,val in results.iteritems() if val == 0 and val in allow_list}
             failed.update({key: val for key,val in results.iteritems() if val == 1 and val not in allow_list})
             if len(failed) > 0:
-               print 'Following traffic_types %s = FAILED' %(failed)
+               print 'Following traffic_types %s = Failed' %(failed)
                return 0
             else:
                return 1
@@ -117,7 +121,7 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
            return self.verify_traff()
         else:
-           print 'Updating PTG = FAILED'
+           print 'Updating PTG = Failed'
            return 0
 
     def test_3_traff_apply_prs_icmp(self):
@@ -130,7 +134,7 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
            return self.verify_traff(proto=['icmp'])
         else:
-           print 'Updating PTG == FAILED'
+           print 'Updating PTG == Failed'
            return 0
 
     def test_4_traff_apply_prs_tcp(self):
@@ -143,7 +147,7 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
            return self.verify_traff(proto=['tcp'])
         else:
-           print 'Updating PTG = FAILED'
+           print 'Updating PTG = Failed'
            return 0
 
     def test_5_traff_apply_prs_udp(self):

@@ -182,7 +182,7 @@ class Gbp_Nova(object):
         else:
            cmd = 'nova delete '+vmname
            out = getoutput(cmd)
-        tatus_try = 1
+        status_try = 1
         cmd = 'nova show '+vmname
         out = getoutput(cmd)
         while True:
