@@ -26,16 +26,15 @@ def main():
        header = val[0]()
        #Build the Testsuite specific setup/config
        header.setup()
+       #Initialize Testsuite class to run its testcases
+       testsuite = val[1]()
        #now run the loop of test-combos
        for bdtype in ['vlan','vxlan']:
            for location in ['same_host','diff_host_same_leaf','diff_host_diff_leaf']:
-               for val in header_to_suite_map.itervalues():
-                   #Initialize Testsuite class to run testcases
-                   testsuite = val[1]()
                    #Run the testcases specific to the initialized testsuite
-                   testsuite.testrunner()
+                   testsuite.test_runner()
        #Testsuite specific cleanup
-       header.cleanu()
+       header.cleanup()
     testbed_cfg.cleanup()
     
 if __name__ == "__main__":

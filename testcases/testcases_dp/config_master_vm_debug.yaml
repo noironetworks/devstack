@@ -43,36 +43,36 @@ resources:
             action_type: allow
             shared: False
 
-    mgmt_act:
+    demo_mgmt_act:
         type: OS::Neutron::PolicyAction
         properties:
-            name: mgmt_act
+            name: demo_mgmt_act
             action_type: allow
             shared: True
 
 # Creating "shared" resource i.e.Mgmt PTG for rendering Mgmt-dhcp-ips to each Instance
 
-    mgmt_l3_policy:
+    demo_mgmt_l3_policy:
         type: OS::Neutron::L3Policy
         properties:
-            name: mgmt_subnet
+            name: demo_mgmt_subnet
             ip_pool: "15.15.15.0/24"
             subnet_prefix_length: 28
             shared: True
 
-    mgmt_l2_policy:
+    demo_mgmt_l2_policy:
         type: OS::Neutron::L2Policy
-        depends_on: mgmt_l3_policy
+        depends_on: demo_mgmt_l3_policy
         properties:
-            name: mgmt_bd
-            l3_policy_id: { get_resource: mgmt_l3_policy }
+            name: demo_mgmt_bd
+            l3_policy_id: { get_resource: demo_mgmt_l3_policy }
             shared: True
 
-    mgmt_ptg:
+    demo_mgmt_ptg:
         type: OS::Neutron::PolicyTargetGroup
         properties:
-            name: mgmt_ptg
-            l2_policy_id: {get_resource: mgmt_l2_policy}
+            name: demo_mgmt_ptg
+            l2_policy_id: {get_resource: demo_mgmt_l2_policy}
             shared: True
 
 # Creating a classifier,policy-rule,policy-ruleset(Contract) for any tcp traffic
@@ -306,10 +306,17 @@ resources:
             l3_policy_id: { get_resource: demo_diff_ptg_same_l2p_l3p_l3_policy }
             shared: False
 
-    demo_diff_ptg_same_l2p_l3p_ptg:
+    demo_diff_ptg_same_l2p_l3p_ptg_1:
         type: OS::Neutron::PolicyTargetGroup
         properties:
-            name: demo_diff_ptg_same_l2p_l3p_ptg
+            name: demo_diff_ptg_same_l2p_l3p_ptg_1
+            l2_policy_id: {get_resource: demo_diff_ptg_same_l2p_l3p_l2_policy}
+            shared: False
+
+    demo_diff_ptg_same_l2p_l3p_ptg_2:
+        type: OS::Neutron::PolicyTargetGroup
+        properties:
+            name: demo_diff_ptg_same_l2p_l3p_ptg_2
             l2_policy_id: {get_resource: demo_diff_ptg_same_l2p_l3p_l2_policy}
             shared: False
 
@@ -330,10 +337,17 @@ resources:
             l3_policy_id: { get_resource: demo_diff_ptg_l2p_same_l3p_l3_policy }
             shared: False
 
-    demo_diff_ptg_l2p_same_l3p_ptg:
+    demo_diff_ptg_l2p_same_l3p_ptg_1:
         type: OS::Neutron::PolicyTargetGroup
         properties:
-            name: demo_diff_ptg_l2p_same_l3p_ptg
+            name: demo_diff_ptg_l2p_same_l3p_ptg_1
+            l2_policy_id: {get_resource: demo_diff_ptg_l2p_same_l3p_l2_policy}
+            shared: False
+
+    demo_diff_ptg_l2p_same_l3p_ptg_2:
+        type: OS::Neutron::PolicyTargetGroup
+        properties:
+            name: demo_diff_ptg_l2p_same_l3p_ptg_2
             l2_policy_id: {get_resource: demo_diff_ptg_l2p_same_l3p_l2_policy}
             shared: False
 
@@ -385,69 +399,6 @@ resources:
             shared: False
 
 
-# VM/Instance launch
-
-    vm1:
-        type: OS::Nova::Server
-        depends_on: vm1_mgmt_pt
-        depends_on: vm1_data_pt
-        properties:
-            name: vm1
-            availability_zone: { get_param: availability_zone }
-            image: {get_param: vm_image}
-            flavor: {get_param: vm_flavor}
-            key_name: { get_param: key_name }
-            networks:
-                - port: {get_attr: [vm1_mgmt_pt, port_id]}
-                - port: {get_attr: [vm1_data_pt, port_id]}
-            user_data_format: RAW
-
-    vm2:
-        type: OS::Nova::Server
-        depends_on: vm2_mgmt_pt
-        depends_on: vm2_data_pt
-        properties:
-            name: vm2
-            availability_zone: { get_param: availability_zone }
-            image: {get_param: vm_image}
-            flavor: {get_param: vm_flavor}
-            key_name: { get_param: key_name }
-            networks:
-                - port: {get_attr: [vm2_mgmt_pt, port_id]}
-                - port: {get_attr: [vm2_data_pt, port_id]}
-            user_data_format: RAW
-
-    vm9:
-        type: OS::Nova::Server
-        depends_on: vm9_mgmt_pt
-        depends_on: vm9_data_pt
-        properties:
-            name: vm9
-            availability_zone: { get_param: availability_zone }
-            image: {get_param: vm_image}
-            flavor: {get_param: vm_flavor}
-            key_name: { get_param: key_name }
-            networks:
-                - port: {get_attr: [vm9_mgmt_pt, port_id]}
-                - port: {get_attr: [vm9_data_pt, port_id]}
-            user_data_format: RAW
-
-    vm10:
-        type: OS::Nova::Server
-        depends_on: vm10_mgmt_pt
-        depends_on: vm10_data_pt
-        properties:
-            name: vm10
-            availability_zone: { get_param: availability_zone }
-            image: {get_param: vm_image}
-            flavor: {get_param: vm_flavor}
-            key_name: { get_param: key_name }
-            networks:
-                - port: {get_attr: [vm10_mgmt_pt, port_id]}
-                - port: {get_attr: [vm10_data_pt, port_id]}
-            user_data_format: RAW
-
-
 outputs:
 
     demo_ruleset_tcp_id:
@@ -483,15 +434,29 @@ outputs:
     demo_ruleset_norule_id:
         value: { get_resource: demo_ruleset_all }
 
-    mgmt_ptg_id:
-        value: { get_resource: mgmt_ptg }
+    demo_mgmt_ptg_id:
+        value: { get_resource: demo_mgmt_ptg }
 
     demo_same_ptg_l2p_l3p_ptg_id:
         value: { get_resource: demo_same_ptg_l2p_l3p_ptg }
 
-    demo_diff_ptg_same_l2p_l3p_ptg_id:
-        value: { get_resource: demo_diff_ptg_same_l2p_l3p_ptg }
+    demo_diff_ptg_same_l2p_l3p_ptg_1_id:
+        value: { get_resource: demo_diff_ptg_same_l2p_l3p_ptg_1 }
 
-    demo_diff_ptg_l2p_same_l3p_ptg_id:
-        value: { get_resource: demo_diff_ptg_l2p_same_l3p_ptg }
+    demo_diff_ptg_same_l2p_l3p_ptg_2_id:
+        value: { get_resource: demo_diff_ptg_same_l2p_l3p_ptg_2 }
+
+    demo_diff_ptg_l2p_same_l3p_ptg_1_id:
+        value: { get_resource: demo_diff_ptg_l2p_same_l3p_ptg_1 }
+
+    demo_diff_ptg_l2p_same_l3p_ptg_2_id:
+        value: { get_resource: demo_diff_ptg_l2p_same_l3p_ptg_2 }
+
+    demo_diff_ptg_l2p_l3p_ptg_1_id:
+        value: { get_resource: demo_diff_ptg_l2p_l3p_ptg_1 }
+
+    demo_diff_ptg_l2p_l3p_ptg_2_id:
+        value: { get_resource: demo_diff_ptg_l2p_l3p_ptg_2 }
+
+
 

@@ -32,7 +32,8 @@ class gbp_main_config(object):
       self.nova_az = conf['nova_az_name']
       self.comp_node = conf['az_comp_node']
       self.cntlr_ip = conf['controller_ip']
-      self.setup_file = conf['main_setup_heat_temp']
+      #self.setup_file = conf['main_setup_heat_temp']
+      self.heat_temp_test = conf['main_setup_heat_temp']
       self.num_hosts = conf['num_comp_nodes']
       self.heat_stack_name = conf['heat_stack_name']
       self.gbpcfg = Gbp_Config()
@@ -40,10 +41,10 @@ class gbp_main_config(object):
       self.gbpnova = Gbp_Nova(self.cntlr_ip)
       self.gbpheat = Gbp_Heat(self.cntlr_ip)
       # Assumption the heat temp is co-located with the testcase, although find path of template file is implemented below:
-      for root,dirs,files in os.walk("/root"):
-          for name in files:
-              if name == self.setup_file:
-                 self.heat_temp_test = os.path.abspath(os.path.join(root, name))
+      #for root,dirs,files in os.walk("/root"):
+      #    for name in files:
+      #        if name == self.setup_file:
+      #           self.heat_temp_test = os.path.abspath(os.path.join(root, name))
     
     def setup(self):
       """
@@ -66,7 +67,7 @@ class gbp_main_config(object):
       #   sys.exit(1)
 
       if self.gbpheat.cfg_all_cli(1,self.heat_stack_name,heat_temp=self.heat_temp_test) == 0:
-         self._log.info("\n ABORTING THE TESTSUITE RUN, HEAT STACK CREATE of 'gbp_dp_stack' Failed")
+         self._log.info("\n ABORTING THE TESTSUITE RUN, HEAT STACK CREATE of %s Failed" %(self.heat_stack_name))
          self.gbpheat.cfg_all_cli(0,self.heat_stack_name) ## Stack delete will cause cleanup
          sys.exit(1)
 

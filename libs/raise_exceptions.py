@@ -4,3 +4,5 @@ class ErrorCopyFilesToServer(Exception):
     pass
 class TestFailed(Exception):
     pass
+class TestSuiteAbort(Exception):
+    pass

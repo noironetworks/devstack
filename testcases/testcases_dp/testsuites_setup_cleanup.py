@@ -9,6 +9,7 @@ from libs.gbp_conf_libs import Gbp_Config
 from libs.gbp_verify_libs import Gbp_Verify
 from libs.gbp_heat_libs import Gbp_Heat
 from libs.gbp_nova_libs import Gbp_Nova
+from libs.raise_exceptions import *
 
 
 class super_hdr(object):
@@ -26,7 +27,7 @@ class super_hdr(object):
   gbpnova = Gbp_Nova(cntlr_ip)
   gbpheat = Gbp_Heat(cntlr_ip)
 
-  def vm_az_create(self,ptgs,vmlist):
+  def vm_create(self,ptgs,vmlist):
     """
     Create VMs
     """
@@ -37,22 +38,23 @@ class super_hdr(object):
             port=self.gbpcfg.gbp_policy_cfg_all(1,'target','vm_%s' %(key),policy_target_group='%s' %(val))
             if port != 0:
                vm[key] = port[1]
+            else:
+               raise TestSuiteAbort("Policy Targets creation Failed")
             print vm
         if self.gbpnova.vm_create_cli(vm['name'],self.vm_image,[vm['mgmt'],vm['data']],'gbpssh',avail_zone=vm['az']) == 0: ## VM create
            return 0
 
 class header1(super_hdr):
-    suite_name
     def __init__(self):
       """
       Initial Heat-based Config setup 
       """
-      self.dhr = super_hdr()
-      self.gbpcfg = self.dhr.gbpcfg
-      self.gbpnova = self.dhr.gbpnova
-      self.gbpheat = self.dhr.gbpheat
-      self.stack_name = self.dhr.stack_name
-      self.heat_temp = self.dhr.heat_temp
+      self.hdr = super_hdr()
+      self.gbpcfg = self.hdr.gbpcfg
+      self.gbpnova = self.hdr.gbpnova
+      self.gbpheat = self.hdr.gbpheat
+      self.stack_name = self.hdr.stack_name
+      self.heat_temp = self.hdr.heat_temp
 
     def setup(self):
       """
@@ -70,16 +72,19 @@ class header1(super_hdr):
       vm3 = {'name':'VM9','az':self.nova_az}
       vm4 = {'name':'VM10','az':''}
       vm_list = [vm1,vm2,vm3,vm4]
-      if self.dhr.vm_az_create(ptgs,vm_list) == 0:
-         print "TEST RUN ABORT" #TODO: raise custom exception
-         self.cleanup([vm1['name'],vm2['name'],vm3['name'],vm4['name']])
+      self.vm_name_list = [vm1['name'],vm2['name'],vm3['name'],vm4['name']]
+      try:
+        if self.hdr.vm_create(ptgs,vm_list) == 0:
+           #Jishnu self.cleanup()
+           raise TestSuiteAbort("VM Creation Failed")
+      except TestSuiteAbort as err:
+           print err
+           pass
 
-    def cleanup(self,vmlist):
+    def cleanup(self):
         self.gbpnova.sshkey_for_vm('gbpssh',action='delete')
-        for vmname in vmlist:
-            if self.gbpnova.vm_delete(vmname) == 0:
-               print "CLeanUP failed as VM Deletion is Unsuccessful"
-               sys.exit(1)
+        for vmname in self.vm_name_list: #Blind cleanup
+            self.gbpnova.vm_delete(vmname)
         self.gbpcfg.gbp_del_all_anyobj('target')     
     
 
@@ -89,10 +94,12 @@ class header2(super_hdr):
       """
       Initial Heat-based Config setup
       """
-      self.gbpnova = Gbp_Nova(self.cntlr_ip)
-      self.gbpheat = Gbp_Heat(self.cntlr_ip)
-      self.stack_name = super_hdr.stack_name
-      self.heat_temp = super_hdr.heat_temp
+      self.hdr = super_hdr()
+      self.gbpcfg = self.hdr.gbpcfg
+      self.gbpnova = self.hdr.gbpnova
+      self.gbpheat = self.hdr.gbpheat
+      self.stack_name = self.hdr.stack_name
+      self.heat_temp = self.hdr.heat_temp
 
     def setup(self):
       """
@@ -101,26 +108,39 @@ class header2(super_hdr):
       VM11 & VM12: to be used for Diff host location Testcase
       VM3,VM4 & VM11 locates in the AZ-node
       """
-      ptgs = {}
-      ptgs['mgmt']=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_mgmt_ptg_id']
-      ptgs['data']=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_diff_ptg_same_l2p_l3p_ptg_id']
-      print ptgs
+      ptg_pair_1,ptg_pair_2 = {},{}
+      mgmt_ptg_uuid=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_mgmt_ptg_id']
+      ptg_pair_1['mgmt'],ptg_pair_2['mgmt']=mgmt_ptg_uuid,mgmt_ptg_uuid
+      ptg_pair_1['data']=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_diff_ptg_same_l2p_l3p_ptg1_id']
+      ptg_pair_2['data']=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_diff_ptg_same_l2p_l3p_ptg2_id']
+      print ptg_pair_1, ptg_pair_2
       vm1 = {'name':'VM3','az':self.nova_az}
       vm2 = {'name':'VM4','az':self.nova_az}
       vm3 = {'name':'VM11','az':self.nova_az}
       vm4 = {'name':'VM12','az':''}
-      vm_list = [vm1,vm2,vm3,vm14]
-      if super_hdr.vm_az_create(ptgs,vm_list) == 0:
-         print "TEST RUN ABORT" #TODO: raise custom exception
-         self.cleanup([vm1['name'],vm2['name'],vm3['name'],vm4['name']])
-
-    def cleanup(self,vmlist):
+      vm_pair_1 = [vm1,vm2]
+      vm_pair_2 = [vm3,vm4]
+      self.vm_pair_1_name = [vm1['name'],vm2['name']]
+      self.vm_pair_2_name = [vm3['name'],vm4['name']]
+      try: 
+        if self.hdr.vm_create(ptg_pair_1,vm_pair_1) == 0:
+           #Jishnu  self.cleanup()
+           raise TestSuiteAbort("VM Creation Failed")
+        if self.hdr.vm_create(ptg_pair_2,vm_pair_2) == 0:
+           #Jishnu  self.cleanup()
+           raise TestSuiteAbort("VM Creation Failed")
+      except TestSuiteAbort as err:
+           print err
+           pass
+ 
+    def cleanup(self):
         self.gbpnova.sshkey_for_vm('gbpssh',action='delete')
-        for vmname in vmlist:
-            if self.gbpnova.vm_delete(vmname) == 0:
-               print "CLeanUP failed as VM Deletion is Unsuccessful"
-               sys.exit(1)
+        for vmname in self.vm_pair_1_name: #Blind cleanup
+            self.gbpnova.vm_delete(vmname)
+        for vmname in self.vm_pair_2_name: 
+            self.gbpnova.vm_delete(vmname)
         self.gbpcfg.gbp_del_all_anyobj('target')
+
 
 class header3(super_hdr):
 
@@ -128,12 +148,12 @@ class header3(super_hdr):
       """
       Initial Heat-based Config setup
       """
-      self.gbpnova = Gbp_Nova(self.cntlr_ip)
-      self.gbpheat = Gbp_Heat(self.cntlr_ip)
-      self.stack_name = super_hdr.stack_name
-      self.heat_temp = super_hdr.heat_temp
-      nova_az = super_hdr.nova_az
-      nova_agg = super_hdr.nova_agg
+      self.hdr = super_hdr()
+      self.gbpcfg = self.hdr.gbpcfg
+      self.gbpnova = self.hdr.gbpnova
+      self.gbpheat = self.hdr.gbpheat
+      self.stack_name = self.hdr.stack_name
+      self.heat_temp = self.hdr.heat_temp
 
     def setup(self):
       """
@@ -142,26 +162,38 @@ class header3(super_hdr):
       VM13 & VM14: to be used for Diff host location Testcase
       VM5,VM6 &VM13 locates in the AZ-node
       """
-      ptgs = {}
-      ptgs['mgmt']=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_mgmt_ptg_id']
-      ptgs['data']=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_diff_ptg_l2p_same_l3p_ptg_id']
-      print ptgs
-      vm1 = {'name':'VM1','az':self.nova_az}
-      vm2 = {'name':'VM2','az':self.nova_az}
-      vm3 = {'name':'VM9','az':self.nova_az}
-      vm4 = {'name':'VM10','az':''}
-      vm_list = [vm1,vm2,vm3,vm4]
-      if super_hdr.vm_az_create(ptgs,vm_list) == 0:
-         print "TEST RUN ABORT" #TODO: raise custom exception
-         self.cleanup([vm1['name'],vm2['name'],vm3['name'],vm4['name']])
+      ptg_pair_1,ptg_pair_2 = {},{}
+      mgmt_ptg_uuid=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_mgmt_ptg_id']
+      ptg_pair_1['mgmt'],ptg_pair_2['mgmt']=mgmt_ptg_uuid,mgmt_ptg_uuid
+      ptg_pair_1['data']=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_diff_ptg_l2p_same_l3p_ptg1_id']
+      ptg_pair_2['data']=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_diff_ptg_l2p_same_l3p_ptg2_id']
+      vm1 = {'name':'VM5','az':self.nova_az}
+      vm2 = {'name':'VM6','az':self.nova_az}
+      vm3 = {'name':'VM13','az':self.nova_az}
+      vm4 = {'name':'VM14','az':''}
+      vm_pair_1 = [vm1,vm2]
+      vm_pair_2 = [vm3,vm4]
+      self.vm_pair_1_name = [vm1['name'],vm2['name']]
+      self.vm_pair_2_name = [vm3['name'],vm4['name']]
+      try:
+        if self.hdr.vm_create(ptg_pair_1,vm_pair_1) == 0:
+           #Jishnu  self.cleanup()
+           raise TestSuiteAbort("VM Creation Failed")
+        if self.hdr.vm_create(ptg_pair_2,vm_pair_2) == 0:
+           #Jishnu  self.cleanup()
+           raise TestSuiteAbort("VM Creation Failed")
+      except TestSuiteAbort as err:
+           print err
+           pass
 
-    def cleanup(self,vmlist):
+    def cleanup(self):
         self.gbpnova.sshkey_for_vm('gbpssh',action='delete')
-        for vmname in vmlist:
-            if self.gbpnova.vm_delete(vmname) == 0:
-               print "CLeanUP failed as VM Deletion is Unsuccessful"
-               sys.exit(1)
+        for vmname in self.vm_pair_1_name: #Blind cleanup
+            self.gbpnova.vm_delete(vmname)
+        for vmname in self.vm_pair_2_name:
+            self.gbpnova.vm_delete(vmname)
         self.gbpcfg.gbp_del_all_anyobj('target')
+
 
 class header4(super_hdr):
 
@@ -169,12 +201,12 @@ class header4(super_hdr):
       """
       Initial Heat-based Config setup
       """
-      self.gbpnova = Gbp_Nova(self.cntlr_ip)
-      self.gbpheat = Gbp_Heat(self.cntlr_ip)
-      self.stack_name = super_hdr.stack_name
-      self.heat_temp = super_hdr.heat_temp
-      nova_az = super_hdr.nova_az
-      nova_agg = super_hdr.nova_agg
+      self.hdr = super_hdr()
+      self.gbpcfg = self.hdr.gbpcfg
+      self.gbpnova = self.hdr.gbpnova
+      self.gbpheat = self.hdr.gbpheat
+      self.stack_name = self.hdr.stack_name
+      self.heat_temp = self.hdr.heat_temp
 
     def setup(self):
       """
@@ -183,25 +215,38 @@ class header4(super_hdr):
       VM15 & VM16: to be used for Diff host location Testcase
       VM7,VM8 &VM15 locates in the AZ-node
       """
-      ptgs = {}
-      ptgs['mgmt']=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_mgmt_ptg_id']
-      ptgs['data']=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_diff_ptg_l2p_l3p_ptg_id']
-      print ptgs
-      vm1 = {'name':'VM1','az':self.nova_az}
-      vm2 = {'name':'VM2','az':self.nova_az}
-      vm3 = {'name':'VM9','az':self.nova_az}
-      vm4 = {'name':'VM10','az':''}
-      vm_list = [vm1,vm2,vm3,vm4]
-      if super_hdr.vm_az_create(ptgs,vm_list) == 0:
-         print "TEST RUN ABORT" #TODO: raise custom exception
-         self.cleanup([vm1['name'],vm2['name'],vm3['name'],vm4['name']])
+      ptg_pair_1,ptg_pair_2 = {},{}
+      mgmt_ptg_uuid=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_mgmt_ptg_id']
+      ptg_pair_1['mgmt'],ptg_pair_2['mgmt']=mgmt_ptg_uuid,mgmt_ptg_uuid
+      ptg_pair_1['data']=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_diff_ptg_l2p_l3p_ptg1_id']
+      ptg_pair_2['data']=self.gbpheat.get_output_cli(self.stack_name,self.heat_temp)['demo_diff_ptg_l2p_l3p_ptg2_id']
+      print ptg_pair_1,ptg_pair_2
+      vm1 = {'name':'VM7','az':self.nova_az}
+      vm2 = {'name':'VM8','az':self.nova_az}
+      vm3 = {'name':'VM15','az':self.nova_az}
+      vm4 = {'name':'VM16','az':''}
+      vm_pair_1 = [vm1,vm2]
+      vm_pair_2 = [vm3,vm4]
+      self.vm_pair_1_name = [vm1['name'],vm2['name']]
+      self.vm_pair_2_name = [vm3['name'],vm4['name']]
+      try:
+        if self.hdr.vm_create(ptg_pair_1,vm_pair_1) == 0:
+           #Jishnu  self.cleanup()
+           raise TestSuiteAbort("VM Creation Failed")
+        if self.hdr.vm_create(ptg_pair_2,vm_pair_2) == 0:
+           #Jishnu  self.cleanup()
+           raise TestSuiteAbort("VM Creation Failed")
+      except TestSuiteAbort as err:
+           print err
+           pass
 
-    def cleanup(self,vmlist):
+    def cleanup(self):
         self.gbpnova.sshkey_for_vm('gbpssh',action='delete')
-        for vmname in vmlist:
-            if self.gbpnova.vm_delete(vmname) == 0:
-               print "CLeanUP failed as VM Deletion is Unsuccessful"
-               sys.exit(1)
+        for vmname in self.vm_pair_1_name: #Blind cleanup
+            self.gbpnova.vm_delete(vmname)
+        for vmname in self.vm_pair_2_name:
+            self.gbpnova.vm_delete(vmname)
         self.gbpcfg.gbp_del_all_anyobj('target')
+
 
 

@@ -1,10 +1,10 @@
 #!highlight yaml
 
 # Mandatory: User must not change the below config params
-main_setup_heat_temp: 'config_master.yaml'
+main_setup_heat_temp: '/root/gbpauto/testcases/testcases_dp/config_master.yaml'
 nova_agg_name: 'gbp_agg'
 nova_az_name: 'gbp_zone'
-heat_stack_name: 'gbp_stack'
+heat_stack_name: 'gbpstack'
 
 # User editable config params
 num_comp_nodes: 2
