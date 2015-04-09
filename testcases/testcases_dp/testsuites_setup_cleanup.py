@@ -22,6 +22,7 @@ class super_hdr(object):
   heat_temp = conf['main_setup_heat_temp']
   stack_name = conf ['heat_stack_name']
   vm_image = conf['vm_image']
+  sshkeyname = conf ['key_name']
   gbpcfg = Gbp_Config()
   gbpverify = Gbp_Verify()
   gbpnova = Gbp_Nova(cntlr_ip)
@@ -41,7 +42,7 @@ class super_hdr(object):
             else:
                raise TestSuiteAbort("Policy Targets creation Failed")
             print vm
-        if self.gbpnova.vm_create_cli(vm['name'],self.vm_image,[vm['mgmt'],vm['data']],'gbpssh',avail_zone=vm['az']) == 0: ## VM create
+        if self.gbpnova.vm_create_cli(vm['name'],self.vm_image,[vm['mgmt'],vm['data']],self.sshkeyname,avail_zone=vm['az']) == 0: ## VM create
            return 0
 
 class header1(super_hdr):
