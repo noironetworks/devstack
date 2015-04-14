@@ -6,3 +6,5 @@ class TestFailed(Exception):
     pass
 class TestSuiteAbort(Exception):
     pass
+class ErrorRemoteCommand(Exception):
+   pass

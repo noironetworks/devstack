@@ -11,5 +11,6 @@ key_name: 'gbpkey' #Ensure that it is same as mentioned in heat template
 num_comp_nodes: 2
 controller_ip: '172.28.184.65'
 az_comp_node: 'f5-compute-1.noiro.lab'
-vm_image: '"trusty-multi-if"'
+#vm_image: '"trusty-multi-if"'
+vm_image: 'cirros'
 
