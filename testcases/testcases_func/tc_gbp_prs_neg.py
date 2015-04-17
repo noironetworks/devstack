@@ -94,7 +94,7 @@ class test_gbp_prs_neg(object):
         self._log.info("\n## TESTCASE_GBP_PRS_NEG_2: TO CREATE/VERIFY POLICY RULESET with mix of VALID and  INVALID POLICY RULE\n")
         ###### Testcase work-flow starts
         self._log.info("\n## Step 1: Create Policy RuleSet with mix of Valid and Invalid PR ##")
-        if self.gbpcfg.gbp_policy_cfg_all(1,'ruleset',self.ruleset_name,policy_rules='self.rule_uuid INVALID') != 0:
+        if self.gbpcfg.gbp_policy_cfg_all(1,'ruleset',self.ruleset_name,policy_rules="'%s INVALID'" %(self.rule_uuid)) != 0:
            self._log.info("# Step 1: Create RuleSet with mix of Valid and Invalid PR did NOT Fail")
            return 0
         self._log.info('# Step 1A: Verify Policy RuleSet config rolled back')
