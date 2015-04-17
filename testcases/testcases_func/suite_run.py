@@ -41,7 +41,7 @@ def main():
         for i,l in enumerate(f,1):
             print "Functional Test Script to execute now == %s" %(l)
             # Assumption: test-scripts are executable from any location
-            cmd='%s' %(l.strip()) # Reading the line from text file, also reads trailing \n, hence we need to strip
+            cmd='sudo python %s' %(l.strip()) # Reading the line from text file, also reads trailing \n, hence we need to strip
             print cmd
             #out=getoutput(cmd)
             subprocess.call(cmd,shell=True)
