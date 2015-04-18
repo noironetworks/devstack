@@ -4,15 +4,20 @@ from commands import *
 
 def run_func_neg():
     # Assumption is all files are in current directory
-    if 'Ubuntu' in platform.linux_distribution():
-        directory = "/usr/local/lib/python2.7/dist-packages/gbpfunctests/"
-    else:
-        directory = "/usr/lib/python2.7/site-packages/gbpfunctests/" ## in RHEL
+    #if 'Ubuntu' in platform.linux_distribution():
+    #    directory = "/usr/local/lib/python2.7/dist-packages/gbpfunctests/"
+    #else:
+    #    directory = "/usr/lib/python2.7/site-packages/gbpfunctests/" ## in RHEL
+    #cmd_list=["sudo sh -c 'cat /dev/null > test_results.txt'",\
+    #          "sudo sh -c 'cat /dev/null > func_neg.txt'",\
+    #          "sudo sh -c 'ls %s/*func*.py > func_neg.txt'" %(directory),\
+    #          "sudo sh -c 'ls %s/*_neg.py >> func_neg.txt'" %(directory),\
+    #          "sudo chmod 777 %s/*" %(directory)]
     cmd_list=["sudo sh -c 'cat /dev/null > test_results.txt'",\
               "sudo sh -c 'cat /dev/null > func_neg.txt'",\
-              "sudo sh -c 'ls %s/*func*.py > func_neg.txt'" %(directory),\
-              "sudo sh -c 'ls %s/*_neg.py >> func_neg.txt'" %(directory),\
-              "sudo chmod 777 %s/*" %(directory)]
+              "sudo sh -c 'ls *func*.py > func_neg.txt'" ,\
+              "sudo sh -c 'ls *_neg.py >> func_neg.txt'" ,\
+              "sudo chmod 777 *"]
     for cmd in cmd_list:
         getoutput(cmd)
     return "func_neg.txt"
