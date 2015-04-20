@@ -4,8 +4,9 @@ import logging
 import os
 import re
 import datetime
+import pexpect
 from commands import *
-from fabric.api import cd,run,env, hide, get, settings
+from fabric.api import cd,run,env, hide, get, settings, local
 from raise_exceptions import *
 
 
@@ -87,18 +88,23 @@ class Gbp_Aci(object):
         #TODO
         return 1
 
-    def apic_conn_disconn(self,leaf_cimc_ip):
+    def dev_conn_disconn(self,rem_ip,action):
         """
-        Function to connect/disconnect APIC from Ostack Cntlr
+        Function to connect/disconnect any device from the local device
+        Primarily we are using for disconnecting APIC from Ostack Controller
+        rem_ip = the ip of the remote device
+        action = 'disconnect' or 'reconnect' are the valid strings
         """
-        env.host_string = leaf_cimc_ip
-        env.user = 'admin'
-        env.password = 'password'
-        run("scope sol")
-        run("set enabled yes")
-        run("commit")
-        run("connect host")
-        token = run("acidiag dbgtoken")
-        password = local("./generate_token.sh %s" % token, capture=True)
-        
-        
+        if action == 'disconnect':
+           cmd = "ip route add %s/32 via 127.0.0.1" %(rem_ip)
+        elif action == 'reconnect':
+           cmd = "ip route del %s/32" %(rem_ip)
+        else:
+            print "Passing Invalid string for param 'action'"
+            return 0
+        if local(cmd).succeeded == True:
+               return 1
+           else:
+               return 0
+
+
