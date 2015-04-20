@@ -98,7 +98,6 @@ class Gbp_Aci(object):
                  return 0
         return 1
 
-
     def dev_conn_disconn(self,local_ip,rem_ip,action):
         """
         Function to connect/disconnect any device from the local device
