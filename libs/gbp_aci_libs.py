@@ -81,17 +81,29 @@ class Gbp_Aci(object):
             raise ErrorRemoteCommand("---ERROR---: Error running %s on %s as user root, stderr %s" % (cmd,ip,out.stderr))
         return 1 
 
-    def apic_verify_mos(self):
+    def apic_verify_mos(self,apic_ip,objs,tenant='admin'):
         """
         Function to verify MOs in APIC
         """
-        #TODO
+        #TODO:Once actual implmentation is done , below code will be discarded
+        if not isinstance(objs,list):
+           objs = [objs]
+        env.host_string = apic_ip
+        env.user = 'admin'
+        env.password = 'password'
+        output = run("ls -ltr /mit/uni/tn-%s" %(tenant))
+        for obj in objs:
+            regex = re.compile(r"\W%s\W" %(obj))
+            if bool(regex.search(output)) == False:
+                 return 0
         return 1
 
-    def dev_conn_disconn(self,rem_ip,action):
+
+    def dev_conn_disconn(self,local_ip,rem_ip,action):
         """
         Function to connect/disconnect any device from the local device
         Primarily we are using for disconnecting APIC from Ostack Controller
+        local_ip = the ip of the local device from which removte device will be disconn
         rem_ip = the ip of the remote device
         action = 'disconnect' or 'reconnect' are the valid strings
         """
@@ -104,7 +116,7 @@ class Gbp_Aci(object):
             return 0
         if local(cmd).succeeded == True:
                return 1
-           else:
+        else:
                return 0
 
 

@@ -9,34 +9,35 @@ import string
 from libs.gbp_conf_libs import Gbp_Config
 from libs.gbp_verify_libs import Gbp_Verify
 from libs.gbp_def_traffic import Gbp_def_traff
-from libs.gbp_heat_libs import Gbp_Heat
 from libs.raise_exceptions import *
 from libs.gbp_aci_libs import Gbp_Aci
+from libs.gbp_heat_libs import Gbp_Heat
 
-class testcase_aci_integ_7(object):
+class testcase_aci_integ_9(object):
     """
     This is a GBP_ACI Integration TestCase
     """
     # Initialize logging
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
     _log = logging.getLogger( __name__ )
-    hdlr = logging.FileHandler('/tmp/testcase_aci_integ_7.log')
+    hdlr = logging.FileHandler('/tmp/testcase_aci_integ_9.log')
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     hdlr.setFormatter(formatter)
     _log.addHandler(hdlr)
     _log.setLevel(logging.INFO)
     _log.setLevel(logging.DEBUG)
 
-    def __init__(self,heattemp,cntlr_ip):
+    def __init__(self,heattemp,compnode_ip):
 
       self.gbpcfg = Gbp_Config()
       self.gbpverify = Gbp_Verify()
       self.gbpdeftraff = Gbp_def_traff()
       self.gbpaci = Gbp_Aci()
-      self.gbpheat = Gbp_Heat(cntlr_ip)
-      self.heat_stack_name = 'gbpinteg7'
+      #self.gbpheat = Gbp_Heat(cntlr_ip)
+      self.heat_stack_name = 'gbpinteg9'
       self.heat_temp_test = heattemp
-      self.cntlr_ip = cntlr_ip 
+      self.compnode_ip = compnode_ip
+      
 
     def test_runner(self):
         """
@@ -96,7 +97,7 @@ class testcase_aci_integ_7(object):
         """
         Test Step to Disconnect APIC from Ostack Controller
         """
-        if self.gbpaci.dev_conn_disconn(self.cntlr_ip,self.apic_ip,'disconnect') == 0:
+        if self.gbpaci.dev_conn_disconn(self.compnode_ip,self.apic_ip,'disconnect') == 0:
            return 0
  
     def test_step_verify_objs_in_apic(self):
@@ -110,7 +111,7 @@ class testcase_aci_integ_7(object):
         """
         Test Step to Reconnect APIC to Ostack Controller
         """
-        if self.gbpaci.dev_conn_disconn(self.cntlr_ip,self.apic_ip,'reconnect') == 0:
+        if self.gbpaci.dev_conn_disconn(self.compnode_ip,self.apic_ip,'reconnect') == 0:
            return 0
        
     def test_traffic(self):

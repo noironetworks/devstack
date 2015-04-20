@@ -50,7 +50,7 @@ class test_same_ptg_same_l2p_same_l3p(object):
 
     def test_runner(self,log_string):
         """
-        Method to run all testcases
+        Method to run all testcases for this test_suite
         """
         #Note: Cleanup per testcases is not required,since every testcase updates the PTG, hence over-writing previous attr vals
         test_list = [self.test_1_traff_with_no_prs,

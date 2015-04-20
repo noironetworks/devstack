@@ -11,6 +11,7 @@ from libs.gbp_verify_libs import Gbp_Verify
 from libs.gbp_def_traffic import Gbp_def_traff
 from libs.raise_exceptions import *
 from libs.gbp_aci_libs import Gbp_Aci
+from libs.gbp_heat_libs import Gbp_Heat
 
 class testcase_aci_integ_1(object):
     """
@@ -26,7 +27,7 @@ class testcase_aci_integ_1(object):
     _log.setLevel(logging.INFO)
     _log.setLevel(logging.DEBUG)
 
-    def __init__(self,heattemp):
+    def __init__(self,heattemp,ip):
 
       self.gbpcfg = Gbp_Config()
       self.gbpverify = Gbp_Verify()
@@ -34,28 +35,26 @@ class testcase_aci_integ_1(object):
       self.gbpaci = Gbp_Aci()
       self.heat_stack_name = 'gbpinteg1'
       self.heat_temp_test = heattemp
-
+      self.gbpheat = Gbp_Heat(ip)      
 
     def test_runner(self,log_string):
         """
-        Method to run all testcases
+        Method to execute the testcase in Ordered Steps
         """
         #Note: Cleanup per testcases is not required,since every testcase updates the PTG, hence over-writing previous attr vals
-        if test_step_setup_config():
-           if test_step_restart_opflex_proxy():
-              if test_step_verify_objs_in_apic():
-                 
-        for test in test_list:
+        testcase_steps = [self.test_step_setup_config,
+                          self.test_step_restart_opflex_proxy,
+                          self.test_step_verify_objs_in_apic,
+                          self.test_traffic]      
+        for step in testcase_steps:
             try:
-               if test()!=1:
-                  raise TestFailed("%s_%s_%s == FAILED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
-               else:
-                  if 'test_1' in test.__name__ or 'test_2' in test.__name__:
-                     self._log.info("%s_%s_%s 10 subtestcases == PASSED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
-                  else:
-                     self._log.info("%s_%s_%s == PASSED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
+               if step()!=1:
+                  self._log.info("Test Failed at Step == %s" %(setp.__name__.lstrip('self')))
+                  self.test_cleanup()
+                  raise TestFailed("%s_@_%s == FAILED" %(self.__class__.__name__.upper(),test.__name__.lstrip('self.')))
             except TestFailed as err:
                print err
+            self._log.info("%s == PASSED" %(self.__class__.__name__.upper()))
 
 
     def verify_traff(self):
@@ -97,7 +96,7 @@ class testcase_aci_integ_1(object):
         if self.gbpheat.apic_verify_mos(self.apic_ip) == 0:
            return 0
 
-    def test_4_traff_apply_prs_tcp(self):
+    def test_traffic(self):
         """
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
