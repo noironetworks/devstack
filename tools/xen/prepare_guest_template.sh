@@ -22,18 +22,11 @@ set -o xtrace
 # This directory
 TOP_DIR=$(cd $(dirname "$0") && pwd)
 
-# Source lower level functions
-. $TOP_DIR/../../functions
-
 # Include onexit commands
 . $TOP_DIR/scripts/on_exit.sh
 
 # xapi functions
 . $TOP_DIR/functions
-
-# Determine what system we are running on.
-# Might not be XenServer if we're using xenserver-core
-GetDistro
 
 # Source params - override xenrc params in your localrc to suite your taste
 source xenrc
@@ -53,28 +46,6 @@ if [ ! -d $STAGING_DIR/etc ]; then
     exit 1
 fi
 
-# Copy XenServer tools deb into the VM
-ISO_DIR="/opt/xensource/packages/iso"
-XS_TOOLS_FILE_NAME="xs-tools.deb"
-XS_TOOLS_PATH="/root/$XS_TOOLS_FILE_NAME"
-if [ -e "$ISO_DIR" ]; then
-    TOOLS_ISO=$(ls -1 $ISO_DIR/xs-tools-*.iso | head -1)
-    TMP_DIR=/tmp/temp.$RANDOM
-    mkdir -p $TMP_DIR
-    mount -o loop $TOOLS_ISO $TMP_DIR
-    DEB_FILE=$(ls $TMP_DIR/Linux/*amd64.deb)
-    echo "Copying XenServer tools into VM from: $DEB_FILE"
-    cp $DEB_FILE "${STAGING_DIR}${XS_TOOLS_PATH}"
-    umount $TMP_DIR
-    rm -rf $TMP_DIR
-else
-    echo "WARNING: no XenServer tools found, falling back to 5.6 tools"
-    TOOLS_URL="https://github.com/downloads/citrix-openstack/warehouse/xe-guest-utilities_5.6.100-651_amd64.deb"
-    curl --no-sessionid -L -o "$XS_TOOLS_FILE_NAME" $TOOLS_URL
-    cp $XS_TOOLS_FILE_NAME "${STAGING_DIR}${XS_TOOLS_PATH}"
-    rm -rf $XS_TOOLS_FILE_NAME
-fi
-
 # Copy prepare_guest.sh to VM
 mkdir -p $STAGING_DIR/opt/stack/
 cp $TOP_DIR/prepare_guest.sh $STAGING_DIR/opt/stack/prepare_guest.sh
@@ -86,13 +57,9 @@ cp $STAGING_DIR/etc/rc.local $STAGING_DIR/etc/rc.local.preparebackup
 cat <<EOF >$STAGING_DIR/etc/rc.local
 #!/bin/sh -e
 bash /opt/stack/prepare_guest.sh \\
-    "$GUEST_PASSWORD" "$XS_TOOLS_PATH" "$STACK_USER" "$DOMZERO_USER" \\
+    "$GUEST_PASSWORD" "$STACK_USER" "$DOMZERO_USER" \\
     > /opt/stack/prepare_guest.log 2>&1
 EOF
-
-# Need to set barrier=0 to avoid a Xen bug
-# https://bugs.launchpad.net/ubuntu/+source/linux/+bug/824089
-sed -i -e 's/errors=/barrier=0,errors=/' $STAGING_DIR/etc/fstab
 
 # Update ubuntu repositories
 cat > $STAGING_DIR/etc/apt/sources.list << EOF
@@ -118,3 +85,10 @@ deb-src http://security.ubuntu.com/ubuntu ${UBUNTU_INST_RELEASE}-security univer
 deb http://security.ubuntu.com/ubuntu ${UBUNTU_INST_RELEASE}-security multiverse
 deb-src http://security.ubuntu.com/ubuntu ${UBUNTU_INST_RELEASE}-security multiverse
 EOF
+
+rm -f $STAGING_DIR/etc/apt/apt.conf
+if [ -n "$UBUNTU_INST_HTTP_PROXY" ]; then
+    cat > $STAGING_DIR/etc/apt/apt.conf << EOF
+Acquire::http::Proxy "$UBUNTU_INST_HTTP_PROXY";
+EOF
+fi

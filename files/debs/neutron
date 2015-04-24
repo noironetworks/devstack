@@ -1,0 +1,20 @@
+acl
+ebtables
+iptables
+iputils-ping
+iputils-arping
+libmysqlclient-dev
+mysql-server #NOPRIME
+sudo
+postgresql-server-dev-all
+python-mysqldb
+python-mysql.connector
+python-qpid # NOPRIME
+dnsmasq-base
+dnsmasq-utils # for dhcp_release only available in dist:precise
+rabbitmq-server # NOPRIME
+qpidd # NOPRIME
+sqlite3
+vlan
+radvd # NOPRIME
+uuid-runtime

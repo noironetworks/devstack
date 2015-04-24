@@ -12,10 +12,12 @@ doc/files
 doc/build
 files/*.gz
 files/*.qcow2
+files/*.img
 files/images
 files/pip-*
-files/get-pip.py
 #local.conf
+files/get-pip.py*
+files/ir-deploy*
 local.sh
 localrc
 proto

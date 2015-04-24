@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # functions - DevStack-specific functions
 #
 # The following variables are assumed to be defined by certain functions:
@@ -11,6 +13,9 @@
 # Include the common functions
 FUNC_DIR=$(cd $(dirname "${BASH_SOURCE:-$0}") && pwd)
 source ${FUNC_DIR}/functions-common
+source ${FUNC_DIR}/inc/ini-config
+source ${FUNC_DIR}/inc/python
+source ${FUNC_DIR}/inc/rootwrap
 
 # Save trace setting
 XTRACE=$(set +o | grep xtrace)
@@ -40,7 +45,7 @@ function upload_image {
     if [[ $image_url != file* ]]; then
         # Downloads the image (uec ami+akistyle), then extracts it.
         if [[ ! -f $FILES/$image_fname || "$(stat -c "%s" $FILES/$image_fname)" = "0" ]]; then
-            wget -c $image_url -O $FILES/$image_fname
+            wget --progress=dot:giga -c $image_url -O $FILES/$image_fname
             if [[ $? -ne 0 ]]; then
                 echo "Not found: $image_url"
                 return
@@ -82,7 +87,7 @@ function upload_image {
         # driver will supply default values.
 
         local vmdk_disktype=""
-        local vmdk_net_adapter=""
+        local vmdk_net_adapter="e1000"
         local path_len
 
         # vmdk adapter type
@@ -114,7 +119,7 @@ function upload_image {
             if [[ $flat_url != file* ]]; then
                 if [[ ! -f $FILES/$flat_fname || \
                 "$(stat -c "%s" $FILES/$flat_fname)" = "0" ]]; then
-                    wget -c $flat_url -O $FILES/$flat_fname
+                    wget --progress=dot:giga -c $flat_url -O $FILES/$flat_fname
                 fi
                 image="$FILES/${flat_fname}"
             else
@@ -282,6 +287,10 @@ function upload_image {
         img_property="--property hw_cdrom_bus=scsi"
     fi
 
+    if is_arch "aarch64"; then
+        img_property="--property hw_machine_type=virt --property hw_cdrom_bus=virtio --property os_command_line='console=ttyAMA0'"
+    fi
+
     if [ "$container_format" = "bare" ]; then
         if [ "$unpack" = "zcat" ]; then
             openstack --os-token $token --os-url $GLANCE_SERVICE_PROTOCOL://$GLANCE_HOSTPORT image create "$image_name" $img_property --public --container-format=$container_format --disk-format $disk_format < <(zcat --force "${image}")
@@ -322,50 +331,55 @@ function use_database {
     fi
 }
 
+#Macro for curl statements. curl requires -g option for literal IPv6 addresses.
+CURL_GET="${CURL_GET:-curl -g}"
 
 # Wait for an HTTP server to start answering requests
 # wait_for_service timeout url
 function wait_for_service {
     local timeout=$1
     local url=$2
-    timeout $timeout sh -c "while ! curl -k --noproxy '*' -s $url >/dev/null; do sleep 1; done"
+    timeout $timeout sh -c "while ! $CURL_GET -k --noproxy '*' -s $url >/dev/null; do sleep 1; done"
 }
 
 
 # ping check
-# Uses globals ``ENABLED_SERVICES``
-# ping_check from-net ip boot-timeout expected
+# Uses globals ``ENABLED_SERVICES``, ``TOP_DIR``, ``MULTI_HOST``, ``PRIVATE_NETWORK``
+# ping_check <ip> [boot-timeout] [from_net] [expected]
 function ping_check {
-    if is_service_enabled neutron; then
-        _ping_check_neutron  "$1" $2 $3 $4
-        return
-    fi
-    _ping_check_novanet "$1" $2 $3 $4
-}
+    local ip=$1
+    local timeout=${2:-30}
+    local from_net=${3:-""}
+    local expected=${4:-True}
+    local op="!"
+    local failmsg="[Fail] Couldn't ping server"
+    local ping_cmd="ping"
 
-# ping check for nova
-# Uses globals ``MULTI_HOST``, ``PRIVATE_NETWORK``
-function _ping_check_novanet {
-    local from_net=$1
-    local ip=$2
-    local boot_timeout=$3
-    local expected=${4:-"True"}
-    local check_command=""
-    MULTI_HOST=`trueorfalse False $MULTI_HOST`
-    if [[ "$MULTI_HOST" = "True" && "$from_net" = "$PRIVATE_NETWORK_NAME" ]]; then
-        return
-    fi
-    if [[ "$expected" = "True" ]]; then
-        check_command="while ! ping -c1 -w1 $ip; do sleep 1; done"
-    else
-        check_command="while ping -c1 -w1 $ip; do sleep 1; done"
-    fi
-    if ! timeout $boot_timeout sh -c "$check_command"; then
-        if [[ "$expected" = "True" ]]; then
-            die $LINENO "[Fail] Couldn't ping server"
-        else
-            die $LINENO "[Fail] Could ping server"
+    # if we don't specify a from_net we're expecting things to work
+    # fine from our local box.
+    if [[ -n "$from_net" ]]; then
+        if is_service_enabled neutron; then
+            ping_cmd="$TOP_DIR/tools/ping_neutron.sh $from_net"
+        elif [[ "$MULTI_HOST" = "True" && "$from_net" = "$PRIVATE_NETWORK_NAME" ]]; then
+            # there is no way to address the multihost / private case, bail here for compatibility.
+            # TODO: remove this cruft and redo code to handle this at the caller level.
+            return
         fi
+    fi
+
+    # inverse the logic if we're testing no connectivity
+    if [[ "$expected" != "True" ]]; then
+        op=""
+        failmsg="[Fail] Could ping server"
+    fi
+
+    # Because we've transformed this command so many times, print it
+    # out at the end.
+    local check_command="while $op $ping_cmd -c1 -w1 $ip; do sleep 1; done"
+    echo "Checking connectivity with $check_command"
+
+    if ! timeout $timeout sh -c "$check_command"; then
+        die $LINENO $failmsg
     fi
 }
 
@@ -433,7 +447,7 @@ function check_path_perm_sanity {
             echo "*** DEST path element"
             echo "***    ${rebuilt_path}"
             echo "*** appears to have 0700 permissions."
-            echo "*** This is very likely to cause fatal issues for devstack daemons."
+            echo "*** This is very likely to cause fatal issues for DevStack daemons."
 
             if [[ -n "$SKIP_PATH_SANITY" ]]; then
                 return
@@ -520,8 +534,8 @@ function setup_colorized_logging {
 }
 
 # These functions are provided for basic fall-back functionality for
-# projects that include parts of devstack (grenade).  stack.sh will
-# override these with more specific versions for devstack (with fancy
+# projects that include parts of DevStack (Grenade).  stack.sh will
+# override these with more specific versions for DevStack (with fancy
 # spinners, etc).  We never override an existing version
 if ! function_exists echo_summary; then
     function echo_summary {

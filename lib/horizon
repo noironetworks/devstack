@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # lib/horizon
 # Functions to control the configuration and operation of the horizon service
 
@@ -70,14 +72,6 @@ function _horizon_config_set {
 # cleanup_horizon() - Remove residual data files, anything left over from previous
 # runs that a clean run would need to clean up
 function cleanup_horizon {
-    if [[ is_fedora && $DISTRO =~ (rhel6) ]]; then
-        # If ``/usr/bin/node`` points into ``$DEST``
-        # we installed it via ``install_nodejs``
-        if [[ $(readlink -f /usr/bin/node) =~ ($DEST) ]]; then
-            sudo rm /usr/bin/node
-        fi
-    fi
-
     local horizon_conf=$(apache_site_config_for horizon)
     sudo rm -f $horizon_conf
 }
@@ -85,6 +79,12 @@ function cleanup_horizon {
 # configure_horizon() - Set config files, create data dirs, etc
 function configure_horizon {
     setup_develop $HORIZON_DIR
+
+    # Compile message catalogs.
+    # Horizon is installed as develop mode, so we can compile here.
+    # Message catalog compilation is handled by Django admin script,
+    # so compiling them after the installation avoids Django installation twice.
+    (cd $HORIZON_DIR; ./run_tests.sh -N --compilemessages)
 }
 
 # init_horizon() - Initialize databases, etc.
@@ -93,11 +93,11 @@ function init_horizon {
     local local_settings=$HORIZON_DIR/openstack_dashboard/local/local_settings.py
     cp $HORIZON_SETTINGS $local_settings
 
+    _horizon_config_set $local_settings "" COMPRESS_OFFLINE True
+    _horizon_config_set $local_settings "" OPENSTACK_KEYSTONE_DEFAULT_ROLE \"Member\"
+
     _horizon_config_set $local_settings "" OPENSTACK_HOST \"${KEYSTONE_SERVICE_HOST}\"
     _horizon_config_set $local_settings "" OPENSTACK_KEYSTONE_URL "\"${KEYSTONE_SERVICE_PROTOCOL}://${KEYSTONE_SERVICE_HOST}:${KEYSTONE_SERVICE_PORT}/v2.0\""
-    if [[ -n "$KEYSTONE_TOKEN_HASH_ALGORITHM" ]]; then
-        _horizon_config_set $local_settings "" OPENSTACK_TOKEN_HASH_ALGORITHM \""$KEYSTONE_TOKEN_HASH_ALGORITHM"\"
-    fi
 
     if [ -f $SSL_BUNDLE_FILE ]; then
         _horizon_config_set $local_settings "" OPENSTACK_SSL_CACERT \"${SSL_BUNDLE_FILE}\"
@@ -129,10 +129,21 @@ function init_horizon {
     fi
     enable_apache_site horizon
 
-    # Remove old log files that could mess with how devstack detects whether Horizon
+    # Remove old log files that could mess with how DevStack detects whether Horizon
     # has been successfully started (see start_horizon() and functions::screen_it())
     # and run_process
     sudo rm -f /var/log/$APACHE_NAME/horizon_*
+
+    # Setup alias for django-admin which could be different depending on distro
+    local django_admin
+    if type -p django-admin > /dev/null; then
+        django_admin=django-admin
+    else
+        django_admin=django-admin.py
+    fi
+
+    DJANGO_SETTINGS_MODULE=openstack_dashboard.settings $django_admin collectstatic --noinput
+    DJANGO_SETTINGS_MODULE=openstack_dashboard.settings $django_admin compress --force
 
 }
 
@@ -141,6 +152,9 @@ function install_django_openstack_auth {
     if use_library_from_git "django_openstack_auth"; then
         local dir=${GITDIR["django_openstack_auth"]}
         git_clone_by_name "django_openstack_auth"
+        # Compile message catalogs before installation
+        _prepare_message_catalog_compilation
+        (cd $dir; python setup.py compile_catalog)
         setup_dev_lib "django_openstack_auth"
     fi
     # if we aren't using this library from git, then we just let it
@@ -152,7 +166,7 @@ function install_horizon {
     # Apache installation, because we mark it NOPRIME
     install_apache_wsgi
 
-    git_clone $HORIZON_REPO $HORIZON_DIR $HORIZON_BRANCH $HORIZON_TAG
+    git_clone $HORIZON_REPO $HORIZON_DIR $HORIZON_BRANCH
 }
 
 # start_horizon() - Start running processes, including screen
@@ -164,6 +178,12 @@ function start_horizon {
 # stop_horizon() - Stop running processes (non-screen)
 function stop_horizon {
     stop_apache_server
+}
+
+# NOTE: It can be moved to common functions, but it is only used by compilation
+# of django_openstack_auth catalogs at the moment.
+function _prepare_message_catalog_compilation {
+    pip_install_gr Babel
 }
 
 

@@ -37,7 +37,7 @@ source $TOP_DIR/eucarc
 source $TOP_DIR/exerciserc
 
 # Import project functions
-source $TOP_DIR/lib/neutron
+source $TOP_DIR/lib/neutron-legacy
 
 # If nova api is not enabled we exit with exitcode 55 so that
 # the exercise is skipped
@@ -142,7 +142,7 @@ else
         die $LINENO "Failure authorizing rule in $SECGROUP"
 
     # Test we can ping our floating ip within ASSOCIATE_TIMEOUT seconds
-    ping_check "$PUBLIC_NETWORK_NAME" $FLOATING_IP $ASSOCIATE_TIMEOUT
+    ping_check $FLOATING_IP $ASSOCIATE_TIMEOUT "$PUBLIC_NETWORK_NAME"
 
     # Revoke pinging
     euca-revoke -P icmp -s 0.0.0.0/0 -t -1:-1 $SECGROUP || \

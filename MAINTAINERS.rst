@@ -56,12 +56,6 @@ OpenFlow Agent (ofagent)
 * YAMAMOTO Takashi <yamamoto@valinux.co.jp>
 * Fumihiko Kakuma <kakuma@valinux.co.jp>
 
-Ryu
-~~~
-
-* YAMAMOTO Takashi <yamamoto@valinux.co.jp>
-* Fumihiko Kakuma <kakuma@valinux.co.jp>
-
 Sahara
 ~~~~~~
 
@@ -96,3 +90,7 @@ Zaqar (Marconi)
 
 * Flavio Percoco <flaper87@gmail.com>
 * Malini Kamalambal <malini.kamalambal@rackspace.com>
+
+Oracle Linux
+~~~~~~~~~~~~
+* Wiekus Beukes <wiekus.beukes@oracle.com>

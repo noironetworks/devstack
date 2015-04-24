@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 # common functions for ovs based plugin
 # -------------------------------------
 
@@ -26,7 +28,7 @@ function _neutron_ovs_base_setup_bridge {
 
 function neutron_ovs_base_cleanup {
     # remove all OVS ports that look like Neutron created ports
-    for port in $(sudo ovs-vsctl list port | grep -o -e tap[0-9a-f\-]* -e q[rg]-[0-9a-f\-]*); do
+    for port in $(sudo ovs-vsctl list port | grep -o -e [a-zA-Z\-]*tap[0-9a-f\-]* -e q[rg]-[0-9a-f\-]*); do
         sudo ovs-vsctl del-port ${port}
     done
 
@@ -60,7 +62,11 @@ function _neutron_ovs_base_install_agent_packages {
 }
 
 function _neutron_ovs_base_configure_debug_command {
-    iniset $NEUTRON_TEST_CONFIG_FILE DEFAULT external_network_bridge $PUBLIC_BRIDGE
+    if [ "$Q_USE_PROVIDERNET_FOR_PUBLIC" = "True" ]; then
+        iniset $NEUTRON_TEST_CONFIG_FILE DEFAULT external_network_bridge ""
+    else
+        iniset $NEUTRON_TEST_CONFIG_FILE DEFAULT external_network_bridge $PUBLIC_BRIDGE
+    fi
 }
 
 function _neutron_ovs_base_configure_firewall_driver {
@@ -87,11 +93,8 @@ function _neutron_ovs_base_configure_l3_agent {
         sudo ip link set $Q_PUBLIC_VETH_EX up
         sudo ip addr flush dev $Q_PUBLIC_VETH_EX
     else
-        # --no-wait causes a race condition if $PUBLIC_BRIDGE is not up when ip addr flush is called
         sudo ovs-vsctl -- --may-exist add-br $PUBLIC_BRIDGE
         sudo ovs-vsctl br-set-external-id $PUBLIC_BRIDGE bridge-id $PUBLIC_BRIDGE
-        # ensure no IP is configured on the public bridge
-        sudo ip addr flush dev $PUBLIC_BRIDGE
     fi
 }
 

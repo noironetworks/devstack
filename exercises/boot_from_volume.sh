@@ -32,7 +32,7 @@ source $TOP_DIR/functions
 
 # Import project functions
 source $TOP_DIR/lib/cinder
-source $TOP_DIR/lib/neutron
+source $TOP_DIR/lib/neutron-legacy
 
 # Import configuration
 source $TOP_DIR/openrc
@@ -182,7 +182,7 @@ IP=$(get_instance_ip $VM_UUID $PRIVATE_NETWORK_NAME)
 die_if_not_set $LINENO IP "Failure retrieving IP address"
 
 # Private IPs can be pinged in single node deployments
-ping_check "$PRIVATE_NETWORK_NAME" $IP $BOOT_TIMEOUT
+ping_check $IP $BOOT_TIMEOUT "$PRIVATE_NETWORK_NAME"
 
 # Clean up
 # --------

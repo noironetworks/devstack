@@ -11,14 +11,11 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-#
-#
-# this runs a series of unit tests for devstack to ensure it's functioning
+
+# This runs a series of unit tests for DevStack to ensure it's functioning
 
 PASSES=""
 FAILURES=""
-
-# Test that no one is trying to land crazy refs as branches
 
 for testfile in tests/test_*.sh; do
     $testfile

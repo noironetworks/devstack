@@ -49,7 +49,7 @@ source $TOP_DIR/functions
 source $TOP_DIR/openrc
 
 # Import neutron functions
-source $TOP_DIR/lib/neutron
+source $TOP_DIR/lib/neutron-legacy
 
 # If neutron is not enabled we exit with exitcode 55, which means exercise is skipped.
 neutron_plugin_check_adv_test_requirements || exit 55
@@ -281,7 +281,7 @@ function ping_ip {
     local VM_NAME=$1
     local NET_NAME=$2
     IP=$(get_instance_ip $VM_NAME $NET_NAME)
-    ping_check $NET_NAME $IP $BOOT_TIMEOUT
+    ping_check $IP $BOOT_TIMEOUT $NET_NAME
 }
 
 function check_vm {
