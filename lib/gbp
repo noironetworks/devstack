@@ -59,6 +59,7 @@ function install_gbpheat {
 # install_gbpui() - Collect source and prepare
 function install_gbpui {
     git_clone $GBPUI_REPO $GBPUI_DIR $GBPUI_BRANCH
+    sed -i '/python-neutronclient/d' $GBPUI_DIR/test-requirements.txt
     setup_develop $GBPUI_DIR
     ln -sf $GBPUI_DIR/gbpui/_*project*.py $HORIZON_DIR/openstack_dashboard/enabled
 }
