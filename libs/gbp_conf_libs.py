@@ -26,7 +26,7 @@ class Gbp_Config(object):
       """
       Init def 
       """
-      self.err_strings=['Unable','Conflict','Bad Request','Error', 'Unknown','Exception', 'Invalid', 'read-only']
+      self.err_strings=['Unable','Conflict','Bad Request','Error', 'Unknown','Exception','Invalid','read-only','not supported']
       
     def exe_command(self,command_args):
       """
@@ -292,7 +292,7 @@ class Gbp_Config(object):
               service='LOADBALANCER'
            else:
               service='FIREWALL'
-           cmd = 'gbp %s-create ' % cfgobj_dict[cfgobj]+str(name_uuid)+' --template-file ./gbp-templates/firewall-lb-servicechain/'+'%s.template' %(svc_type)+' --servicetype '+service
+           cmd = 'gbp %s-create ' % cfgobj_dict[cfgobj]+str(name_uuid)+' --template-file %s.template' %(svc_type)+' --servicetype '+service
         _log.info(cmd)
         # Execute the policy-rule-config-cmd
         cmd_out = getoutput(cmd)
