@@ -24,7 +24,7 @@ class Gbp_Config(object):
       """
       Init def 
       """
-      self.err_strings=['Unable','Conflict','Bad Request','Error', 'Unknown','Exception','Invalid','read-only']
+      self.err_strings=['Unable','Conflict','Bad Request','Error', 'Unknown','Exception','Invalid','read-only','not supported']
 	
     def exe_command(self,command_args):
       """
