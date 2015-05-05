@@ -302,13 +302,6 @@ class test_gbp_prs_func(object):
                                                 parent_id=parent_uuid) == 0:
            self._log.info("\n## Step 2B: Verify Parent RuleSet using -show option == Failed")
            return 0
-        ## Verify Implicit-creation of Neutron Security-Group-Obj for each PRS
-        names=['provided_demo_child_prs','consumed_demo_child_prs','\
-                provided_demo_par_prs','consumed_demo_par_prs']
-        for nm in names:
-            if self.gbpverify.neut_ver_all('security-group',nm,ret='id')==0:
-               self._log.info("\n## Step 2C: Implicit-creation of Neutron Security-Group-Obj %s during PRS creation ==Failed" %(nm))
-               return 0
         ## Delete Child PRS
         if self.gbpcfg.gbp_policy_cfg_all(0,'ruleset','demo_child_prs')==0:
            self._log.info("# Step 3: Delete Child Policy RuleSet == Failed")
@@ -318,12 +311,6 @@ class test_gbp_prs_func(object):
                                                 child_policy_rule_sets=child_uuid)!=0:
            self._log.info("# Step 3A: Verify Parent PRS after Delete of Child PRS using -show option == Failed")
            return 0
-        ## Verify Implicit-deletion of Neutron Security-Group-Obj for Child PRS
-        names=['provided_demo_child_prs','consumed_demo_child_prs']
-        for nm in names:
-            if self.gbpverify.neut_ver_all('security-group',nm,ret='id')!=0:
-               self._log.info("\n## Step 3B: Implicit-deletion of Neutron Security-Group-Obj %s during Child PRS deletion == Failed" %(nm))
-               return 0
         ##Create Child PRS,Associate to Parent and Verify
         child_uuid = self.gbpcfg.gbp_policy_cfg_all(1,'ruleset','demo_child_prs',policy_rules=self.rule_name)
         if child_uuid == 0:
@@ -352,11 +339,6 @@ class test_gbp_prs_func(object):
                                                 parent_id=parent_uuid)!=0:
            self._log.info("# Step 6A: Verify Child PRS after Delete of Parent PRS using -show option == Failed")
            return 0
-        names=['provided_demo_par_prs','consumed_demo_par_prs']
-        for nm in names:
-            if self.gbpverify.neut_ver_all('security-group',nm,ret='id')!=0:
-               self._log.info("\n## Step 6B: Implicit-deletion of Neutron Security-Group-Obj %s during Parent PRS deletion == Failed" %(nm))
-               return 0
         self._log.info("\nTESTCASE_GBP_PRS_FUNC_5: PASSED")
         return 1
 
