@@ -1,12 +1,12 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
 import logging
 import os
 import datetime
 import re
+from commands import *
 from fabric.api import cd,run,env, hide, get, settings
-from scapy.all import *
 
 class Gbp_def_traff(object):
 
@@ -31,7 +31,7 @@ class Gbp_def_traff(object):
               return 0
         
     def test_icmp(self,src_vm_ip,target_ip,user='noiro',pwd='noiro',pkt_cnt=3):
-        env.host = src_vm_ip
+        env.host_string = src_vm_ip
         env.user = user
         env.pwd = pwd
         with settings(warn_only=True):
@@ -46,7 +46,7 @@ class Gbp_def_traff(object):
               return 0
 
     def test_tcp(self,src_vm_ip,target_ip,port,user='noiro',pwd='noiro',pkt_cnt=3):
-        env.host = src_vm_ip
+        env.host_string = src_vm_ip
         env.user = user
         env.pwd = pwd
         print "Sending TCP SYN,SYN ACK,SYN-ACK-FIN to %s" %(target_ip)
@@ -65,7 +65,7 @@ class Gbp_def_traff(object):
         return 1
     
     def test_udp(self,src_vm_ip,target_ip,port,user='noiro',pwd='noiro',pkt_cnt=3):
-        env.host = src_vm_ip
+        env.host_string = src_vm_ip
         env.user = user
         env.pwd = pwd
         print "Sending UDP to %s" %(target_ip)
@@ -81,7 +81,7 @@ class Gbp_def_traff(object):
               return 0
 
     def test_arp(self,src_vm_ip,target_ip,user='noiro',pwd='noiro'):
-        env.host = src_vm_ip
+        env.host_string = src_vm_ip
         env.user = user
         env.pwd = pwd
         cmd_del_arp = "arp -d %s" %(target_ip)
@@ -96,7 +96,7 @@ class Gbp_def_traff(object):
           return 1
     
     def test_dns(self,src_vm_ip):
-        env.host = src_vm_ip
+        env.host_string = src_vm_ip
         env.user = user
         env.pwd = pwd
         with settings(warn_only=True):
@@ -104,6 +104,36 @@ class Gbp_def_traff(object):
            if result.return_code != 0:
               return 0
         return 1
+
+    def get_netns(self,net_node_ip,subnet):
+        env.host_string = net_node_ip
+        env.user = root
+        env.password = 'noir0123'
+        with settings(warn_only=True):
+           result = run("ip netns | grep qdhcp")
+           out = [x.strip() for x in result.split('\n')]
+           while True:
+              for netns in out:
+                  cmd = "ip netns exec %s ifconfig" %(netns)
+                  result = run(cmd).replace('\r\n',' ')
+                  if result.find(subnet) > -1:
+                     break
+        return netns
+
+    def get_vm_subnet(self,vm_stringi,ret='ip'):
+        """
+        ret = 'ip' : for returning VM-Port's IP
+              'subnet' : for returning VM-Port's subnet
+        """
+        cmd = "nova list | grep %s" %(vm_string)
+        output = getoutput(cmd)
+        if  ret == 'ip':
+            match = re.search('.*=(\d+.\d+.\d+.\d+)',output,re.I)
+            return match.group(1)
+        if ret == 'subnet':
+           match = re.search('.*=(\d+.\d+.\d+)',output,re.I)
+           return match.group(1)
+
 
     def test_dhcp(self):
         return 1
@@ -138,3 +168,4 @@ class Gbp_def_traff(object):
          if protocol == 'l3bcast':
             results['l3bcast']=self.test_l3bcast()
         return results
+
