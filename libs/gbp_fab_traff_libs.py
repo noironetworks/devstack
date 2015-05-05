@@ -27,7 +27,7 @@ class Gbp_def_traff(object):
         output = out
         check = re.search('\\b%s\\b packets transmitted, \\b(\d+)\\b packets received' %(cnt),output,re.I)
         if check != None:
-           if cnt != int(check.group(1)):
+           if int(cnt) - int(check.group(1)) > 1:
               return 0
         
     def test_icmp(self,src_vm_ip,target_ip,user='noiro',pwd='noiro',pkt_cnt=3):
