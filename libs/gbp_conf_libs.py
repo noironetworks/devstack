@@ -9,6 +9,7 @@ import string
 import re
 import datetime
 from commands import *
+from fabric.api import cd,run,env, hide, get, settings
 from keystoneclient import client as ksclient
 from keystoneclient import session
 from keystoneclient.auth.identity import v2 as ident
@@ -317,3 +318,36 @@ class Gbp_Config(object):
                _log.info("Cmd execution failed! with this Return Error: \n%s" %(cmd_ver))
                return 0
 
+    def get_netns(self,net_node_ip,subnet):
+        env.host_string = net_node_ip
+        env.user = 'root'
+        env.password = 'noir0123'
+        with settings(warn_only=True):
+           result = run("ip netns | grep qdhcp")
+           out = [x.strip() for x in result.split('\n')]
+           for netns in out:
+                  cmd = "ip netns exec %s ifconfig" %(netns)
+                  result = run(cmd).replace('\r\n',' ')
+                  if result.find(subnet) > -1:
+                     break
+        return netns
+
+    def get_vm_subnet(self,vm_string,ret=''):
+        """
+        ret = 'ip' : for returning VM-Port's IP
+              'subnet' : for returning VM-Port's subnet
+              '' : returns a list['ip,'subnet']
+        """
+        cmd = "nova list | grep %s" %(vm_string)
+        output = getoutput(cmd)
+        ip_match = re.search('.*=(\d+.\d+.\d+.\d+)',output,re.I)
+        subn_match = re.search('.*=(\d+.\d+.\d+)',output,re.I)
+        if ip_match != None and subn_match != None:
+           if  ret == 'ip':
+               return ip_match.group(1)
+           elif ret == 'subnet':
+               return subn_match.group(1)
+           else:
+               return [ip_match.group(1),subn_match.group(1)]
+        else:
+           return 0

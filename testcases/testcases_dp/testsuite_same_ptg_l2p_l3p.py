@@ -7,7 +7,8 @@ import datetime
 import string
 from libs.gbp_conf_libs import Gbp_Config
 from libs.gbp_verify_libs import Gbp_Verify
-from libs.gbp_def_traffic import Gbp_def_traff
+from libs.gbp_fab_traff_libs import Gbp_def_traff
+from libs.gbp_pexp_traff_libs import Gbp_pexp_traff
 from libs.raise_exceptions import *
 from testsuites_setup_cleanup import super_hdr
 
@@ -34,6 +35,7 @@ class test_same_ptg_same_l2p_same_l3p(object):
       self.gbpcfg = Gbp_Config()
       self.gbpverify = Gbp_Verify()
       self.gbpdeftraff = Gbp_def_traff()
+      #self.gbppexptraff = Gbp_pexp_traff() << Moved it to traffic func
       stack_name = super_hdr.stack_name
       heat_temp = super_hdr.heat_temp
       self.objs_uuid = self.gbpverify.get_uuid_from_stack(super_hdr.heat_temp,stack_name)
@@ -48,11 +50,12 @@ class test_same_ptg_same_l2p_same_l3p(object):
       self.test_9_prs = self.objs_uuid['demo_ruleset_all_id']
 
 
-    def test_runner(self,log_string):
+    def test_runner(self,log_string,location):
         """
         Method to run all testcases for this test_suite
         """
         #Note: Cleanup per testcases is not required,since every testcase updates the PTG, hence over-writing previous attr vals
+        self.vm_loc = location
         test_list = [self.test_1_traff_with_no_prs,
                     self.test_2_traff_app_prs_no_rule,
                     self.test_3_traff_apply_prs_icmp,
@@ -82,10 +85,23 @@ class test_same_ptg_same_l2p_same_l3p(object):
         """
         Verifies thes expected traffic result per testcase
         """
-        return 1 #Jishnu
+        #return 1 #Jishnu
         #Incase of Same PTG all traffic is allowed irrespective what Policy-Ruleset is applied
         # Hence verify_traff will check for all protocols including the implicit ones
-        results=self.gbpdeftraff.test_run()
+        gbpcfg = Gbp_Config()
+        vm1_ip = gbpcfg.get_vm_subnet('VM1')[0]
+        vm1_subn = gbpcfg.get_vm_subnet('VM1')[1]
+        dhcp_ns = gbpcfg.get_netns('172.28.184.63',vm1_subn)
+        if self.vm_loc == 'diff_host_same_leaf': #Jishnu: TODO: Change the hardcoded com-node/ntk-node IP after test 
+           vm3_ip = gbpcfg.get_vm_subnet('VM3',ret='ip')
+           print vm1_ip, vm1_subn, vm3_ip, dhcp_ns
+           gbppexptraff = Gbp_pexp_traff('172.28.184.63',dhcp_ns,vm1_ip,vm3_ip)
+        if self.vm_loc == 'same_host':
+           vm2_ip = gbpcfg.get_vm_subnet('VM2',ret='ip')
+           print vm1_ip, vm1_subn, vm2_ip, dhcp_ns
+           gbppexptraff = Gbp_pexp_traff('172.28.184.63',dhcp_ns,vm1_ip,vm2_ip)
+        results=gbppexptraff.test_run()
+        print 'Results from the Testcase == ', results 
         failed={}
         failed = {key: val for key,val in results.iteritems() if val == 0}
         if len(failed) > 0:

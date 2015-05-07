@@ -68,7 +68,8 @@ class gbp_main_config(object):
 
       if self.gbpheat.cfg_all_cli(1,self.heat_stack_name,heat_temp=self.heat_temp_test) == 0:
          self._log.info("\n ABORTING THE TESTSUITE RUN, HEAT STACK CREATE of %s Failed" %(self.heat_stack_name))
-         self.gbpheat.cfg_all_cli(0,self.heat_stack_name) ## Stack delete will cause cleanup
+         #self.gbpheat.cfg_all_cli(0,self.heat_stack_name) ## Stack delete will cause cleanup
+         self.cleanup()
          sys.exit(1)
 
     def cleanup(self):
@@ -77,4 +78,4 @@ class gbp_main_config(object):
         self.gbpnova.avail_zone('cli','removehost',self.nova_agg,hostname=self.comp_node)
         self.gbpnova.avail_zone('cli','delete',self.nova_agg)
         self.gbpnova.sshkey_for_vm(action='delete')
- 
+        

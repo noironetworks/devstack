@@ -25,15 +25,20 @@ def main():
        #Initialize Testsuite specific config setup/cleanup class
        header = val[0]()
        #Build the Testsuite specific setup/config
-       header.setup()
+       #header.setup()
        #Initialize Testsuite class to run its testcases
        testsuite = val[1]()
        #now run the loop of test-combos
-       for bdtype in ['vxlan','vlan']:
-           for location in ['same_host','diff_host_same_leaf','diff_host_diff_leaf']:
+       print "Before Running Test .. sleeping for 60 secs to enable SSH Contract"  #TODO: Will remove this once implicit ssh contract
+       #for ip in ['ipv4','ipv6']:  #TODO: Enable this when ipv6 support is known
+       for ip in ['ipv4']:
+         #for bdtype in ['vxlan','vlan']:  #TODO: Enable this when vlan support is known
+         for bdtype in ['vxlan']:
+           #for location in ['same_host','diff_host_same_leaf','diff_host_diff_leaf']: #TODO: Enable this when diff_leaf support is known
+           for location in ['same_host','diff_host_same_leaf']: #location strings MUST NOT BE CHANGED
                    #Run the testcases specific to the initialized testsuite
                    log_string = "%s_%s" %(bdtype,location)
-                   testsuite.test_runner(log_string)
+                   testsuite.test_runner(log_string,location)
        #Testsuite specific cleanup
        header.cleanup()
     testbed_cfg.cleanup()

@@ -70,10 +70,11 @@ class Gbp_Heat(object):
               if cmd_out.find('CREATE_COMPLETE') != -1:
                  return 1
               else:
+                 _log.info("Keep Retrying every 5s to check if heat stack-create completed")
                  sleep(5)
                  cmd_out = getoutput(cmd_ver)
-              if num_try > 10:
-                 _log.info(" After 10 re-tries, the stack create has NOT COMPLETED")
+              if num_try > 100:
+                 _log.info(" After 100 re-tries, the stack create has NOT COMPLETED")
                  return 0
               num_try +=1
         if val == 0:

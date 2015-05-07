@@ -105,36 +105,6 @@ class Gbp_def_traff(object):
               return 0
         return 1
 
-    def get_netns(self,net_node_ip,subnet):
-        env.host_string = net_node_ip
-        env.user = root
-        env.password = 'noir0123'
-        with settings(warn_only=True):
-           result = run("ip netns | grep qdhcp")
-           out = [x.strip() for x in result.split('\n')]
-           while True:
-              for netns in out:
-                  cmd = "ip netns exec %s ifconfig" %(netns)
-                  result = run(cmd).replace('\r\n',' ')
-                  if result.find(subnet) > -1:
-                     break
-        return netns
-
-    def get_vm_subnet(self,vm_stringi,ret='ip'):
-        """
-        ret = 'ip' : for returning VM-Port's IP
-              'subnet' : for returning VM-Port's subnet
-        """
-        cmd = "nova list | grep %s" %(vm_string)
-        output = getoutput(cmd)
-        if  ret == 'ip':
-            match = re.search('.*=(\d+.\d+.\d+.\d+)',output,re.I)
-            return match.group(1)
-        if ret == 'subnet':
-           match = re.search('.*=(\d+.\d+.\d+)',output,re.I)
-           return match.group(1)
-
-
     def test_dhcp(self):
         return 1
 

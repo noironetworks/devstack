@@ -131,7 +131,8 @@ class Gbp_Nova(object):
         return 1
 
 
-    def vm_create_cli(self,vmname,vm_image,ports,sshkeyname,avail_zone=''):
+    #def vm_create_cli(self,vmname,vm_image,ports,sshkeyname,avail_zone=''): #Jishnu: change on 05/06
+    def vm_create_cli(self,vmname,vm_image,ports,avail_zone=''):
         """
         Creates VM and checks for ACTIVE status
         """
@@ -141,8 +142,10 @@ class Gbp_Nova(object):
         #cmd = 'nova keypair-add --pub-key '+'%s ' %(keypath)+ sshkeyname
         #if self.cmd_error_check(getoutput(cmd)) == 0:
         #   return 0 #SSH Key upload failed
-        self.sshkey_for_vm(sshkeyname)
-        cmd = 'nova boot --image '+vm_image+' --flavor m1.medium --key_name '+sshkeyname
+        # << Jishnu .. below changes as 05/06 >> #
+        #self.sshkey_for_vm(sshkeyname)
+        #cmd = 'nova boot --image '+vm_image+' --flavor m1.medium --key_name '+sshkeyname
+        cmd = 'nova boot --image '+vm_image+' --flavor m1.medium'
         if isinstance(ports,str):
            ports = [ports]
         for port in ports:
@@ -164,6 +167,7 @@ class Gbp_Nova(object):
             if re.findall('ACTIVE',out) != []:
                break
             else:
+               _log.info("Retrying every 5s .... to check if VM is ACTIVE state")
                sleep(5)
                out = getoutput(cmd)
                if status_try > 10:

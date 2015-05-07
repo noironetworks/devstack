@@ -7,25 +7,19 @@ parameters:
       type: string
       label: vm_image
       description: Image for all VMs
-      default: cirros
+      default: ubuntu_multi_nics
 
     vm_flavor:
       type: string
       label: vm_flavor
       description: Flavor for all VMs
-      default: m1.small
+      default: m1.medium
 
     availability_zone:
       type: string
       label: availability_zone
       description: The Availability Zone to Launch Instance
       default: 'gbp_zone'
-
-    key_name:
-      type: string
-      label: key_name
-      description: Name of an existing key pair to enable SSH access to the instance.
-      default: 'gbpkey'
 
 resources:
 # Creating allow action
@@ -42,38 +36,6 @@ resources:
             name: demo_act_dup
             action_type: allow
             shared: False
-
-    demo_mgmt_act:
-        type: OS::Neutron::PolicyAction
-        properties:
-            name: demo_mgmt_act
-            action_type: allow
-            shared: True
-
-# Creating "shared" resource i.e.Mgmt PTG for rendering Mgmt-dhcp-ips to each Instance
-
-    demo_mgmt_l3_policy:
-        type: OS::Neutron::L3Policy
-        properties:
-            name: demo_mgmt_subnet
-            ip_pool: "15.15.15.0/24"
-            subnet_prefix_length: 28
-            shared: True
-
-    demo_mgmt_l2_policy:
-        type: OS::Neutron::L2Policy
-        depends_on: demo_mgmt_l3_policy
-        properties:
-            name: demo_mgmt_bd
-            l3_policy_id: { get_resource: demo_mgmt_l3_policy }
-            shared: True
-
-    demo_mgmt_ptg:
-        type: OS::Neutron::PolicyTargetGroup
-        properties:
-            name: demo_mgmt_ptg
-            l2_policy_id: {get_resource: demo_mgmt_l2_policy}
-            shared: True
 
 # Creating a classifier,policy-rule,policy-ruleset(Contract) for any tcp traffic
     demo_class_tcp:
@@ -224,13 +186,6 @@ resources:
             l2_policy_id: {get_resource: demo_same_ptg_l2p_l3p_l2_policy}
             shared: False
 
-    vm1_mgmt_pt:
-        type: OS::Neutron::PolicyTarget
-        depends_on: demo_mgmt_ptg
-        properties:
-            name: vm1_mgmt_pt
-            description: 'VM1 Mgmt PT'
-            policy_target_group_id: { get_resource: demo_mgmt_ptg }
 
     vm1_data_pt:
         type: OS::Neutron::PolicyTarget
@@ -240,14 +195,6 @@ resources:
             description: 'VM1 Data PT'
             policy_target_group_id: { get_resource: demo_same_ptg_l2p_l3p_ptg }
 
-    vm2_mgmt_pt:
-        type: OS::Neutron::PolicyTarget
-        depends_on: demo_mgmt_ptg
-        properties:
-            name: vm2_mgmt_pt
-            description: 'VM2 Mgmt PT'
-            policy_target_group_id: { get_resource: demo_mgmt_ptg }
-
     vm2_data_pt:
         type: OS::Neutron::PolicyTarget
         depends_on: demo_same_ptg_l2p_l3p_ptg
@@ -255,14 +202,6 @@ resources:
             name: vm2_data_pt
             description: 'VM2 Data PT'
             policy_target_group_id: { get_resource: demo_same_ptg_l2p_l3p_ptg }
-
-    vm3_mgmt_pt:
-        type: OS::Neutron::PolicyTarget
-        depends_on: demo_mgmt_ptg
-        properties:
-            name: vm3_mgmt_pt
-            description: 'VM3 Mgmt PT'
-            policy_target_group_id: { get_resource: demo_mgmt_ptg }
 
     vm3_data_pt:
         type: OS::Neutron::PolicyTarget
@@ -303,14 +242,6 @@ resources:
             l2_policy_id: {get_resource: demo_diff_ptg_same_l2p_l3p_l2_policy}
             shared: False
 
-    vm4_mgmt_pt:
-        type: OS::Neutron::PolicyTarget
-        depends_on: demo_mgmt_ptg
-        properties:
-            name: vm4_mgmt_pt
-            description: 'VM4 Mgmt PT'
-            policy_target_group_id: { get_resource: demo_mgmt_ptg }
-
     vm4_data_pt:
         type: OS::Neutron::PolicyTarget
         depends_on: demo_diff_ptg_same_l2p_l3p_ptg1
@@ -319,14 +250,6 @@ resources:
             description: 'VM4 Data PT'
             policy_target_group_id: { get_resource: demo_diff_ptg_same_l2p_l3p_ptg1 }
 
-    vm5_mgmt_pt:
-        type: OS::Neutron::PolicyTarget
-        depends_on: demo_mgmt_ptg
-        properties:
-            name: vm5_mgmt_pt
-            description: 'VM5 Mgmt PT'
-            policy_target_group_id: { get_resource: demo_mgmt_ptg }
-
     vm5_data_pt:
         type: OS::Neutron::PolicyTarget
         depends_on: demo_diff_ptg_same_l2p_l3p_ptg2
@@ -334,14 +257,6 @@ resources:
             name: vm5_data_pt
             description: 'VM5 Data PT'
             policy_target_group_id: { get_resource: demo_diff_ptg_same_l2p_l3p_ptg2}
-
-    vm6_mgmt_pt:
-        type: OS::Neutron::PolicyTarget
-        depends_on: demo_mgmt_ptg
-        properties:
-            name: vm6_mgmt_pt
-            description: 'VM6 Mgmt PT'
-            policy_target_group_id: { get_resource: demo_mgmt_ptg }
 
     vm6_data_pt:
         type: OS::Neutron::PolicyTarget
@@ -383,14 +298,6 @@ resources:
             l2_policy_id: {get_resource: demo_diff_ptg_l2p_same_l3p_l2_policy}
             shared: False
 
-    vm7_mgmt_pt:
-        type: OS::Neutron::PolicyTarget
-        depends_on: demo_mgmt_ptg
-        properties:
-            name: vm7_mgmt_pt
-            description: 'VM7 Mgmt PT'
-            policy_target_group_id: { get_resource: demo_mgmt_ptg }
-
     vm7_data_pt:
         type: OS::Neutron::PolicyTarget
         depends_on: demo_diff_ptg_l2p_same_l3p_ptg1
@@ -399,14 +306,6 @@ resources:
             description: 'VM7 Data PT'
             policy_target_group_id: { get_resource: demo_diff_ptg_l2p_same_l3p_ptg1 }
 
-    vm8_mgmt_pt:
-        type: OS::Neutron::PolicyTarget
-        depends_on: demo_mgmt_ptg
-        properties:
-            name: vm8_mgmt_pt
-            description: 'VM8 Mgmt PT'
-            policy_target_group_id: { get_resource: demo_mgmt_ptg }
-
     vm8_data_pt:
         type: OS::Neutron::PolicyTarget
         depends_on: demo_diff_ptg_l2p_same_l3p_ptg2
@@ -414,14 +313,6 @@ resources:
             name: vm8_data_pt
             description: 'VM8 Data PT'
             policy_target_group_id: { get_resource: demo_diff_ptg_l2p_same_l3p_ptg2 }
-
-    vm9_mgmt_pt:
-        type: OS::Neutron::PolicyTarget
-        depends_on: demo_mgmt_ptg
-        properties:
-            name: vm9_mgmt_pt
-            description: 'VM9 Mgmt PT'
-            policy_target_group_id: { get_resource: demo_mgmt_ptg }
 
     vm9_data_pt:
         type: OS::Neutron::PolicyTarget
@@ -479,14 +370,6 @@ resources:
             l2_policy_id: {get_resource: demo_l2_policy_2}
             shared: False
 
-    vm10_mgmt_pt:
-        type: OS::Neutron::PolicyTarget
-        depends_on: demo_mgmt_ptg
-        properties:
-            name: vm10_mgmt_pt
-            description: 'VM10 Mgmt PT'
-            policy_target_group_id: { get_resource: demo_mgmt_ptg }
-
     vm10_data_pt:
         type: OS::Neutron::PolicyTarget
         depends_on: demo_diff_ptg_l2p_l3p_ptg1
@@ -495,14 +378,6 @@ resources:
             description: 'VM10 Data PT'
             policy_target_group_id: { get_resource: demo_diff_ptg_l2p_l3p_ptg1 }
 
-    vm11_mgmt_pt:
-        type: OS::Neutron::PolicyTarget
-        depends_on: demo_mgmt_ptg
-        properties:
-            name: vm11_mgmt_pt
-            description: 'VM11 Mgmt PT'
-            policy_target_group_id: { get_resource: demo_mgmt_ptg }
-
     vm11_data_pt:
         type: OS::Neutron::PolicyTarget
         depends_on: demo_diff_ptg_l2p_l3p_ptg2
@@ -510,14 +385,6 @@ resources:
             name: vm11_data_pt
             description: 'VM11 Data PT'
             policy_target_group_id: { get_resource: demo_diff_ptg_l2p_l3p_ptg2 }
-
-    vm12_mgmt_pt:
-        type: OS::Neutron::PolicyTarget
-        depends_on: demo_mgmt_ptg
-        properties:
-            name: vm12_mgmt_pt
-            description: 'VM12 Mgmt PT'
-            policy_target_group_id: { get_resource: demo_mgmt_ptg }
 
     vm12_data_pt:
         type: OS::Neutron::PolicyTarget
@@ -531,177 +398,144 @@ resources:
 # Instantiating VM for Same_PTG_Same_L2P_Same_L3P
     vm1:
         type: OS::Nova::Server
-        depends_on: vm1_mgmt_pt
         depends_on: vm1_data_pt
         properties:
             name: "VM1"
             availability_zone: { get_param: availability_zone }
-            key_name: { get_param: key_name }
             image: { get_param: vm_image }
             flavor: {get_param: vm_flavor}
             networks:
-                - port: {get_attr: [vm1_mgmt_pt, port_id]}
                 - port: {get_attr: [vm1_data_pt, port_id]}
             user_data_format: RAW
 
     vm2:
         type: OS::Nova::Server
-        depends_on: vm1_mgmt_pt
         depends_on: vm1_data_pt
         properties:
             name: "VM2"
             availability_zone: { get_param: availability_zone }
-            key_name: { get_param: key_name }
             image: { get_param: vm_image }
             flavor: {get_param: vm_flavor}
             networks:
-                - port: {get_attr: [vm2_mgmt_pt, port_id]}
                 - port: {get_attr: [vm2_data_pt, port_id]}
             user_data_format: RAW
 
     vm3:
         type: OS::Nova::Server
-        depends_on: vm3_mgmt_pt
         depends_on: vm3_data_pt
         properties:
             name: "VM3"
-            key_name: { get_param: key_name }
             image: { get_param: vm_image }
             flavor: {get_param: vm_flavor}
             networks:
-                - port: {get_attr: [vm3_mgmt_pt, port_id]}
                 - port: {get_attr: [vm3_data_pt, port_id]}
             user_data_format: RAW
 
+# Instantiating VM for DIff_PTG_Same_L2P_Same_L3P
     vm4:
         type: OS::Nova::Server
-        depends_on: vm4_mgmt_pt
         depends_on: vm4_data_pt
         properties:
             name: "VM4"
             availability_zone: { get_param: availability_zone }
-            key_name: { get_param: key_name }
             image: { get_param: vm_image }
             flavor: {get_param: vm_flavor}
             networks:
-                - port: {get_attr: [vm4_mgmt_pt, port_id]}
                 - port: {get_attr: [vm4_data_pt, port_id]}
             user_data_format: RAW
 
     vm5:
         type: OS::Nova::Server
-        depends_on: vm5_mgmt_pt
         depends_on: vm5_data_pt
         properties:
             name: "VM5"
             availability_zone: { get_param: availability_zone }
-            key_name: { get_param: key_name }
             image: { get_param: vm_image }
             flavor: {get_param: vm_flavor}
             networks:
-                - port: {get_attr: [vm5_mgmt_pt, port_id]}
                 - port: {get_attr: [vm5_data_pt, port_id]}
             user_data_format: RAW
 
     vm6:
         type: OS::Nova::Server
-        depends_on: vm6_mgmt_pt
         depends_on: vm6_data_pt
         properties:
             name: "VM6"
-            key_name: { get_param: key_name }
             image: { get_param: vm_image }
             flavor: {get_param: vm_flavor}
             networks:
-                - port: {get_attr: [vm6_mgmt_pt, port_id]}
                 - port: {get_attr: [vm6_data_pt, port_id]}
             user_data_format: RAW
 
+# Instantiating VM for Diff_PTG_Diff_L2P_Same_L3P
     vm7:
         type: OS::Nova::Server
-        depends_on: vm7_mgmt_pt
         depends_on: vm7_data_pt
         properties:
             name: "VM7"
             availability_zone: { get_param: availability_zone }
-            key_name: { get_param: key_name }
             image: { get_param: vm_image }
             flavor: {get_param: vm_flavor}
             networks:
-                - port: {get_attr: [vm7_mgmt_pt, port_id]}
                 - port: {get_attr: [vm7_data_pt, port_id]}
             user_data_format: RAW
 
     vm8:
         type: OS::Nova::Server
-        depends_on: vm8_mgmt_pt
         depends_on: vm8_data_pt
         properties:
             name: "VM8"
             availability_zone: { get_param: availability_zone }
-            key_name: { get_param: key_name }
             image: { get_param: vm_image }
             flavor: {get_param: vm_flavor}
             networks:
-                - port: {get_attr: [vm8_mgmt_pt, port_id]}
                 - port: {get_attr: [vm8_data_pt, port_id]}
             user_data_format: RAW
 
     vm9:
         type: OS::Nova::Server
-        depends_on: vm9_mgmt_pt
         depends_on: vm9_data_pt
         properties:
             name: "VM9"
-            key_name: { get_param: key_name }
             image: { get_param: vm_image }
             flavor: {get_param: vm_flavor}
             networks:
-                - port: {get_attr: [vm9_mgmt_pt, port_id]}
                 - port: {get_attr: [vm9_data_pt, port_id]}
             user_data_format: RAW
 
+# Instantiating VM for Diff_PTG_Diff_L2P_Diff_L3P
     vm10:
         type: OS::Nova::Server
-        depends_on: vm10_mgmt_pt
         depends_on: vm10_data_pt
         properties:
             name: "VM10"
             availability_zone: { get_param: availability_zone }
-            key_name: { get_param: key_name }
             image: { get_param: vm_image }
             flavor: {get_param: vm_flavor}
             networks:
-                - port: {get_attr: [vm10_mgmt_pt, port_id]}
                 - port: {get_attr: [vm10_data_pt, port_id]}
             user_data_format: RAW
 
     vm11:
         type: OS::Nova::Server
-        depends_on: vm11_mgmt_pt
         depends_on: vm11_data_pt
         properties:
             name: "VM11"
             availability_zone: { get_param: availability_zone }
-            key_name: { get_param: key_name }
             image: { get_param: vm_image }
             flavor: {get_param: vm_flavor}
             networks:
-                - port: {get_attr: [vm11_mgmt_pt, port_id]}
                 - port: {get_attr: [vm11_data_pt, port_id]}
             user_data_format: RAW
 
     vm12:
         type: OS::Nova::Server
-        depends_on: vm12_mgmt_pt
         depends_on: vm12_data_pt
         properties:
             name: "VM12"
-            key_name: { get_param: key_name }
             image: { get_param: vm_image }
             flavor: {get_param: vm_flavor}
             networks:
-                - port: {get_attr: [vm12_mgmt_pt, port_id]}
                 - port: {get_attr: [vm12_data_pt, port_id]}
             user_data_format: RAW
 
@@ -739,9 +573,6 @@ outputs:
 
     demo_ruleset_norule_id:
         value: { get_resource: demo_ruleset_all }
-
-    demo_mgmt_ptg_id:
-        value: { get_resource: demo_mgmt_ptg }
 
     demo_same_ptg_l2p_l3p_ptg_id:
         value: { get_resource: demo_same_ptg_l2p_l3p_ptg }

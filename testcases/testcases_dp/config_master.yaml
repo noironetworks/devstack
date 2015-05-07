@@ -7,7 +7,7 @@ parameters:
       type: string
       label: vm_image
       description: Image for all VMs
-      default: trusty-multi-if
+      default: ubuntu_multi_nics
 
     vm_flavor:
       type: string
@@ -19,13 +19,7 @@ parameters:
       type: string
       label: availability_zone
       description: The Availability Zone to Launch Instance
-      default: 'gbp-zone'
-
-    key_name:
-      type: string
-      label: key_name
-      description: Name of an existing key pair to enable SSH access to the instance.
-      default: 'gbpkey'
+      default: 'gbp_zone'
 
 resources:
 # Creating allow action
@@ -42,38 +36,6 @@ resources:
             name: demo_act_dup
             action_type: allow
             shared: False
-
-    demo_mgmt_act:
-        type: OS::Neutron::PolicyAction
-        properties:
-            name: demo_mgmt_act
-            action_type: allow
-            shared: True
-
-# Creating "shared" resource i.e.Mgmt PTG for rendering Mgmt-dhcp-ips to each Instance
-
-    demo_mgmt_l3_policy:
-        type: OS::Neutron::L3Policy
-        properties:
-            name: demo_mgmt_subnet
-            ip_pool: "15.15.15.0/24"
-            subnet_prefix_length: 28
-            shared: True
-
-    demo_mgmt_l2_policy:
-        type: OS::Neutron::L2Policy
-        depends_on: demo_mgmt_l3_policy
-        properties:
-            name: demo_mgmt_bd
-            l3_policy_id: { get_resource: demo_mgmt_l3_policy }
-            shared: True
-
-    demo_mgmt_ptg:
-        type: OS::Neutron::PolicyTargetGroup
-        properties:
-            name: demo_mgmt_ptg
-            l2_policy_id: {get_resource: demo_mgmt_l2_policy}
-            shared: True
 
 # Creating a classifier,policy-rule,policy-ruleset(Contract) for any tcp traffic
     demo_class_tcp:
@@ -200,7 +162,7 @@ resources:
             child_policy_rule_sets: []
             shared: False
 
-# Creating L3Policy,L2Policy and PTG and VMs for header SamePTG_SameL2P_SameL3P
+# Creating L3Policy,L2Policy and PTG and PTs for header SamePTG_SameL2P_SameL3P
     demo_same_ptg_l2p_l3p_l3_policy:
         type: OS::Neutron::L3Policy
         properties:
@@ -225,7 +187,7 @@ resources:
             shared: False
 
 
-# Creating L3Policy,L2Policy and PTG for header DiffPTG_SameL2P_SameL3P
+# Creating L3Policy,L2Policy and PTG and PTs for header DiffPTG_SameL2P_SameL3P
     demo_diff_ptg_same_l2p_l3p_l3_policy:
         type: OS::Neutron::L3Policy
         properties:
@@ -256,7 +218,8 @@ resources:
             l2_policy_id: {get_resource: demo_diff_ptg_same_l2p_l3p_l2_policy}
             shared: False
 
-# Creating L3Policy,L2Policy and PTG for header DiffPTG_DiffL2P_SameL3P
+
+# Creating L3Policy,L2Policy and PTG and PTs for header DiffPTG_DiffL2P_SameL3P
     demo_diff_ptg_l2p_same_l3p_l3_policy:
         type: OS::Neutron::L3Policy
         properties:
@@ -287,7 +250,8 @@ resources:
             l2_policy_id: {get_resource: demo_diff_ptg_l2p_same_l3p_l2_policy}
             shared: False
 
-# Creating L3Policy,L2Policy and PTG for header DiffPTG_DiffL2P_DiffL3P
+
+# Creating L3Policy,L2Policy and PTG and PTs for header DiffPTG_DiffL2P_DiffL3P
     demo_l3policy_1:
         type: OS::Neutron::L3Policy
         properties:
@@ -335,6 +299,7 @@ resources:
             shared: False
 
 
+
 outputs:
 
     demo_ruleset_tcp_id:
@@ -370,9 +335,6 @@ outputs:
     demo_ruleset_norule_id:
         value: { get_resource: demo_ruleset_all }
 
-    demo_mgmt_ptg_id:
-        value: { get_resource: demo_mgmt_ptg }
-
     demo_same_ptg_l2p_l3p_ptg_id:
         value: { get_resource: demo_same_ptg_l2p_l3p_ptg }
 
@@ -393,6 +355,5 @@ outputs:
 
     demo_diff_ptg_l2p_l3p_ptg2_id:
         value: { get_resource: demo_diff_ptg_l2p_l3p_ptg2 }
-
 
 

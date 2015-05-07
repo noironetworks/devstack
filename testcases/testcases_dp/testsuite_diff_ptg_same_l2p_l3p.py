@@ -7,7 +7,8 @@ import datetime
 import string
 from libs.gbp_conf_libs import Gbp_Config
 from libs.gbp_verify_libs import Gbp_Verify
-from libs.gbp_def_traffic import Gbp_def_traff
+from libs.gbp_fab_traff_libs import Gbp_def_traff
+from libs.gbp_pexp_traff_libs import Gbp_pexp_traff
 from libs.raise_exceptions import *
 from testsuites_setup_cleanup import super_hdr
 
@@ -49,11 +50,12 @@ class test_diff_ptg_same_l2p_l3p(object):
       self.test_9_prs = self.objs_uuid['demo_ruleset_all_id']
 
 
-    def test_runner(self,log_string):
+    def test_runner(self,log_string,location):
         """
         Method to run all testcases
         """
         #Note: Cleanup per testcases is not required,since every testcase updates the PTG, hence over-writing previous attr vals
+        self.vm_loc = location
         test_list = [self.test_1_traff_with_no_prs,
                     self.test_2_traff_app_prs_no_rule,
                     self.test_3_traff_apply_prs_icmp,
@@ -83,10 +85,23 @@ class test_diff_ptg_same_l2p_l3p(object):
         """
         Verifies thes expected traffic result per testcase
         """
-        return 1 #Jishnu
+        #return 1 #Jishnu
         #Incase of Diff PTG Same L2 & L3P all traffic is dis-allowed by default unless Policy-Ruleset is applied
         # Hence verify_traff will check for all protocols including the implicit ones
-        results=self.gbpdeftraff.test_run()
+        gbpcfg = Gbp_Config()
+        vm4_ip = gbpcfg.get_vm_subnet('VM4')[0]
+        vm4_subn = gbpcfg.get_vm_subnet('VM4')[1]
+        dhcp_ns = gbpcfg.get_netns('172.28.184.63',vm4_subn)
+        if self.vm_loc == 'diff_host_same_leaf': #Jishnu: TODO: Change the hardcoded com-node/ntk-node IP after test
+           vm6_ip = gbpcfg.get_vm_subnet('VM6',ret='ip')
+           print vm4_ip, vm4_subn, vm6_ip, dhcp_ns
+           gbppexptraff = Gbp_pexp_traff('172.28.184.63',dhcp_ns,vm4_ip,vm6_ip)
+        if self.vm_loc == 'same_host':
+           vm5_ip = gbpcfg.get_vm_subnet('VM5',ret='ip')
+           print vm4_ip, vm4_subn, vm5_ip, dhcp_ns
+           gbppexptraff = Gbp_pexp_traff('172.28.184.63',dhcp_ns,vm4_ip,vm5_ip)
+        results=gbppexptraff.test_run()
+        print 'Results from the Testcase == ', results
         failed={}
         if proto[0] == 'all':
            failed = {key: val for key,val in results.iteritems() if val == 1}
