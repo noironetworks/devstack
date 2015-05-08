@@ -19,6 +19,8 @@ class Gbp_pexp_traff(object):
         if check != None:
            if int(cnt) - int(check.group(1)) > 1:
               return 0
+        else:
+            return 0
 
     def test_run(self,protocols=['icmp','tcp','udp'],port=443):
       child = pexpect.spawn('ssh root@%s' %(self.net_node))
@@ -26,6 +28,17 @@ class Gbp_pexp_traff(object):
       child.sendline('ifconfig eth2')
       child.expect('#')
       print child.before
+      child.sendline('ip netns exec %s ping %s -c 2' %(self.netns,self.src_ep)) ## Check whether ping works first
+      child.expect('#')
+      print child.before
+      print 'Out ==NOIRO'
+      noicmp,nossh=1,1
+      if len(re.findall('Unreachable',child.before))==2: #Count of ping pkts
+         noicmp=0       
+         print 'I am in No PIng'
+      if noicmp==0 :
+         results={'arp':0,'dns':0,'dhcp':0,'icmp':0,'tcp':0,'udp':0}
+         return results
       child.sendline('ip netns exec %s ssh noiro@%s' %(self.netns,self.src_ep))
       child.expect('password:')
       child.sendline('noir0123')

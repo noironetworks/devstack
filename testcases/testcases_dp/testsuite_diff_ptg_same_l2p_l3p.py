@@ -40,7 +40,8 @@ class test_diff_ptg_same_l2p_l3p(object):
       self.objs_uuid = self.gbpverify.get_uuid_from_stack(super_hdr.heat_temp,stack_name)
       self.ptg_1 = self.objs_uuid['demo_diff_ptg_same_l2p_l3p_ptg1_id']
       self.ptg_2 = self.objs_uuid['demo_diff_ptg_same_l2p_l3p_ptg2_id']
-      self.test_2_prs = self.objs_uuid['demo_ruleset_norule_id']
+      #self.test_2_prs = self.objs_uuid['demo_ruleset_norule_id'] #TODO: Need to enable this and remove the below line once test is done
+      self.test_2_prs = 'demo_ruleset_norule' 
       self.test_3_prs = self.objs_uuid['demo_ruleset_icmp_id']
       self.test_4_prs = self.objs_uuid['demo_ruleset_tcp_id']
       self.test_5_prs = self.objs_uuid['demo_ruleset_udp_id']
@@ -103,8 +104,8 @@ class test_diff_ptg_same_l2p_l3p(object):
         results=gbppexptraff.test_run()
         print 'Results from the Testcase == ', results
         failed={}
-        if proto[0] == 'all':
-           failed = {key: val for key,val in results.iteritems() if val == 1}
+        if proto[0] == 'all': # In 'all' proto is verified for PTGs with NO_PRS, PRS_NO_RULE, REM_PRS, hence below val ==1, then Fail, because pkts were not dropped
+           failed = {key: val for key,val in results.iteritems() if val == 1} 
            if len(failed) > 0:
               print 'Following traffic_types %s = Failed' %(failed)
               return 0
@@ -113,8 +114,8 @@ class test_diff_ptg_same_l2p_l3p(object):
         else:
             implicit_allow = ['arp','dhcp','dns']
             allow_list = implicit_allow + proto
-            failed = {key: val for key,val in results.iteritems() if val == 0 and val in allow_list}
-            failed.update({key: val for key,val in results.iteritems() if val == 1 and val not in allow_list})
+            failed = {key: val for key,val in results.iteritems() if val == 0 and key in allow_list}
+            failed.update({key: val for key,val in results.iteritems() if val == 1 and key not in allow_list})
             if len(failed) > 0:
                print 'Following traffic_types %s = Failed' %(failed)
                return 0

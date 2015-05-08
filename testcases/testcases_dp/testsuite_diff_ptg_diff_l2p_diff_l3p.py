@@ -40,7 +40,8 @@ class test_diff_ptg_diff_l2p_diff_l3p(object):
       self.objs_uuid = self.gbpverify.get_uuid_from_stack(super_hdr.heat_temp,stack_name)
       self.ptg_1 = self.objs_uuid['demo_diff_ptg_l2p_l3p_ptg1_id']
       self.ptg_2 = self.objs_uuid['demo_diff_ptg_l2p_l3p_ptg2_id']
-      self.test_2_prs = self.objs_uuid['demo_ruleset_norule_id']
+      #self.test_2_prs = self.objs_uuid['demo_ruleset_norule_id'] #TODO: Need to enable this and remove the below line once test is done
+      self.test_2_prs = 'demo_ruleset_norule'
       self.test_3_prs = self.objs_uuid['demo_ruleset_icmp_id']
       self.test_4_prs = self.objs_uuid['demo_ruleset_tcp_id']
       self.test_5_prs = self.objs_uuid['demo_ruleset_udp_id']
@@ -85,9 +86,22 @@ class test_diff_ptg_diff_l2p_diff_l3p(object):
         Verifies thes expected traffic result per testcase
         """
         #return 1 #Jishnu
-        #Incase of Diff PTG Diff L2P and DIff L3P all traffic is allowed irrespective what Policy-Ruleset is applied
+        #Incase of Diff PTG Diff L2P and DIff L3P all traffic is disallowed irrespective what Policy-Ruleset is applied
         # Hence verify_traff will check for all protocols including the implicit ones
-        results=self.gbpdeftraff.test_run()
+        gbpcfg = Gbp_Config()
+        vm10_ip = gbpcfg.get_vm_subnet('VM10')[0]
+        vm10_subn = gbpcfg.get_vm_subnet('VM10')[1]
+        dhcp_ns = gbpcfg.get_netns('172.28.184.63',vm10_subn)
+        if self.vm_loc == 'diff_host_same_leaf': #Jishnu: TODO: Change the hardcoded com-node/ntk-node IP after test
+           vm12_ip = gbpcfg.get_vm_subnet('VM12',ret='ip')
+           print vm10_ip, vm10_subn, vm12_ip, dhcp_ns
+           gbppexptraff = Gbp_pexp_traff('172.28.184.63',dhcp_ns,vm10_ip,vm12_ip)
+        if self.vm_loc == 'same_host':
+           vm11_ip = gbpcfg.get_vm_subnet('VM11',ret='ip')
+           print vm10_ip, vm10_subn, vm11_ip, dhcp_ns
+           gbppexptraff = Gbp_pexp_traff('172.28.184.63',dhcp_ns,vm10_ip,vm11_ip)
+        results=gbppexptraff.test_run()
+        print 'Results from the Testcase == ', results
         failed={}
         failed = {key: val for key,val in results.iteritems() if val == 1}
         if len(failed) > 0:
