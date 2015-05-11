@@ -37,7 +37,7 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
       self.gbpdeftraff = Gbp_def_traff()
       stack_name = super_hdr.stack_name
       heat_temp = super_hdr.heat_temp
-
+      self.ntk_node = super_hdr.ntk_node
       self.ptg_1 = objs_uuid['demo_diff_ptg_l2p_same_l3p_ptg1_id']
       self.ptg_2 = objs_uuid['demo_diff_ptg_l2p_same_l3p_ptg2_id']
       self.test_2_prs = objs_uuid['demo_ruleset_norule_id']
@@ -84,22 +84,22 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
         """
         Verifies thes expected traffic result per testcase
         """
-        #return 1 #Jishnu
+        
         #Incase of Diff PTG  Diff L2P and Same L3P all traffic is dis-allowed irrespective what Policy-Ruleset is applied
         # Hence verify_traff will check for all protocols including the implicit ones
         gbpcfg = Gbp_Config()
         vm7_ip = gbpcfg.get_vm_subnet('VM7')[0]
         vm7_subn = gbpcfg.get_vm_subnet('VM7')[1]
-        dhcp_ns = gbpcfg.get_netns('172.28.184.63',vm7_subn)
+        dhcp_ns = gbpcfg.get_netns(self.ntk_node,vm7_subn)
 
-        if self.vm_loc == 'diff_host_same_leaf': #Jishnu: TODO: Change the hardcoded com-node/ntk-node IP after test
+        if self.vm_loc == 'diff_host_same_leaf': 
            vm9_ip = gbpcfg.get_vm_subnet('VM9',ret='ip')
            print vm7_ip, vm7_subn, vm9_ip, dhcp_ns
-           gbppexptraff = Gbp_pexp_traff('172.28.184.63',dhcp_ns,vm7_ip,vm9_ip)
+           gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm7_ip,vm9_ip)
         if self.vm_loc == 'same_host':
            vm8_ip = gbpcfg.get_vm_subnet('VM8',ret='ip')
            print vm7_ip, vm7_subn, vm8_ip, dhcp_ns
-           gbppexptraff = Gbp_pexp_traff('172.28.184.63',dhcp_ns,vm7_ip,vm8_ip)
+           gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm7_ip,vm8_ip)
         results=gbppexptraff.test_run()
         print 'Results from the Testcase == ', results
 
