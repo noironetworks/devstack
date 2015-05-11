@@ -14,7 +14,7 @@ from libs.raise_exceptions import *
 
 class super_hdr(object):
 
-  with open('test_var_def.yaml','rt') as f:
+  with open('testconfig_def.yaml','rt') as f:
            conf = yaml.load(f)
   nova_az = conf['nova_az_name']
   cntlr_ip = conf['controller_ip']

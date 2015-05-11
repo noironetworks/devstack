@@ -30,25 +30,24 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
     _log.setLevel(logging.INFO)
     _log.setLevel(logging.DEBUG)
 
-    def __init__(self):
+    def __init__(self,objs_uuid):
 
       self.gbpcfg = Gbp_Config()
       self.gbpverify = Gbp_Verify()
       self.gbpdeftraff = Gbp_def_traff()
       stack_name = super_hdr.stack_name
       heat_temp = super_hdr.heat_temp
-      self.objs_uuid = self.gbpverify.get_uuid_from_stack(super_hdr.heat_temp,stack_name)
-      self.ptg_1 = self.objs_uuid['demo_diff_ptg_l2p_same_l3p_ptg1_id']
-      self.ptg_2 = self.objs_uuid['demo_diff_ptg_l2p_same_l3p_ptg2_id']
-      #self.test_2_prs = self.objs_uuid['demo_ruleset_norule_id'] #TODO: Need to enable this and remove the below line once test is done
-      self.test_2_prs = 'demo_ruleset_norule'
-      self.test_3_prs = self.objs_uuid['demo_ruleset_icmp_id']
-      self.test_4_prs = self.objs_uuid['demo_ruleset_tcp_id']
-      self.test_5_prs = self.objs_uuid['demo_ruleset_udp_id']
-      self.test_6_prs = self.objs_uuid['demo_ruleset_icmp_tcp_id']
-      self.test_7_prs = self.objs_uuid['demo_ruleset_icmp_udp_id']
-      self.test_8_prs = self.objs_uuid['demo_ruleset_tcp_udp_id']
-      self.test_9_prs = self.objs_uuid['demo_ruleset_all_id']
+
+      self.ptg_1 = objs_uuid['demo_diff_ptg_l2p_same_l3p_ptg1_id']
+      self.ptg_2 = objs_uuid['demo_diff_ptg_l2p_same_l3p_ptg2_id']
+      self.test_2_prs = objs_uuid['demo_ruleset_norule_id']
+      self.test_3_prs = objs_uuid['demo_ruleset_icmp_id']
+      self.test_4_prs = objs_uuid['demo_ruleset_tcp_id']
+      self.test_5_prs = objs_uuid['demo_ruleset_udp_id']
+      self.test_6_prs = objs_uuid['demo_ruleset_icmp_tcp_id']
+      self.test_7_prs = objs_uuid['demo_ruleset_icmp_udp_id']
+      self.test_8_prs = objs_uuid['demo_ruleset_tcp_udp_id']
+      self.test_9_prs = objs_uuid['demo_ruleset_all_id']
 
 
     def test_runner(self,log_string,location):
