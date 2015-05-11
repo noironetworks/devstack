@@ -22,7 +22,8 @@ class super_hdr(object):
   heat_temp = conf['main_setup_heat_temp']
   stack_name = conf ['heat_stack_name']
   vm_image = conf['vm_image']
-  sshkeyname = conf ['key_name']
+  sshkeyname = conf['key_name']
+  ntk_node = conf['ntk_node']
   gbpcfg = Gbp_Config()
   gbpverify = Gbp_Verify()
   gbpnova = Gbp_Nova(cntlr_ip)
