@@ -101,13 +101,22 @@ resources:
             config: { get_file: lb.template }
             shared: False
 
+    sc_fw_node:
+        type: OS::Neutron::ServiceChainNode
+        properties:
+            name: "Firewall"
+            service_type: FIREWALL
+            config: { get_file: fw.template }
+            shared: False
+
 # LB service chain spec
     sc_spec:
         type: OS::Neutron::ServiceChainSpec
-        depends_on: [ sc_lb_node ]
+        depends_on: [ sc_fw_node, sc_lb_node ]
         properties:
-            name: "Loadbalancer-Service-Chain"
+            name: "Firewall-Loadbalancer-Service-Chain"
             nodes:
+                - { get_resource: sc_fw_node }
                 - { get_resource: sc_lb_node }
             shared: False
 
