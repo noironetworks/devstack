@@ -98,7 +98,7 @@ resources:
         properties:
             name: "Loadbalancer"
             service_type: LOADBALANCER
-            config: { get_file: lb_vip_description.template }
+            config: { get_file: lb.template }
             shared: False
 
 # LB service chain spec
