@@ -8,7 +8,8 @@ import yaml
 import string
 from libs.gbp_conf_libs import Gbp_Config
 from libs.gbp_verify_libs import Gbp_Verify
-from libs.gbp_def_traffic import Gbp_def_traff
+from libs.gbp_fab_traff_libs import Gbp_def_traff
+from libs.gbp_pexp_traff_libs import Gbp_pexp_traff
 from libs.gbp_heat_libs import Gbp_Heat
 from libs.raise_exceptions import *
 from libs.gbp_aci_libs import Gbp_Aci
@@ -37,6 +38,7 @@ class testcase_aci_integ_7(object):
       self.heat_stack_name = 'gbpinteg7'
       self.heat_temp_test = heattemp
       self.cntlr_ip = cntlr_ip 
+      self.apic_ip = apic_ip
 
     def test_runner(self):
         """

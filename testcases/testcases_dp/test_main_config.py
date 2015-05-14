@@ -53,13 +53,14 @@ class gbp_main_config(object):
       Heat Stack Creates All Test Config
       """
       if self.num_hosts > 1:
-         agg_id = self.gbpnova.avail_zone('api','create',self.nova_agg,avail_zone_name=self.nova_az)
-         if agg_id == 0:
+         self.agg_id = self.gbpnova.avail_zone('api','create',self.nova_agg,avail_zone_name=self.nova_az)
+         if self.agg_id == 0:
             self._log.info("\n ABORTING THE TESTSUITE RUN,nova host aggregate creation Failed")
             sys.exit(1)
-         self._log.info(" Agg %s" %(agg_id))
-         if self.gbpnova.avail_zone('api','addhost',agg_id,hostname=self.comp_node) == 0:
+         self._log.info(" Agg %s" %(self.agg_id))
+         if self.gbpnova.avail_zone('api','addhost',self.agg_id,hostname=self.comp_node) == 0:
             self._log.info("\n ABORTING THE TESTSUITE RUN, availability zone creation Failed")
+            self.gbpnova.avail_zone('cli','delete',self.agg_id) #Cleanup Agg_ID
             sys.exit(1)
 
       #if self.gbpnova.sshkey_for_vm() == 0:
@@ -76,6 +77,6 @@ class gbp_main_config(object):
         ##Need to call for instance delete if there is an instance
         self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
         self.gbpnova.avail_zone('cli','removehost',self.nova_agg,hostname=self.comp_node)
-        self.gbpnova.avail_zone('cli','delete',self.nova_agg)
+        self.gbpnova.avail_zone('cli','delete',self.agg_id)
         self.gbpnova.sshkey_for_vm(action='delete')
-        
+        sys.exit(1)

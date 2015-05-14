@@ -11,6 +11,9 @@ from libs.gbp_verify_libs import Gbp_Verify
 from libs.gbp_heat_libs import Gbp_Heat
 from libs.raise_exceptions import *
 from libs.gbp_aci_libs import Gbp_Aci
+from libs.gbp_fab_traff_libs import Gbp_def_traff
+from libs.gbp_pexp_traff_libs import Gbp_pexp_traff
+
 
 class testcase_aci_integ_8(object):
     """

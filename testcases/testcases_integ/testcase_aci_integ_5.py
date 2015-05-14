@@ -8,7 +8,8 @@ import yaml
 import string
 from libs.gbp_conf_libs import Gbp_Config
 from libs.gbp_verify_libs import Gbp_Verify
-from libs.gbp_def_traffic import Gbp_def_traff
+from libs.gbp_fab_traff_libs import Gbp_def_traff
+from libs.gbp_pexp_traff_libs import Gbp_pexp_traff
 from libs.raise_exceptions import *
 from libs.gbp_aci_libs import Gbp_Aci
 

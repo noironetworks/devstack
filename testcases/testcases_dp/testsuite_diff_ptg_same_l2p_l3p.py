@@ -83,7 +83,7 @@ class test_diff_ptg_same_l2p_l3p(object):
 
     def verify_traff(self,proto=['all']):
         """
-        Verifies thes expected traffic result per testcase
+        Verifies the expected traffic result per testcase
         """
         #Incase of Diff PTG Same L2 & L3P all traffic is dis-allowed by default unless Policy-Ruleset is applied
         # Hence verify_traff will check for all protocols including the implicit ones

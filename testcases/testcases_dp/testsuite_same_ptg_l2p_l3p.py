@@ -81,7 +81,7 @@ class test_same_ptg_same_l2p_same_l3p(object):
 
     def verify_traff(self):
         """
-        Verifies thes expected traffic result per testcase
+        Verifies the expected traffic result per testcase
         """
         #Incase of Same PTG all traffic is allowed irrespective what Policy-Ruleset is applied
         # Hence verify_traff will check for all protocols including the implicit ones

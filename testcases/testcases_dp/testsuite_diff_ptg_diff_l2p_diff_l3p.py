@@ -81,7 +81,7 @@ class test_diff_ptg_diff_l2p_diff_l3p(object):
 
     def verify_traff(self):
         """
-        Verifies thes expected traffic result per testcase
+        Verifies the expected traffic result per testcase
         """
         #Incase of Diff PTG Diff L2P and DIff L3P all traffic is disallowed irrespective what Policy-Ruleset is applied
         # Hence verify_traff will check for all protocols including the implicit ones
