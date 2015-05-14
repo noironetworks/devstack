@@ -96,7 +96,7 @@ resources:
     sc_lb_node:
         type: OS::Neutron::ServiceChainNode
         properties:
-            name: "Loadbalancer"
+            name: "HAProxy-Loadbalancer"
             service_type: LOADBALANCER
             config: { get_file: lb.template }
             shared: False
@@ -104,7 +104,7 @@ resources:
     sc_fw_node:
         type: OS::Neutron::ServiceChainNode
         properties:
-            name: "Firewall"
+            name: "McAfee-Firewall"
             service_type: FIREWALL
             config: { get_file: fw.template }
             shared: False
@@ -114,7 +114,7 @@ resources:
         type: OS::Neutron::ServiceChainSpec
         depends_on: [ sc_fw_node, sc_lb_node ]
         properties:
-            name: "Firewall-Loadbalancer-Service-Chain"
+            name: "McAfee_Firewall-HAProxy_Loadbalancer-Service-Chain"
             nodes:
                 - { get_resource: sc_fw_node }
                 - { get_resource: sc_lb_node }

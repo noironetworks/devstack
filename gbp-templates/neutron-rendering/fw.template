@@ -6,15 +6,15 @@
 	    "properties": {
 		"admin_state_up": true,
 		"firewall_policy_id": {"get_resource": "Firewall_policy"},
-		"name": "testFirewall",
-		"description": "test Firewall"
+		"name": "McAfee Next Generation Firewall",
+		"description": "McAfee Next Generation Firewall"
 		}
 	    },
 	"Firewall_policy": {
 	    "type": "OS::Neutron::FirewallPolicy",
 	    "properties": {
 		"shared": false,
-		"description": "test firewall policy",
+		"description": "Web Server Firewall Policy",
 		"name": "testFWPolicy",
 		"firewall_rules": [{"get_resource": "Firewall_rule"}],
 		"audited": true
@@ -24,12 +24,12 @@
 	    "type": "OS::Neutron::FirewallRule",
 	    "properties": {
 		"protocol": "tcp",
-		"description": "firewall rule 1",
+		"description": "Allow Port 80",
 		"enabled": true,
 		"destination_port": "80",
 		"shared": false,
 		"action": "allow",
-		"name": "testFw"
+		"name": "Allow Port 80"
 		}
 	    }
 	}
