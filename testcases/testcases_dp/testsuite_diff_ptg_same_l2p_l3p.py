@@ -94,11 +94,11 @@ class test_diff_ptg_same_l2p_l3p(object):
         if self.vm_loc == 'diff_host_same_leaf': 
            vm6_ip = gbpcfg.get_vm_subnet('VM6',ret='ip')
            print vm4_ip, vm4_subn, vm6_ip, dhcp_ns
-           gbppexptraff = Gbp_pexp_traff('self.ntk_node',dhcp_ns,vm4_ip,vm6_ip)
+           gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm4_ip,vm6_ip)
         if self.vm_loc == 'same_host':
            vm5_ip = gbpcfg.get_vm_subnet('VM5',ret='ip')
            print vm4_ip, vm4_subn, vm5_ip, dhcp_ns
-           gbppexptraff = Gbp_pexp_traff('self.ntk_node',dhcp_ns,vm4_ip,vm5_ip)
+           gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm4_ip,vm5_ip)
         results=gbppexptraff.test_run()
         print 'Results from the Testcase == ', results
         failed={}

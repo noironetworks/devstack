@@ -29,10 +29,10 @@ class wrapper(object):
            imp_class = importlib.import_module(class_name)
            class_obj = getattr(imp_class,class_name)
            if callable(class_obj):
-              cls = class_obj(self.heat_temp_file,self.cntrl_ip,self.leaf_ip,
-                              self.apic_ip,self.ntk_node,
-                              self.nova_agg,self.nova_az,self.comp_node)
+              cls = class_obj(self.heat_temp_file,self.cntrl_ip,self.leaf_ip,\
+                              self.apic_ip,self.ntk_node,self.nova_agg,\
+                              self.nova_az,self.comp_node)
               cls.test_runner('TESTCASE_ACI_INTEG')
 
 if __name__ == '__main__':
-    main()
+   main()

@@ -7,7 +7,7 @@ import datetime
 import pexpect
 from time import sleep
 from commands import *
-from fabric.api import cd,run,env, hide, get, settings, local
+from fabric.api import cd,run,env, hide, get, settings, local, lcd
 from raise_exceptions import *
 
 
@@ -48,7 +48,8 @@ class Gbp_Aci(object):
 
     def get_root_password(self,ip,passwd='noir0123'):
         token = self.exec_admin_cmd(ip,cmd="acidiag dbgtoken",passwd=passwd)
-        password = local("./generate_token.sh %s" % token, capture=True)
+        with lcd('/root/gbpauto/libs'):
+           password = local("./generate_token.sh %s" % token, capture=True)
         return password
 
     def exec_root_cmd(self,ip,cmd):
@@ -68,27 +69,27 @@ class Gbp_Aci(object):
         act = restart/stop/start
         """
         cmd_ps = 'ps aux | grep svc_ifc_opflexp'
-        out = re.search('\\broot\\b\s+(\d+).*/isan/bin/svc_ifc_opflexp',exec_root_cmd(leaf_ip,cmd_ps),re.I)
+        out = re.search('\\broot\\b\s+(\d+).*/isan/bin/svc_ifc_opflexp',self.exec_root_cmd(leaf_ip,cmd_ps),re.I)
         if out != None:
            pid = int(out.group(1))        
         if act == 'stop':
            cmd_stop = "kill -s SEGV %s" %(pid)
            for i in range(1,8):
-               exec_root_cmd(leaf_ip,cmd_stop)
+               self.exec_root_cmd(leaf_ip,cmd_stop)
                sleep(5)
-               out = re.search('\\broot\\b\s+(\d+).*/isan/bin/svc_ifc_opflexp',exec_root_cmd(leaf_ip,cmd_ps),re.I)
+               out = re.search('\\broot\\b\s+(\d+).*/isan/bin/svc_ifc_opflexp',self.exec_root_cmd(leaf_ip,cmd_ps),re.I)
                if out == None:
                   break
         if act == 'start':
            cmd_start = 'vsh & test reparse 0xf'
-           exec_root_cmd(leaf_ip,cmd_start)
+           self.exec_root_cmd(leaf_ip,cmd_start)
            sleep(5)
            cmd_chk = 'vsh & show system internal sysmgr service name opflex_proxy'
-           if len(re.findall('State: SRV_STATE_HANDSHAKED',exec_root_cmd(leaf_ip,cmd_chk))) > 1:
+           if len(re.findall('State: SRV_STATE_HANDSHAKED',self.exec_root_cmd(leaf_ip,cmd_chk))) > 1:
               return 1
         if act == 'restart':
            cmd = "kill -HUP %s" %(pid)
-           out = exec_root_cmd(leaf_ip,cmd)
+           out = self.exec_root_cmd(leaf_ip,cmd)
         if out.failed:
             raise ErrorRemoteCommand("---ERROR---: Error running %s on %s as user root, stderr %s" % (cmd,leaf_ip,out.stderr))
         return 1 
