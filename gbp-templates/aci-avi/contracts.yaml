@@ -194,7 +194,7 @@ resources:
         properties:
             name: "TCP-Traffic"
             protocol: tcp
-            direction: in
+            direction: bi
             shared: True
 
 # Rule to allow all tcp traffic
@@ -202,7 +202,7 @@ resources:
         type: OS::Neutron::PolicyRule
         depends_on: [ tcp_classifier, allow_action ]
         properties:
-            name: "TCP-IN"
+            name: "TCP-BI"
             policy_classifier_id: { get_resource: tcp_classifier }
             policy_actions: [{ get_resource: allow_action }]
             shared: True
