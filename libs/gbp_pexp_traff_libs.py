@@ -10,7 +10,7 @@ class Gbp_pexp_traff(object):
       self.netns = netns
       self.src_ep = src_vm_ip
       self.dest_ep = dst_vm_ip
-      self.pkt_cnt = 5
+      self.pkt_cnt = 3
 
     def parse_hping(self,out,pkt_cnt):
         cnt = pkt_cnt
