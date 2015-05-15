@@ -79,46 +79,50 @@ gbp l3policy-update $INFRA_L3_POLICY_ID --external-segment "$INFRA_EXTERNAL_SEGM
 gbp l3policy-update $APP_L3_POLICY_ID --external-segment "$APP_EXTERNAL_SEGMENT_ID="
 gbp external-policy-update $APP_EXTERNAL_POLICY_ID --external-segments "$APP_EXTERNAL_SEGMENT_ID"
 
+# The following is done in the demo-base.sh script, remove them when confirmed
+# that they are not needed to be done here
+# --remove from here---
 # Launch the Eng tenant's stack
-set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $ENG_TENANT_NAME
+# set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $ENG_TENANT_NAME
  
-heat stack-create -f "$APP_YAML" "$ENG_STACK" -P "web_vm_image=$WEB_VM_IMAGE_NAME;web_vm_flavor=$WEB_VM_FLAVOR;app_vm_image=$APP_VM_IMAGE_NAME;app_vm_flavor=$APP_VM_FLAVOR;db_vm_image=$DB_VM_IMAGE_NAME;db_vm_flavor=$DB_VM_FLAVOR;mysql_rule_set_id=$MYSQL_RULE_SET_ID;app_rule_set_id=$APP_RULE_SET_ID;app_l3_policy_id=$APP_L3_POLICY_ID;mgmt_ptg_id=$MGMT_PTG_ID;monitoring_ip=$MONITORING_IP"
+# heat stack-create -f "$APP_YAML" "$ENG_STACK" -P "web_vm_image=$WEB_VM_IMAGE_NAME;web_vm_flavor=$WEB_VM_FLAVOR;app_vm_image=$APP_VM_IMAGE_NAME;app_vm_flavor=$APP_VM_FLAVOR;db_vm_image=$DB_VM_IMAGE_NAME;db_vm_flavor=$DB_VM_FLAVOR;mysql_rule_set_id=$MYSQL_RULE_SET_ID;app_rule_set_id=$APP_RULE_SET_ID;app_l3_policy_id=$APP_L3_POLICY_ID;mgmt_ptg_id=$MGMT_PTG_ID;monitoring_ip=$MONITORING_IP"
 
-confirm_resource_created "heat stack-show" "$ENG_STACK" "CREATE_COMPLETE"
+# confirm_resource_created "heat stack-show" "$ENG_STACK" "CREATE_COMPLETE"
 
-WEB_PTG_ID=`heat output-show "$ENG_STACK" "web_ptg_id" | sed "s/\"//g"`
-gbp group-update $WEB_PTG_ID --provided-policy-rule-sets "$HTTP_RULE_SET_ID=true"
-gbp group-update $WEB_PTG_ID --consumed-policy-rule-sets "$APP_RULE_SET_ID=true"
+# WEB_PTG_ID=`heat output-show "$ENG_STACK" "web_ptg_id" | sed "s/\"//g"`
+# gbp group-update $WEB_PTG_ID --provided-policy-rule-sets "$HTTP_RULE_SET_ID=true"
+# gbp group-update $WEB_PTG_ID --consumed-policy-rule-sets "$APP_RULE_SET_ID=true"
 
-set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $ADMIN_TENANT_NAME
-gbp external-policy-update $APP_EXTERNAL_POLICY_ID --consumed-policy-rule-sets "$HTTP_RULE_SET_ID=true"
+# set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $ADMIN_TENANT_NAME
+# gbp external-policy-update $APP_EXTERNAL_POLICY_ID --consumed-policy-rule-sets "$HTTP_RULE_SET_ID=true"
 # Launching the Eng tenant's stack complete
 
 # Launch the HR tenant's stack
-set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $HR_TENANT_NAME
+# set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $HR_TENANT_NAME
  
-heat stack-create -f "$APP_YAML" "$HR_STACK" -P "web_vm_image=$WEB_VM_IMAGE_NAME;web_vm_flavor=$WEB_VM_FLAVOR;app_vm_image=$APP_VM_IMAGE_NAME;app_vm_flavor=$APP_VM_FLAVOR;db_vm_image=$DB_VM_IMAGE_NAME;db_vm_flavor=$DB_VM_FLAVOR;mysql_rule_set_id=$MYSQL_RULE_SET_ID;app_rule_set_id=$APP_RULE_SET_ID;app_l3_policy_id=$APP_L3_POLICY_ID;mgmt_ptg_id=$MGMT_PTG_ID;monitoring_ip=$MONITORING_IP"
+# heat stack-create -f "$APP_YAML" "$HR_STACK" -P "web_vm_image=$WEB_VM_IMAGE_NAME;web_vm_flavor=$WEB_VM_FLAVOR;app_vm_image=$APP_VM_IMAGE_NAME;app_vm_flavor=$APP_VM_FLAVOR;db_vm_image=$DB_VM_IMAGE_NAME;db_vm_flavor=$DB_VM_FLAVOR;mysql_rule_set_id=$MYSQL_RULE_SET_ID;app_rule_set_id=$APP_RULE_SET_ID;app_l3_policy_id=$APP_L3_POLICY_ID;mgmt_ptg_id=$MGMT_PTG_ID;monitoring_ip=$MONITORING_IP"
 
-confirm_resource_created "heat stack-show" "$HR_STACK" "CREATE_COMPLETE"
+# confirm_resource_created "heat stack-show" "$HR_STACK" "CREATE_COMPLETE"
 
-WEB_PTG_ID=`heat output-show "$HR_STACK" "web_ptg_id" | sed "s/\"//g"`
-gbp group-update $WEB_PTG_ID --network-service-policy "$VIP_IP_POLICY_ID"
-gbp group-update $WEB_PTG_ID --provided-policy-rule-sets "$HTTP_WITH_LB_REDIRECT_RULE_SET_ID=true"
-gbp group-update $WEB_PTG_ID --consumed-policy-rule-sets "$APP_RULE_SET_ID=true"
+# WEB_PTG_ID=`heat output-show "$HR_STACK" "web_ptg_id" | sed "s/\"//g"`
+# gbp group-update $WEB_PTG_ID --network-service-policy "$VIP_IP_POLICY_ID"
+# gbp group-update $WEB_PTG_ID --provided-policy-rule-sets "$HTTP_WITH_LB_REDIRECT_RULE_SET_ID=true"
+# gbp group-update $WEB_PTG_ID --consumed-policy-rule-sets "$APP_RULE_SET_ID=true"
 
-set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $ADMIN_TENANT_NAME
-gbp external-policy-update $APP_EXTERNAL_POLICY_ID --consumed-policy-rule-sets "$HTTP_WITH_LB_REDIRECT_RULE_SET_ID=true,$HTTP_RULE_SET_ID=true"
+# set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $ADMIN_TENANT_NAME
+# gbp external-policy-update $APP_EXTERNAL_POLICY_ID --consumed-policy-rule-sets "$HTTP_WITH_LB_REDIRECT_RULE_SET_ID=true,$HTTP_RULE_SET_ID=true"
 
-set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $HR_TENANT_NAME
-if [ "$RENDERING_MODE" == "$ACI_TRANSPARENT_SVC_RENDERING" ]; then
-    APP_L2_POLICY_ID=`heat output-show "$HR_STACK" "app_l2_policy_id" | sed "s/\"//g"`
-    DB_PTG_ID=`heat output-show "$HR_STACK" "db_ptg_id" | sed "s/\"//g"`
-    APP_PTG_ID=`heat output-show "$HR_STACK" "app_ptg_id" | sed "s/\"//g"`
-    gbp l2policy-update $APP_L2_POLICY_ID --allow-broadcast True
-    gbp group-update $DB_PTG_ID --provided-policy-rule-sets "$MYSQL_VIA_FW_IDS_RULE_SET_ID=true"
-    gbp group-update $APP_PTG_ID --consumed-policy-rule-sets "$MYSQL_VIA_FW_IDS_RULE_SET_ID=true"
-fi
+# set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $HR_TENANT_NAME
+# if [ "$RENDERING_MODE" == "$ACI_TRANSPARENT_SVC_RENDERING" ]; then
+#     APP_L2_POLICY_ID=`heat output-show "$HR_STACK" "app_l2_policy_id" | sed "s/\"//g"`
+#     DB_PTG_ID=`heat output-show "$HR_STACK" "db_ptg_id" | sed "s/\"//g"`
+#     APP_PTG_ID=`heat output-show "$HR_STACK" "app_ptg_id" | sed "s/\"//g"`
+#     gbp l2policy-update $APP_L2_POLICY_ID --allow-broadcast True
+#     gbp group-update $DB_PTG_ID --provided-policy-rule-sets "$MYSQL_VIA_FW_IDS_RULE_SET_ID=true"
+#     gbp group-update $APP_PTG_ID --consumed-policy-rule-sets "$MYSQL_VIA_FW_IDS_RULE_SET_ID=true"
+# fi
 # Launching the HR tenant's stack complete
+# --remove until here---
 
 
 echo "*********************************************************************"
