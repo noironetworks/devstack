@@ -380,6 +380,16 @@ resources:
             child_policy_rule_sets: []
             shared: True
 
+# Allow outside world to access Service Management PTG
+    service_management_access_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: [icmp_traffic_rule, tcp_traffic_rule]
+        properties:
+            name: 'Service-Management-Access'
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: tcp_traffic_rule }]
+            child_policy_rule_sets: []
+            shared: True
+
 outputs:
 
     vip_ip_policy_id:
@@ -405,3 +415,6 @@ outputs:
 
     monitoring_to_outside_rule_set_id:
         value: { get_resource: monitoring_to_outside_rule_set }
+
+    service_management_access_rule_set_id:
+        value: { get_resource: service_management_access_rule_set }

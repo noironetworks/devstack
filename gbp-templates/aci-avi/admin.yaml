@@ -61,6 +61,11 @@ parameters:
     label: app_to_outside_rule_set_id
     description: ID of the App to Outside PRS
 
+  service_management_access_rule_set_id:
+    type: string
+    label: service_management_access_rule_set_id
+    description: ID of PRS for Outside to Service Management access
+
   mysql_rule_set_id:
     type: string
     label: mysql_rule_set_id
@@ -176,6 +181,8 @@ resources:
                   policy_rule_set_scope:
             consumed_policy_rule_sets:
                 - policy_rule_set_id: { get_param: web_access_prs_id }
+                  policy_rule_set_scope:
+                - policy_rule_set_id: { get_param: service_management_access_rule_set_id }
                   policy_rule_set_scope:
             shared: True
 
@@ -304,9 +311,14 @@ resources:
         properties:
             name: { get_param: service_management_ptg_name }
             l2_policy_id: { get_resource: infra_l2_policy }
-            consumed_policy_rule_sets: 
+            provided_policy_rule_sets:
+                - policy_rule_set_id: { get_param: service_management_access_rule_set_id }
+                  policy_rule_set_scope:
+            consumed_policy_rule_sets:
                 - policy_rule_set_id: { get_param: monitoring_rule_set_id }
-                  policy_rule_set_scope: 
+                  policy_rule_set_scope:
+                - policy_rule_set_id: { get_param: monitoring_to_outside_rule_set_id }
+                  policy_rule_set_scope:
             shared: True
 
     svc_mgmt_server_pt1:
