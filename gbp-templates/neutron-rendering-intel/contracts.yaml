@@ -1,0 +1,276 @@
+#!highlight yaml
+
+heat_template_version: 2014-10-16
+
+parameters:
+
+  app_to_outside_rule_set_name:
+    type: string
+    label: app_to_outside_rule_set_name
+    description: Name of the App to Outside PRS
+    default: 'App_to_outside'
+
+  app_rule_set_name:
+    type: string
+    label: app_rule_set_name
+    description: Name of the App PRS
+    default: 'App'
+
+  http_rule_set_name:
+    type: string
+    label: http_rule_set_name
+    description: Name of the allow HTTP traffic rule set
+    default: "Allow_HTTP_Traffic"
+
+  web_tier_provided_prs_name:
+    type: string
+    label: web_tier_provided_prs_name
+    description: Name of the PRS provided by the Web Tier
+    default: "Web_Tier_via_Loadbalancer"
+
+  web_tier_consumed_prs_name:
+    type: string
+    label: web_tier_consumed_prs_name
+    description: Name of the PRS consumed by the Web Tier
+    default: "External_Connectivity"
+
+  service_management_ptg_name:
+    type: string
+    label: service_management_ptg_name
+    description: Name of the service management PTG
+    default: 'Service_Management_Tier'
+
+  external_network_cidr:
+    type: string
+    label: external_network_cidr
+    description: CIDR of external network
+    default: '203.0.113.0/24'
+
+  external_network_gateway:
+    type: string
+    label: external_network_gateway
+    description: Gateway for external network
+    default: '203.0.113.1'
+
+  physical_network_name:
+    type: string
+    label: physical_network_name
+    description: Name of the Physical network to map the external network to
+    default: 'default'
+
+  physical_network_type:
+    type: string
+    label: physical_network_type
+    description: Flat or VLAN
+    default: 'flat'
+
+resources:
+
+#### Network Services' Setup ####
+
+# Loadbalancer service chain node
+    sc_lb_node:
+        type: OS::Neutron::ServiceChainNode
+        properties:
+            name: "HAProxy-Loadbalancer"
+            service_type: LOADBALANCER
+            config: { get_file: lb.template }
+            shared: False
+
+    sc_fw_node:
+        type: OS::Neutron::ServiceChainNode
+        properties:
+            name: "McAfee-Firewall"
+            service_type: FIREWALL
+            config: { get_file: fw.template }
+            shared: False
+
+# LB service chain spec
+    sc_spec:
+        type: OS::Neutron::ServiceChainSpec
+        depends_on: [ sc_fw_node, sc_lb_node ]
+        properties:
+            name: "McAfee_Firewall-HAProxy_Loadbalancer-Service-Chain"
+            nodes:
+                - { get_resource: sc_fw_node }
+                - { get_resource: sc_lb_node }
+            shared: False
+
+# Network service policy for VIP IP assignment
+    vip_ip_policy:
+        type: OS::Neutron::NetworkServicePolicy
+        properties:
+            name: "VIP-Allocation"
+            network_service_params:
+                - type: ip_single
+                  name: vip_ip
+                  value: self_subnet
+            shared: False
+
+#### Policy Classifiers, Actions, Rules Setup ####
+
+# Allow action
+    allow_action:
+        type: OS::Neutron::PolicyAction
+        properties:
+            name: "Allow"
+            action_type: allow
+            shared: False
+
+# Classifier for icmp traffic
+    icmp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "ICMP-Traffic"
+            protocol: icmp
+            direction: bi
+            shared: False
+
+# Rule to allow all icmp traffic
+    icmp_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ icmp_classifier, allow_action ]
+        properties:
+            name: "ICMP-BI"
+            policy_classifier_id: { get_resource: icmp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: False
+
+
+# Classifier for all tcp traffic
+    tcp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "TCP-Traffic"
+            protocol: tcp
+            direction: in
+            shared: False
+
+# Rule to all all tcp traffic
+    tcp_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ tcp_classifier, allow_action ]
+        properties:
+            name: "TCP-IN"
+            policy_classifier_id: { get_resource: tcp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: False
+
+# App traffic classifier
+    app_tcp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "Application-Traffic"
+            protocol: tcp
+            port_range: '8080'
+            direction: in
+            shared: False
+
+# Allow App traffic classifier rule
+    app_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ app_tcp_classifier, allow_action ]
+        properties:
+            name: "Application-IN"
+            policy_classifier_id: { get_resource: app_tcp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: False
+
+# HTTP traffic classifier
+    http_tcp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "HTTP-Traffic"
+            protocol: tcp
+            port_range: '80'
+            direction: in
+            shared: False
+
+# Allow HTTP traffic rule
+    http_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ http_tcp_classifier, allow_action ]
+        properties:
+            name: "HTTP-IN"
+            policy_classifier_id: { get_resource: http_tcp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: False
+
+# Redirect to LB chain action
+    redirect_to_lb_chain:
+        type: OS::Neutron::PolicyAction
+        depends_on: sc_spec
+        properties:
+            name: "Redirect-LB"
+            action_type: redirect
+            action_value: { get_resource: sc_spec }
+            shared: False
+
+# Redirect HTTP traffic to LB rule
+    http_redirect_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ http_tcp_classifier, redirect_to_lb_chain ]
+        properties:
+            name: "HTTP-IN-VIA-LB"
+            policy_classifier_id: { get_resource: http_tcp_classifier }
+            policy_actions: [{ get_resource: redirect_to_lb_chain }]
+            shared: False
+
+#### Policy-Rules-Sets (Contracts) Setup ####
+
+#  Web tier - allow inbound 80 from external (nginx)
+    http_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: [icmp_traffic_rule, http_traffic_rule]
+        properties:
+            name: { get_param: http_rule_set_name }
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: http_traffic_rule }]
+            child_policy_rule_sets: []
+            shared: False
+
+#  Web tier - allow inbound 80 from external (nginx) via LB
+    http_with_lb_redirect_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: [icmp_traffic_rule, http_redirect_traffic_rule]
+        properties:
+            name: { get_param: web_tier_provided_prs_name }
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: http_redirect_traffic_rule }]
+            child_policy_rule_sets: []
+            shared: False
+
+# App tier - allow inbound 8000 from web-tier (python server)
+    app_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: [icmp_traffic_rule, app_traffic_rule]
+        properties:
+            name: { get_param: app_rule_set_name }
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: app_traffic_rule }]
+            child_policy_rule_sets: []
+            shared: False
+
+# Allow Web tier access to outside world
+    app_to_outside_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: [icmp_traffic_rule, tcp_traffic_rule]
+        properties:
+            name: { get_param: app_to_outside_rule_set_name }
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: tcp_traffic_rule }]
+            child_policy_rule_sets: []
+            shared: False
+
+outputs:
+
+    vip_ip_policy_id:
+        value: { get_resource: vip_ip_policy }
+
+    http_rule_set_id:
+        value: { get_resource: http_rule_set }
+
+    http_with_lb_redirect_rule_set_id:
+        value: { get_resource: http_with_lb_redirect_rule_set }
+
+    app_rule_set_id:
+        value: { get_resource: app_rule_set }
+
+    app_to_outside_rule_set_id:
+        value: { get_resource: app_to_outside_rule_set }
