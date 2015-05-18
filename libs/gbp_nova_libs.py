@@ -41,6 +41,28 @@ class Gbp_Nova(object):
                _log.info("Cmd execution failed! with this Return Error: \n%s" %(cmd_out))
                return 0
 
+    def quota_update(self):
+        """
+        Updates the instances/cores/ram
+        """
+        cmd_inst = "sed -i 's/quota_instances.*/quota_instances=50/' /etc/nova/nova.conf"
+        cmd_core = "sed -i 's/quota_cores.*/quota_cores=200/' /etc/nova/nova.conf"
+        cmd_ram = "sed -i 's/quota_ram.*/quota_ram=655360000/' /etc/nova/nova.conf"
+        for cmd in [cmd_inst,cmd_core,cmd_ram]:
+           getoutput(cmd)
+        for service in ['openstack-nova-api.service','openstack-nova-scheduler.service']:
+            cmd_restart = 'systemctl restart %s' %(service)
+            getoutput(cmd_restart)
+            sleep(2)
+            cmd_verify = 'systemctl status %s' %(service)
+            out = getoutput(cmd_verify)
+            if len(regex.findall('Active: active \(running\)',out)) > 0:
+               return 1
+            else:
+                _log.info('This service %s did not restart' %(service))
+                return 0
+
+
     def avail_zone(self,method,action,agg_name_id,avail_zone_name='',hostname=''):
         """
         Call Nova API/CLI to create avail-zone

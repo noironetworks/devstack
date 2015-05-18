@@ -319,10 +319,26 @@ class Gbp_Config(object):
                return 0
 
     def get_netns(self,net_node_ip,subnet):
+        """
+        Returns the Network Node's Ntk NameSpace
+        Associated with every VM
+        """
         env.host_string = net_node_ip
         env.user = 'root'
         env.password = 'noir0123'
-        with settings(warn_only=True):
+        if isinstance(subnet,list):
+           netns_list = []
+           with settings(warn_only=True):
+              result = run("ip netns | grep qdhcp")
+              out = [x.strip() for x in result.split('\n')]
+              for netns in out:
+                  cmd = "ip netns exec %s ifconfig" %(netns)
+                  result = run(cmd).replace('\r\n',' ')
+                  if result.find(subnet) > -1:
+                     netns_list.append(netns)
+           return netns_list
+        else:
+          with settings(warn_only=True):
            result = run("ip netns | grep qdhcp")
            out = [x.strip() for x in result.split('\n')]
            for netns in out:
@@ -330,7 +346,22 @@ class Gbp_Config(object):
                   result = run(cmd).replace('\r\n',' ')
                   if result.find(subnet) > -1:
                      break
-        return netns
+          return netns
+
+    def del_netns(self,net_node_ip,netns):
+        """
+        Deletes the Network Node's Ntk NameSpace
+        Associated with every VM
+        """
+        env.host_string = net_node_ip
+        env.user = 'root'
+        env.password = 'noir0123'
+        if isinstance(netns,list):
+         for ns in netns:
+           with settings(warn_only=True):
+               result = run("ip netns delete %s" %(ns))
+        else:
+               result = run("ip netns delete %s" %(netns))
 
     def get_vm_subnet(self,vm_string,ret=''):
         """

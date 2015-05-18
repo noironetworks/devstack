@@ -31,6 +31,7 @@ class gbp_main_config(object):
       self.nova_agg = conf['nova_agg_name']
       self.nova_az = conf['nova_az_name']
       self.comp_node = conf['az_comp_node']
+      self.ntk_node = conf['ntk_node']
       self.cntlr_ip = conf['controller_ip']
       #self.setup_file = conf['main_setup_heat_temp']
       self.heat_temp_test = conf['main_setup_heat_temp']
@@ -52,6 +53,9 @@ class gbp_main_config(object):
       SSH Key creation
       Heat Stack Creates All Test Config
       """
+      if self.gbpnova.quota_update()==0:
+         self._log.info("\n ABORTING THE TESTSUITE RUN, Updating the Nova Quota's Failed")
+         sys.exit(1)
       if self.num_hosts > 1:
          self.agg_id = self.gbpnova.avail_zone('api','create',self.nova_agg,avail_zone_name=self.nova_az)
          if self.agg_id == 0:
@@ -62,7 +66,7 @@ class gbp_main_config(object):
             self._log.info("\n ABORTING THE TESTSUITE RUN, availability zone creation Failed")
             self.gbpnova.avail_zone('cli','delete',self.agg_id) #Cleanup Agg_ID
             sys.exit(1)
-
+         
       #if self.gbpnova.sshkey_for_vm() == 0:
       #   self._log.info("\n ABORTING THE TESTSUITE RUN, ssh key creation Failed")
       #   sys.exit(1)
@@ -79,4 +83,12 @@ class gbp_main_config(object):
         self.gbpnova.avail_zone('cli','removehost',self.nova_agg,hostname=self.comp_node)
         self.gbpnova.avail_zone('cli','delete',self.agg_id)
         self.gbpnova.sshkey_for_vm(action='delete')
+        #Ntk namespace cleanup in Network-Node.. VM names are static throughout the test-cycle
+        subnet_list = []
+        for vm in ['VM1','VM4','VM7','VM10','VM11']:
+            vm_ip = gbpcfg.get_vm_subnet(vm)[0]
+            vm_subn = gbpcfg.get_vm_subnet(vm)[1]
+            subnet_list.append(vm_subn)
+        dhcp_ns_list = gbpcfg.get_netns(self.ntk_node,subnet_list)
+        gbpcfg.del_netns(self.ntk_node,dhcp_ns_list)
         sys.exit(1)
