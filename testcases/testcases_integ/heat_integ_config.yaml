@@ -107,6 +107,38 @@ resources:
             child_policy_rule_sets: []
             shared: False
 
+    demo_ruleset_icmp_tcp:
+        type: OS::Neutron::PolicyRuleSet
+        properties:
+            name: demo_ruleset_icmp_tcp
+            policy_rules: [{ get_resource: demo_rule_icmp }, { get_resource: demo_rule_tcp }]
+            child_policy_rule_sets: []
+            shared: False
+
+    demo_ruleset_icmp_udp:
+        type: OS::Neutron::PolicyRuleSet
+        properties:
+            name: demo_ruleset_icmp_udp
+            policy_rules: [{ get_resource: demo_rule_icmp },{ get_resource: demo_rule_udp }]
+            child_policy_rule_sets: []
+            shared: False
+
+    demo_ruleset_tcp_udp:
+        type: OS::Neutron::PolicyRuleSet
+        properties:
+            name: demo_ruleset_tcp_udp
+            policy_rules: [{ get_resource: demo_rule_tcp }, { get_resource: demo_rule_udp }]
+            child_policy_rule_sets: []
+            shared: False
+
+    demo_ruleset_all:
+        type: OS::Neutron::PolicyRuleSet
+        properties:
+            name: demo_ruleset_all
+            policy_rules: [{ get_resource: demo_rule_icmp }, { get_resource: demo_rule_tcp }, { get_resource: demo_rule_udp }]
+            child_policy_rule_sets: []
+            shared: False
+
 # Creating L2 and L3Policy for rendering DHCP
     demo_l3_policy:
         type: OS::Neutron::L3Policy
@@ -124,6 +156,7 @@ resources:
             l3_policy_id: { get_resource: demo_l3_policy }
             shared: False
 
+
 # Create EPGs for DHCP rendering by Admin
     server_ptg_1:
         type: OS::Neutron::PolicyTargetGroup
@@ -131,10 +164,7 @@ resources:
             name: server_ptg_1
             l2_policy_id: {get_resource: demo_l2_policy}
             provided_policy_rule_sets:
-                - policy_rule_set_id: { get_resource: demo_ruleset_tcp }
-                  policy_rule_set_scope:
-            consumed_policy_rule_sets:
-                - policy_rule_set_id: { get_resource: demo_ruleset_icmp }
+                - policy_rule_set_id: { get_resource: demo_ruleset_all }
                   policy_rule_set_scope:
             shared: False
             
@@ -144,10 +174,8 @@ resources:
             name: client_ptg_1
             l2_policy_id: {get_resource: demo_l2_policy}
             consumed_policy_rule_sets:
-                - policy_rule_set_id: { get_resource: demo_ruleset_tcp }
+                - policy_rule_set_id: { get_resource: demo_ruleset_all }
                   policy_rule_set_scope:
-                - policy_rule_set_id: { get_resource: demo_ruleset_icmp }
-                  policy_rule_set_scope: 
             shared: False    
 
     vm4_data_pt:

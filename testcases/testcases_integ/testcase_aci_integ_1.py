@@ -52,11 +52,11 @@ class testcase_aci_integ_1(object):
         Method to execute the testcase in Ordered Steps
         """
         #Note: Cleanup per testcases is not required,since every testcase updates the PTG, hence over-writing previous attr vals
-        testcase_steps = [#self.test_step_setup_config,
-                          #self.test_verify_traffic,
-                          self.test_step_restart_opflex_proxy,
-                          self.test_step_verify_objs_in_apic,
-                          self.test_verify_traffic]      
+        testcase_steps = [#self.test_step_SetUpConfig,
+                          #self.test_step_VerifyTraffic,
+                          self.test_step_RestartOpflexProxy,
+                          self.test_step_VerifyObjsApic,
+                          self.test_step_VerifyTraffic]      
         for step in testcase_steps:  ##TODO: Needs FIX
             try:
                if step()!=1:
@@ -64,10 +64,10 @@ class testcase_aci_integ_1(object):
                   raise TestFailed("%s_@_%s == FAILED" %(self.__class__.__name__.upper(),step.__name__.lstrip('self.')))
             except TestFailed as err:
                print 'Noiro ==',err
-               self.test_cleanup()
+               self.test_CleanUp()
         self._log.info("%s == PASSED" %(self.__class__.__name__.upper()))
 
-    def test_step_setup_config(self):
+    def test_step_SetUpConfig(self):
         """
         Test Step using Heat, setup the Test Config
         """
@@ -82,13 +82,12 @@ class testcase_aci_integ_1(object):
             sys.exit(1)
         sleep(3)
         if self.gbpheat.cfg_all_cli(1,self.heat_stack_name,heat_temp=self.heat_temp_test) == 0:
-           print 'FAILED FAILED FAILED FAILED'
            self._log.info("\n ABORTING THE TESTSUITE RUN, HEAT STACK CREATE of %s Failed" %(self.heat_stack_name))
-           self.test_cleanup()
+           self.test_CleanUp()
            sys.exit(1)
         return 1
 
-    def test_cleanup(self):
+    def test_CleanUp(self):
         """
         Test Setup Cleanup
         """
@@ -97,21 +96,21 @@ class testcase_aci_integ_1(object):
         self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
         sys.exit(1)
 
-    def test_step_restart_opflex_proxy(self):
+    def test_step_RestartOpflexProxy(self):
         """
         Test Step to restart Opflex Proxy
         """
         if self.gbpaci.opflex_proxy_act(self.leaf_ip) == 0:
            return 0
         return 1 
-    def test_step_verify_objs_in_apic(self):
+    def test_step_VerifyObjsApic(self):
         """
         Test Step to verify that all configured objs are available in APIC
         """
         if self.gbpaci.apic_verify_mos(self.apic_ip) == 0:
            return 0
         return 1
-    def test_verify_traffic(self):
+    def test_step_VerifyTraffic(self):
         """
         Send and Verify traffic
         """

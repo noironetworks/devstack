@@ -382,3 +382,13 @@ class Gbp_Config(object):
                return [ip_match.group(1),subn_match.group(1)]
         else:
            return 0
+
+    def restart_service(self,dev_ip,service_name,action='restart'):
+        """
+        Runs systemctl cmd to restart services
+        """
+        env.host_string = dev_ip
+        env.user = 'root'
+        env.password = 'noir0123'
+        with settings(warn_only=True):
+             results = run("systemctl %s %s" %(action,service_name))
