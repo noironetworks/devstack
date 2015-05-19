@@ -103,7 +103,7 @@ class Gbp_Aci(object):
            objs = [objs]
         env.host_string = apic_ip
         env.user = 'admin'
-        env.password = 'password'
+        env.password = 'noir0123'
         output = run("ls -ltr /mit/uni/tn-%s" %(tenant))
         for obj in objs:
             regex = re.compile(r"\W%s\W" %(obj))
@@ -131,4 +131,20 @@ class Gbp_Aci(object):
         else:
                return 0
 
-
+    def enable_disable_switch_port(self,apic_ip,switch_node_id,action,port):
+        """
+        Using APIC user can Admin DOWN/UP a Leaf/Spine Port
+        switch_node_id :: NodeID of Leaf/Spine
+        action:: 'enable' or 'disable'
+        port:: Port of the Leaf/Spine
+        """
+        env.host_string = apic_ip
+        env.user = 'admin'
+        env.password = 'noir0123'
+        if action == 'enable':
+           cmd = 'switchport %s switch %s interface %s' %(action,switch_node_id,port)
+        if action == 'disable':
+           cmd = 'switchport %s switch %s interface %s' %(action,switch_node_id,port)
+        output = run(cmd)
+        print output
+        return 1

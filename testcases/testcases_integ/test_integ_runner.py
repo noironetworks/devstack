@@ -23,13 +23,20 @@ class wrapper(object):
        self.nova_agg = config_file['nova_agg_name']
        self.nova_az = config_file['nova_az_name']
        self.comp_node = config_file['az_comp_node']
+       self.leaf_port1 = config_file['leaf1_to_comp1_conn']
+       self.leaf_por2 = config_file['leaf1_to_comp2_conn']
 
     def run(self):
-       for class_name in [filename.strip('.py') for filename in glob.glob('testcase_aci_integ*.py')]:
+       for class_name in [filename.strip('.py') for filename in glob.glob('testcase_gbp_intg*.py')]:
            imp_class = importlib.import_module(class_name)
            class_obj = getattr(imp_class,class_name)
            if callable(class_obj):
-              cls = class_obj(self.heat_temp_file,self.cntrl_ip,self.leaf_ip,\
+              if class_name.find('leaf') > -1: #Testcase names with 'leaf' substring
+                 cls = class_obj(self.heat_temp_file,self.cntrl_ip,self.leaf_ip,\
+                                 self.apic_ip,self.ntk_node,self.nova_agg,\
+                                 self.nova_az,self.comp_node,self.leaf_port1,self.leaf_port2)
+              else:
+                 cls = class_obj(self.heat_temp_file,self.cntrl_ip,self.leaf_ip,\
                               self.apic_ip,self.ntk_node,self.nova_agg,\
                               self.nova_az,self.comp_node)
               cls.test_runner('TESTCASE_ACI_INTEG')

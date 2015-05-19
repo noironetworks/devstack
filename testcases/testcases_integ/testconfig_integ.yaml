@@ -17,4 +17,5 @@ leaf_ip: '172.28.184.61'
 az_comp_node: 'f5-compute-1.noiro.lab'
 #vm_image: '"trusty-multi-if"'
 vm_image: 'ubuntu_multi_nics'
-
+leaf1_to_comp1_conn = '1/1'
+leaf1_to_comp2_conn = '1/2'
