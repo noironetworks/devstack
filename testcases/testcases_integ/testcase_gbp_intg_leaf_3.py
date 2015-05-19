@@ -6,6 +6,7 @@ import os
 import datetime
 import yaml
 import string
+from time import sleep
 from libs.gbp_conf_libs import Gbp_Config
 from libs.gbp_verify_libs import Gbp_Verify
 from libs.gbp_fab_traff_libs import Gbp_def_traff
@@ -16,27 +17,27 @@ from libs.gbp_aci_libs import Gbp_Aci
 from test_utils import *
 
 
-class testcase_gbp_intg_apic_2(object):
+class testcase_gbp_intg_leaf_1(object):
     """
     This is a GBP_ACI Integration TestCase
     """
     # Initialize logging
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
     _log = logging.getLogger( __name__ )
-    hdlr = logging.FileHandler('/tmp/testcase_gbp_intg_apic_2.log')
+    hdlr = logging.FileHandler('/tmp/testcase_gbp_intg_leaf_1.log')
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     hdlr.setFormatter(formatter)
     _log.addHandler(hdlr)
     _log.setLevel(logging.INFO)
     _log.setLevel(logging.DEBUG)
 
-    def __init__(self,heattemp,cntlr_ip,leaf_ip,apic_ip,ntk_node,nova_agg,nova_az,az_comp_node):
-
+    def __init__(self,heattemp,cntlr_ip,leaf_ip,apic_ip,ntk_node,nova_agg,nova_az,\
+                                        az_comp_node,leaf_port1,leaf_port2,comp_nodes):
       self.gbpcfg = Gbp_Config()
       self.gbpverify = Gbp_Verify()
       self.gbpdeftraff = Gbp_def_traff()
       self.gbpaci = Gbp_Aci()
-      self.heat_stack_name = 'gbpapic2'
+      self.heat_stack_name = 'gbpleaf3'
       self.heat_temp_test = heattemp
       self.gbpheat = Gbp_Heat(cntlr_ip)
       self.gbpnova = Gbp_Nova(cntlr_ip)
@@ -46,14 +47,18 @@ class testcase_gbp_intg_apic_2(object):
       self.nova_agg = nova_agg
       self.nova_az = nova_az
       self.az_comp_node = az_comp_node
+      self.leaf_port1 = leaf_port1 
+      self.leaf_port2 = leaf_port2
+      self.comp_nodes = comp_nodes
+
 
     def test_runner(self):
         """
         Method to run the Testcase in Ordered Steps
         """
-        testcase_steps = [self.test_step_DisconnectApic,
+        testcase_steps = [self.test_step_StopOPflexAgent,
                           self.test_step_SetUpConfig,
-                          self.test_step_ReconnectApic,
+                          self.test_step_StartOpflexAgent,
                           self.test_step_VerifyObjsApic,
                           self.test_step_VerifyTraffic]
         for step in testcase_steps:  ##TODO: Needs FIX
@@ -98,13 +103,16 @@ class testcase_gbp_intg_apic_2(object):
         return 1
 
 
-    def test_step_DisconnectApic(self):
+    def test_step_StopOPflexAgent(self):
         """
-        Test Step to Disconnect APIC from Ostack Controller
+        Test Step to  Stop OpflexAgent on two Comp-nodes
         """
-        if self.gbpaci.dev_conn_disconn(self.cntlr_ip,self.apic_ip,'disconnect') == 0:
-           return 0
- 
+        for node in self.comp_nodes:
+          if self.gbpcfg.restart_service(node,'agent-ovs.service',action='stop') == 0:
+             return 0
+        return 1
+
+
     def test_step_VerifyObjsApic(self):
         """
         Test Step to verify that all configured objs are available in APIC
@@ -112,20 +120,18 @@ class testcase_gbp_intg_apic_2(object):
         if self.gbpaci.apic_verify_mos(self.apic_ip) == 0:
            return 0
 
-    def test_step_ReconnectApic(self):
+    def test_step_StartOpflexAgent(self):
         """
-        Test Step to Reconnect APIC to Ostack Controller
-        Restart Neutron-Server
+        Test Step to Start OpflexAgent on two Comp-nodes
         """
-        if self.gbpaci.dev_conn_disconn(self.cntlr_ip,self.apic_ip,'reconnect') == 0:
-           return 0
-        else:
-           getoutput('systemctl restart neutron-server.service')
-           sleep(5)
-           return 1
+        for node in self.comp_nodes:
+          if self.gbpcfg.restart_service(node,'agent-ovs.service',action='start') == 0:
+             return 0
+        return 1
        
     def test_step_VerifyTraffic(self):
         """
         Send and Verify traffic
         """
         return verify_traff(proto='all')
+

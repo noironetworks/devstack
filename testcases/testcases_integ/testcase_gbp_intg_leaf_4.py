@@ -6,56 +6,60 @@ import os
 import datetime
 import yaml
 import string
+from time import sleep
 from libs.gbp_conf_libs import Gbp_Config
 from libs.gbp_verify_libs import Gbp_Verify
 from libs.gbp_fab_traff_libs import Gbp_def_traff
 from libs.gbp_pexp_traff_libs import Gbp_pexp_traff
-from libs.gbp_heat_libs import Gbp_Heat
 from libs.raise_exceptions import *
 from libs.gbp_aci_libs import Gbp_Aci
+from libs.gbp_heat_libs import Gbp_Heat
+from libs.gbp_nova_libs import Gbp_Nova
 from test_utils import *
 
 
-class testcase_gbp_intg_apic_2(object):
+class testcase_gbp_intg_apic_1(object):
     """
     This is a GBP_ACI Integration TestCase
     """
     # Initialize logging
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
     _log = logging.getLogger( __name__ )
-    hdlr = logging.FileHandler('/tmp/testcase_gbp_intg_apic_2.log')
+    hdlr = logging.FileHandler('/tmp/testcase_gbp_intg_apic_1.log')
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     hdlr.setFormatter(formatter)
     _log.addHandler(hdlr)
     _log.setLevel(logging.INFO)
     _log.setLevel(logging.DEBUG)
 
-    def __init__(self,heattemp,cntlr_ip,leaf_ip,apic_ip,ntk_node,nova_agg,nova_az,az_comp_node):
-
+    def __init__(self,heattemp,cntlr_ip,leaf_ip,apic_ip,ntk_node,nova_agg,nova_az,\
+                                        az_comp_node,leaf_port1,leaf_port2,comp_nodes):
       self.gbpcfg = Gbp_Config()
       self.gbpverify = Gbp_Verify()
       self.gbpdeftraff = Gbp_def_traff()
       self.gbpaci = Gbp_Aci()
-      self.heat_stack_name = 'gbpapic2'
+      self.heat_stack_name = 'gbpleaf4'
       self.heat_temp_test = heattemp
       self.gbpheat = Gbp_Heat(cntlr_ip)
-      self.gbpnova = Gbp_Nova(cntlr_ip)
+      self.gbpnova = Gbp_Nova(cntlr_ip)      
       self.leaf_ip = leaf_ip
       self.apic_ip = apic_ip
       self.ntk_node = ntk_node
       self.nova_agg = nova_agg
       self.nova_az = nova_az
       self.az_comp_node = az_comp_node
+      self.comp_nodes = comp_nodes
 
-    def test_runner(self):
+    def test_runner(self,log_string):
         """
-        Method to run the Testcase in Ordered Steps
+        Method to execute the testcase in Ordered Steps
         """
-        testcase_steps = [self.test_step_DisconnectApic,
-                          self.test_step_SetUpConfig,
-                          self.test_step_ReconnectApic,
+        #Note: Cleanup per testcases is not required,since every testcase updates the PTG, hence over-writing previous attr vals
+        testcase_steps = [self.test_step_SetUpConfig,
+                          self.test_step_VerifyTraffic,
+                          self.test_step_RestartOpflexAgent,
                           self.test_step_VerifyObjsApic,
-                          self.test_step_VerifyTraffic]
+                          self.test_step_VerifyTraffic]      
         for step in testcase_steps:  ##TODO: Needs FIX
             try:
                if step()!=1:
@@ -64,18 +68,7 @@ class testcase_gbp_intg_apic_2(object):
             except TestFailed as err:
                print 'Noiro ==',err
                self.test_CleanUp()
-        self._log.info("%s == PASSED" %(self.__class__.__name__.upper()))        
-
-
-    def test_CleanUp(self):
-        """
-        Cleanup the Testcase setup
-        """
-        self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
-        self.gbpnova.avail_zone('api','delete',self.agg_id)
-        self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
-        sys.exit(1)
-
+        self._log.info("%s == PASSED" %(self.__class__.__name__.upper()))
 
     def test_step_SetUpConfig(self):
         """
@@ -97,33 +90,32 @@ class testcase_gbp_intg_apic_2(object):
            sys.exit(1)
         return 1
 
+    def test_CleanUp(self):
+        """
+        Test Setup Cleanup
+        """
+        self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
+        self.gbpnova.avail_zone('api','delete',self.agg_id)
+        self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
+        sys.exit(1)
 
-    def test_step_DisconnectApic(self):
+    def test_step_RestartOpflexAgent(self):
         """
-        Test Step to Disconnect APIC from Ostack Controller
+        Test Step to Restart OpflexAgent on both comp-nodes
         """
-        if self.gbpaci.dev_conn_disconn(self.cntlr_ip,self.apic_ip,'disconnect') == 0:
-           return 0
- 
+        for node in self.comp_nodes:
+          if self.gbpcfg.restart_service(node,'agent-ovs.service') == 0:
+             return 0
+        return 1
+
     def test_step_VerifyObjsApic(self):
         """
         Test Step to verify that all configured objs are available in APIC
         """
         if self.gbpaci.apic_verify_mos(self.apic_ip) == 0:
            return 0
+        return 1
 
-    def test_step_ReconnectApic(self):
-        """
-        Test Step to Reconnect APIC to Ostack Controller
-        Restart Neutron-Server
-        """
-        if self.gbpaci.dev_conn_disconn(self.cntlr_ip,self.apic_ip,'reconnect') == 0:
-           return 0
-        else:
-           getoutput('systemctl restart neutron-server.service')
-           sleep(5)
-           return 1
-       
     def test_step_VerifyTraffic(self):
         """
         Send and Verify traffic

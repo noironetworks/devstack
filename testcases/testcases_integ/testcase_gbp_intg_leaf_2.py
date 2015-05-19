@@ -32,13 +32,13 @@ class testcase_gbp_intg_apic_1(object):
     _log.setLevel(logging.INFO)
     _log.setLevel(logging.DEBUG)
 
-    def __init__(self,heattemp,cntlr_ip,leaf_ip,apic_ip,ntk_node,nova_agg,nova_az,comp_node):
-
+    def __init__(self,heattemp,cntlr_ip,leaf_ip,apic_ip,ntk_node,nova_agg,nova_az,\
+                                        az_comp_node,leaf_port1,leaf_port2,comp_nodes):
       self.gbpcfg = Gbp_Config()
       self.gbpverify = Gbp_Verify()
       self.gbpdeftraff = Gbp_def_traff()
       self.gbpaci = Gbp_Aci()
-      self.heat_stack_name = 'gbpinteg1'
+      self.heat_stack_name = 'gbpleaf2'
       self.heat_temp_test = heattemp
       self.gbpheat = Gbp_Heat(cntlr_ip)
       self.gbpnova = Gbp_Nova(cntlr_ip)      
@@ -47,7 +47,7 @@ class testcase_gbp_intg_apic_1(object):
       self.ntk_node = ntk_node
       self.nova_agg = nova_agg
       self.nova_az = nova_az
-      self.comp_node = comp_node
+      self.az_comp_node = az_comp_node
 
     def test_runner(self,log_string):
         """
@@ -78,7 +78,7 @@ class testcase_gbp_intg_apic_1(object):
             self._log.info("\n ABORTING THE TESTSUITE RUN,nova host aggregate creation Failed")
             sys.exit(1)
         self._log.info(" Agg %s" %(self.agg_id))
-        if self.gbpnova.avail_zone('api','addhost',self.agg_id,hostname=self.comp_node) == 0:
+        if self.gbpnova.avail_zone('api','addhost',self.agg_id,hostname=self.az_comp_node) == 0:
             self._log.info("\n ABORTING THE TESTSUITE RUN, availability zone creation Failed")
             self.gbpnova.avail_zone('api','delete',self.nova_agg,avail_zone_name=self.nova_az) # Cleaning up
             sys.exit(1)
@@ -93,7 +93,7 @@ class testcase_gbp_intg_apic_1(object):
         """
         Test Setup Cleanup
         """
-        self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.comp_node)
+        self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
         self.gbpnova.avail_zone('api','delete',self.agg_id)
         self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
         sys.exit(1)

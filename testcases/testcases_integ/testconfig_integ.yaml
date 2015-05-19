@@ -12,6 +12,7 @@ num_comp_nodes: 2
 controller_ip: '172.28.184.65'
 compnode1_ip: '172.28.184.63'
 compnode2_ip: '172.28.184.64'
+comp_nodes: ['172.28.184.63','172.28.184.64']
 apic_ip: '172.28.184.60'
 leaf_ip: '172.28.184.61'
 az_comp_node: 'f5-compute-1.noiro.lab'

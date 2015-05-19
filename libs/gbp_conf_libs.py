@@ -37,6 +37,7 @@ class Gbp_Config(object):
       #proc.communicate()
       return proc.stdout.read()
 
+
     def keystone_creds(self):
         creds={}
         creds['username'] = os.environ['OS_USERNAME']
@@ -44,6 +45,7 @@ class Gbp_Config(object):
         creds['auth_url'] = os.environ['OS_AUTH_URL']
         creds['tenant_name'] = os.environ['OS_TENANT_NAME']
         return creds
+
 
     def gbp_uuid_get(self,cmd_out):
         '''
@@ -56,6 +58,7 @@ class Gbp_Config(object):
            return obj_uuid.rstrip()
         else:
             return 0
+
 
     def gbp_action_config(self,cmd_val,name_uuid,**kwargs):
 	"""
@@ -95,6 +98,7 @@ class Gbp_Config(object):
            action_uuid = self.gbp_uuid_get(cmd_out)
            return action_uuid
 
+
     def gbp_classif_config(self,cmd_val,classifier_name,**kwargs):
         """
         -- cmd_val== 0:delete; 1:create; 2:update
@@ -131,6 +135,7 @@ class Gbp_Config(object):
         if cmd_val==1:
            classifier_uuid = self.gbp_uuid_get(cmd_out)
            return classifier_uuid
+
 
     def gbp_policy_cfg_all(self,cmd_val,cfgobj,name_uuid,**kwargs):
         """
@@ -202,6 +207,7 @@ class Gbp_Config(object):
            return 0
         return 1
 
+
     def gbp_policy_cfg_upd_all(self,cfgobj,name_uuid,attr):
         """
         --cfgobj== policy-*(where *=action;classifer,rule,ruleset,targetgroup,target
@@ -240,6 +246,7 @@ class Gbp_Config(object):
                return 0
         return 1
 
+
     def gbp_del_all_anyobj(self,cfgobj):
         """
         This function deletes all entries for any policy-object
@@ -264,6 +271,7 @@ class Gbp_Config(object):
             cmd_out = getoutput(cmd)
             _log.info(cmd_out)
         return 1 
+
 
     def gbp_sc_cfg_all(self,cmd_val,cfgobj,name_uuid,nodes="",svc_type='lb'):
         """
@@ -308,6 +316,7 @@ class Gbp_Config(object):
            obj_uuid = self.gbp_uuid_get(cmd_out)
            return obj_uuid
 
+
     def cmd_error_check(self,cmd_output):
         """
         Verifies whether executed cmd has any known error string
@@ -317,6 +326,7 @@ class Gbp_Config(object):
                _log.info(cmd_out)
                _log.info("Cmd execution failed! with this Return Error: \n%s" %(cmd_ver))
                return 0
+
 
     def get_netns(self,net_node_ip,subnet):
         """
@@ -348,6 +358,7 @@ class Gbp_Config(object):
                      break
           return netns
 
+
     def del_netns(self,net_node_ip,netns):
         """
         Deletes the Network Node's Ntk NameSpace
@@ -362,6 +373,11 @@ class Gbp_Config(object):
                result = run("ip netns delete %s" %(ns))
         else:
                result = run("ip netns delete %s" %(netns))
+        if result.succeeded:
+           return 1
+        else: 
+           return 0
+
 
     def get_vm_subnet(self,vm_string,ret=''):
         """
@@ -383,6 +399,7 @@ class Gbp_Config(object):
         else:
            return 0
 
+
     def restart_service(self,dev_ip,service_name,action='restart'):
         """
         Runs systemctl cmd to restart services
@@ -391,4 +408,19 @@ class Gbp_Config(object):
         env.user = 'root'
         env.password = 'noir0123'
         with settings(warn_only=True):
-             results = run("systemctl %s %s" %(action,service_name))
+             result = run("systemctl %s %s" %(action,service_name))
+        if result.failed:
+           return 0
+        if action == 'start' or action == 'restart':
+           sleep(2)
+           result = run("systemctl status %s" %(service_name))
+           if result.succeeded:
+              if result.find('Active: active \(running\)') > -1:
+                 return 1
+              else:
+                 _log.info('Service is NOT ACTIVE/RUNNING post-%s' %(action))
+                 return 0
+           else:
+                _log.info('Systemctl Status cmd failed for the Service %s' %(service_name))
+                return 0
+        return 1
