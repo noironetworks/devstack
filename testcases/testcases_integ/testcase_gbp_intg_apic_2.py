@@ -13,6 +13,8 @@ from libs.gbp_pexp_traff_libs import Gbp_pexp_traff
 from libs.gbp_heat_libs import Gbp_Heat
 from libs.raise_exceptions import *
 from libs.gbp_aci_libs import Gbp_Aci
+from test_utils import *
+
 
 class testcase_gbp_intg_apic_2(object):
     """
@@ -126,21 +128,4 @@ class testcase_gbp_intg_apic_2(object):
         """
         Send and Verify traffic
         """
-        gbpcfg = Gbp_Config()
-        vm4_ip = gbpcfg.get_vm_subnet('VM4')[0]
-        vm4_subn = gbpcfg.get_vm_subnet('VM4')[1]
-        dhcp_ns = gbpcfg.get_netns(self.ntk_node,vm4_subn)
-        vm5_ip = gbpcfg.get_vm_subnet('VM5',ret='ip')
-        vm6_ip = gbpcfg.get_vm_subnet('VM6',ret='ip')
-        print vm4_ip, vm4_subn, vm5_ip, vm6_ip, dhcp_ns
-        gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm4_ip,vm6_ip)
-        gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm4_ip,vm5_ip)
-        results=gbppexptraff.test_run()
-        failed = {}
-        failed = {key: val for key,val in results.iteritems() if val == 0}
-        #if len(failed) > 0: #TODO: Until UDP traffic is fixed, we disable this check
-        #   self._log.info("\n Following traffic_types %s = Failed" %(failed))
-        #   return 0
-        #else:
-        return 1
-
+        return verify_traff(proto='all')
