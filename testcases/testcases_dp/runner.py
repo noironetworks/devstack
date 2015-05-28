@@ -42,7 +42,7 @@ def main():
        #for ip in ['ipv4','ipv6']:  #TODO: Enable this when ipv6 support is known
        for ip in ['ipv4']:
          #for bdtype in ['vxlan','vlan']:  #TODO: Enable this when vlan support is known
-         for bdtype in ['vlan']:
+         for bdtype in ['vxlan']:
            #for location in ['same_host','diff_host_same_leaf','diff_host_diff_leaf']: #TODO: Enable this when diff_leaf support is known
            for location in ['same_host','diff_host_same_leaf']: #location strings MUST NOT BE CHANGED
                    #Run the testcases specific to the initialized testsuite

@@ -148,3 +148,11 @@ class Gbp_Aci(object):
         output = run(cmd)
         print output
         return 1
+
+    def reboot_aci(self,ip):
+        """
+        Reboot APIC/Leaf/Spine
+        ip:: ip of the aci device to be rebooted
+        """
+        self.exec_admin_cmd(ip,'system-reboot')
+        return 1
