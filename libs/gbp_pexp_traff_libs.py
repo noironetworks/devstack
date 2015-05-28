@@ -53,7 +53,7 @@ class Gbp_pexp_traff(object):
       results = {}
       for protocol in protocols:
         if protocol=='icmp' or protocol=='all':
-           child.sendline('hping3 %s --icmp -c %s' %(self.dest_ep,self.pkt_cnt))
+           child.sendline('hping3 %s --icmp -c %s --fast -q' %(self.dest_ep,self.pkt_cnt))
            child.expect('#')
            print "Sent ICMP packets"
            result=child.before         
@@ -63,9 +63,9 @@ class Gbp_pexp_traff(object):
            else:
               results['icmp']=0
         if protocol=='tcp'or protocol=='all':
-           cmd_s = "sudo hping3 %s -S -p %s -c %s" %(self.dest_ep,port,self.pkt_cnt)
-           cmd_sa = "sudo hping3 %s -S -A -p %s -c %s" %(self.dest_ep,port,self.pkt_cnt)
-           cmd_saf = "sudo hping3 %s -S -A -F -p %s -c %s" %(self.dest_ep,port,self.pkt_cnt)
+           cmd_s = "sudo hping3 %s -S -p %s -c %s --fast -q" %(self.dest_ep,port,self.pkt_cnt)
+           cmd_sa = "sudo hping3 %s -S -A -p %s -c %s --fast -q" %(self.dest_ep,port,self.pkt_cnt)
+           cmd_saf = "sudo hping3 %s -S -A -F -p %s -c %s --fast -q" %(self.dest_ep,port,self.pkt_cnt)
            for cmd in [cmd_s,cmd_sa,cmd_saf]:
                child.sendline(cmd)
                child.expect('#')
@@ -77,7 +77,7 @@ class Gbp_pexp_traff(object):
                else:
                   results['tcp']=0
         if protocol=='udp' or protocol=='all':
-           cmd = "hping3 %s --udp -p %s -c %s" %(self.dest_ep,port,self.pkt_cnt)
+           cmd = "hping3 %s --udp -p %s -c %s --fast -q" %(self.dest_ep,port,self.pkt_cnt)
            child.sendline(cmd)
            child.expect('#')
            print 'Sent UDP packets'

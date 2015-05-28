@@ -37,13 +37,39 @@ resources:
             action_type: allow
             shared: False
 
+
+# Creating a classifier,policy-rule,policy-ruleset(Contract) for ICMP traffic
+    demo_class_icmp:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: demo_class_icmp
+            protocol: icmp
+            direction: bi
+            shared: False
+
+    demo_rule_icmp:
+        type: OS::Neutron::PolicyRule
+        properties:
+            name: demo_rule_icmp
+            policy_classifier_id: { get_resource: demo_class_icmp }
+            policy_actions: [{ get_resource: demo_act }]
+            shared: False
+
+    demo_ruleset_icmp:
+        type: OS::Neutron::PolicyRuleSet
+        properties:
+            name: demo_ruleset_icmp
+            policy_rules: [{ get_resource: demo_rule_icmp }]
+            child_policy_rule_sets: []
+            shared: False
+
 # Creating a classifier,policy-rule,policy-ruleset(Contract) for any tcp traffic
     demo_class_tcp:
         type: OS::Neutron::PolicyClassifier
         properties:
             name: demo_class_tcp
             protocol: tcp
-            direction: in
+            direction: bi
             shared: False
 
     demo_rule_tcp:
@@ -68,7 +94,7 @@ resources:
         properties:
             name: demo_class_udp
             protocol: udp
-            direction: in
+            direction: bi
             shared: False
 
     demo_rule_udp:
@@ -84,31 +110,6 @@ resources:
         properties:
             name: demo_ruleset_udp
             policy_rules: [{ get_resource: demo_rule_udp }]
-            child_policy_rule_sets: []
-            shared: False
-
-# Creating a classifier,policy-rule,policy-ruleset(Contract) for ICMP traffic
-    demo_class_icmp:
-        type: OS::Neutron::PolicyClassifier
-        properties:
-            name: demo_class_icmp
-            protocol: icmp
-            direction: bi
-            shared: False
-
-    demo_rule_icmp:
-        type: OS::Neutron::PolicyRule
-        properties:
-            name: demo_rule_icmp
-            policy_classifier_id: { get_resource: demo_class_icmp }
-            policy_actions: [{ get_resource: demo_act }]
-            shared: False
-
-    demo_ruleset_icmp:
-        type: OS::Neutron::PolicyRuleSet
-        properties:
-            name: demo_ruleset_icmp
-            policy_rules: [{ get_resource: demo_rule_icmp }]
             child_policy_rule_sets: []
             shared: False
 

@@ -35,7 +35,7 @@ class Gbp_def_traff(object):
         env.user = user
         env.pwd = pwd
         with settings(warn_only=True):
-          result = run("sudo hping3 %s --icmp -c %s" %(target_ip,pkt_cnt))
+          result = run("sudo hping3 %s --icmp -c %s --fast -q" %(target_ip,pkt_cnt))
           if result.return_code == 0:
              if self.parse_hping(result,pkt_cnt) != 0:
                return 1
@@ -50,9 +50,9 @@ class Gbp_def_traff(object):
         env.user = user
         env.pwd = pwd
         print "Sending TCP SYN,SYN ACK,SYN-ACK-FIN to %s" %(target_ip)
-        cmd_s = "sudo hping3 %s -S -p %s -c %s" %(target_ip,port,pkt_cnt)
-        cmd_sa = "sudo hping3 %s -S -A -p %s -c %s" %(target_ip,port,pkt_cnt)
-        cmd_saf = "sudo hping3 %s -S -A -F -p %s -c %s" %(target_ip,port,pkt_cnt)
+        cmd_s = "sudo hping3 %s -S -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt)
+        cmd_sa = "sudo hping3 %s -S -A -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt)
+        cmd_saf = "sudo hping3 %s -S -A -F -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt)
         with settings(warn_only=True):
            for cmd in [cmd_s,cmd_sa,cmd_saf]:
               result = run(cmd)
@@ -70,7 +70,7 @@ class Gbp_def_traff(object):
         env.pwd = pwd
         print "Sending UDP to %s" %(target_ip)
         with settings(warn_only=True):
-          result = run("sudo hping3 %s --udp -p %s -c %s" %(target_ip,port,pkt_cnt))
+          result = run("sudo hping3 %s --udp -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt))
           if result.return_code == 0:
              if self.parse_hping(result,pkt_cnt) != 0:
                return 1
