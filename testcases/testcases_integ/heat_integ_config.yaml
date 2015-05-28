@@ -38,7 +38,7 @@ resources:
         properties:
             name: demo_class_udp
             protocol: udp
-            direction: in
+            direction: bi
             shared: False
 
 # Creating a classifier for ICMP traffic
