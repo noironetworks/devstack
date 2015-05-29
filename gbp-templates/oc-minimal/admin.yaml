@@ -1,0 +1,306 @@
+#!highlight yaml
+
+heat_template_version: 2013-05-23
+
+parameters:
+
+  infra_external_segment_name:
+    type: string
+    label: infra_external_segment_name
+    description: Name of the external segment used by infra services
+    default: 'Infrastructure'
+
+  infra_external_policy_name:
+    type: string
+    label: infra_external_policy_name
+    description: Name of the external segment used by infra services
+    default: 'Infrastructure'
+
+  app_external_segment_name:
+    type: string
+    label: infra_external_segment_name
+    description: Name of the external policy used by infra services
+    default: 'App'
+
+  app_external_policy_name:
+    type: string
+    label: app_external_policy_name
+    description: Name of the external policy used by app services
+    default: 'App'
+
+  port_address_translation:
+    type: string
+    label: port_address_translation
+    description: True for Neutron rendering, False for APIC rendering
+    default: 'False'
+
+  infra_ip_pool:
+    type: string
+    label: infra_ip_pool
+    description: IP Pool used for the Mgmt and Monitoring network
+    default: '172.1.0.0/24'
+
+  app_ip_pool:
+    type: string
+    label: infra_ip_pool
+    description: IP Pool used for the Mgmt and Monitoring network
+    default: '172.2.0.0/24'
+
+  monitoring_rule_set_id:
+    type: string
+    label: monitoring_rule_set_id
+    description: ID of the Monitoring PRS
+
+  monitoring_to_outside_rule_set_id:
+    type: string
+    label: monitoring_to_outside_rule_set_id
+    description: ID of the Monitoring to Outside PRS
+
+  app_to_outside_rule_set_id:
+    type: string
+    label: app_to_outside_rule_set_id
+    description: ID of the App to Outside PRS
+
+  service_management_access_rule_set_id:
+    type: string
+    label: service_management_access_rule_set_id
+    description: ID of PRS for Outside to Service Management access
+
+  mysql_rule_set_id:
+    type: string
+    label: mysql_rule_set_id
+    description: ID of the MySQL PRS
+
+  app_rule_set_id:
+    type: string
+    label: app_rule_set_id
+    description: ID of the App PRS
+
+  web_tier_provided_prs_id:
+    type: string
+    label: web_tier_provided_prs_id
+    description: ID of the PRS provided by the Web Tier
+
+  web_tier_consumed_prs_id:
+    type: string
+    label: web_tier_consumed_prs_id
+    description: ID of the PRS consumed by the Web Tier
+
+  web_access_prs_id:
+    type: string
+    label: web_tier_consumed_prs_id
+    description: ID of the PRS provided by the Monitoring Tier
+
+  monitoring_ptg_name:
+    type: string
+    label: monitoring_ptg_name
+    description: Name of the monitoring PTG
+    default: 'Monitoring'
+
+  service_management_ptg_name:
+    type: string
+    label: service_management_ptg_name
+    description: Name of the service management PTG
+    default: 'Service_Management_Tier'
+
+  management_ptg_name:
+    type: string
+    label: management_ptg_name
+    description: Name of the management PTG
+    default: 'Management'
+
+  monitoring_vm_image:
+    type: string
+    label: monitoring_vm_image
+    description: Name of the image for the monitoring VMs
+    default: 'cirros'
+
+  monitoring_vm_flavor:
+    type: string
+    label: monitoring_vm_flavor
+    description: Name of the flavor for the monitoring VMs
+    default: 'm1.tiny'
+
+  mgmt_vm_image:
+    type: string
+    label: mgmt_vm_image
+    description: Name of the image for the mgmt VMs
+    default: 'cirros'
+
+  mgmt_vm_flavor:
+    type: string
+    label: mgmt_vm_flavor
+    description: Name of the flavor for the mgmt VMs
+    default: 'm1.tiny'
+
+  svc_mgmt_vm_image:
+    type: string
+    label: svc_mgmt_vm_image
+    description: Name of the image for the svc mgmt VMs
+    default: 'cirros'
+
+  svc_mgmt_vm_flavor:
+    type: string
+    label: mgmt_vm_flavor
+    description: Name of the flavor for the svc mgmt VMs
+    default: 'm1.tiny'
+
+  infra_l3_policy_name:
+    type: string
+    label: infra_l3_policy_name
+    description: Name of the L3 policy for infra
+    default: 'Infrastructure'
+
+  app_l3_policy_name:
+    type: string
+    label: app_l3_policy_name
+    description: Name of the L3 policy for app
+    default: 'Datacenter'
+
+resources:
+
+#### Setup External Connectiviy resources ####
+
+    infra_external_segment:
+        type: OS::Neutron::ExternalSegment
+        properties:
+            name: { get_param: infra_external_segment_name }
+            port_address_translation: { get_param: port_address_translation }
+            external_routes:
+                - destination: '0.0.0.0/0'
+                  nexthop:
+            shared: True
+
+    infra_external_policy:
+        type: OS::Neutron::ExternalPolicy
+        properties:
+            name: { get_param: infra_external_policy_name }
+            external_segments: [ { get_resource: infra_external_segment } ]
+            provided_policy_rule_sets:
+                - policy_rule_set_id: { get_param: monitoring_to_outside_rule_set_id }
+                  policy_rule_set_scope:
+            consumed_policy_rule_sets:
+                - policy_rule_set_id: { get_param: web_access_prs_id }
+                  policy_rule_set_scope:
+                - policy_rule_set_id: { get_param: service_management_access_rule_set_id }
+                  policy_rule_set_scope:
+            shared: True
+
+    app_external_segment:
+        type: OS::Neutron::ExternalSegment
+        properties:
+            name: { get_param: app_external_segment_name }
+            port_address_translation: { get_param: port_address_translation }
+            external_routes:
+                - destination: '0.0.0.0/0'
+                  nexthop:
+            shared: True
+
+    app_external_policy:
+        type: OS::Neutron::ExternalPolicy
+        properties:
+            name: { get_param: app_external_policy_name }
+            external_segments: [ { get_resource: app_external_segment } ]
+            shared: True
+
+#### Setup L3/L2 Resrouces ####
+
+    infra_l3_policy:
+        type: OS::Neutron::L3Policy
+        properties:
+            name: { get_param: infra_l3_policy_name }
+            ip_pool: { get_param: infra_ip_pool }
+            shared: True
+
+    infra_l2_policy:
+        type: OS::Neutron::L2Policy
+        depends_on: infra_l3_policy
+        properties:
+            name: "Control-Domain"
+            l3_policy_id: { get_resource: infra_l3_policy }
+            shared: True
+
+    app_l3_policy:
+        type: OS::Neutron::L3Policy
+        properties:
+            name: { get_param: app_l3_policy_name }
+            ip_pool: { get_param: app_ip_pool }
+            shared: True
+
+#### Monitoring Group ####
+
+    monitoring_ptg:
+        type: OS::Neutron::PolicyTargetGroup
+        depends_on: [ infra_l2_policy ]
+        properties:
+            name: { get_param: monitoring_ptg_name }
+            l2_policy_id: { get_resource: infra_l2_policy }
+            provided_policy_rule_sets: 
+                - policy_rule_set_id: { get_param: monitoring_rule_set_id }
+                  policy_rule_set_scope:
+                - policy_rule_set_id: { get_param: web_access_prs_id }
+                  policy_rule_set_scope:
+            consumed_policy_rule_sets: 
+                - policy_rule_set_id: { get_param: monitoring_to_outside_rule_set_id }
+                  policy_rule_set_scope: 
+            shared: False
+
+#### Management Group ####
+
+    mgmt_ptg:
+        type: OS::Neutron::PolicyTargetGroup
+        depends_on: infra_l2_policy
+        properties:
+            name: { get_param: management_ptg_name }
+            l2_policy_id: { get_resource: infra_l2_policy }
+            consumed_policy_rule_sets: 
+                - policy_rule_set_id: { get_param: monitoring_rule_set_id }
+                  policy_rule_set_scope: 
+            shared: True
+
+#### Service Management Group ####
+
+    svc_mgmt_ptg:
+        type: OS::Neutron::PolicyTargetGroup
+        depends_on: infra_l2_policy
+        properties:
+            name: { get_param: service_management_ptg_name }
+            l2_policy_id: { get_resource: infra_l2_policy }
+            provided_policy_rule_sets:
+                - policy_rule_set_id: { get_param: service_management_access_rule_set_id }
+                  policy_rule_set_scope:
+            consumed_policy_rule_sets:
+                - policy_rule_set_id: { get_param: monitoring_rule_set_id }
+                  policy_rule_set_scope:
+                - policy_rule_set_id: { get_param: monitoring_to_outside_rule_set_id }
+                  policy_rule_set_scope:
+            shared: True
+
+outputs:
+
+    app_l3_policy_id:
+        value: { get_resource: app_l3_policy }
+
+    mgmt_ptg_id:
+        value: { get_resource: mgmt_ptg }
+
+    svc_mgmt_ptg_id:
+        value: { get_resource: svc_mgmt_ptg }
+
+    infra_external_segment_id:
+        value: { get_resource: infra_external_segment }
+
+    infra_external_policy_id:
+        value: { get_resource: infra_external_policy }
+
+    app_external_segment_id:
+        value: { get_resource: app_external_segment }
+
+    app_external_policy_id:
+        value: { get_resource: app_external_policy }
+
+    infra_l3_policy_id:
+        value: { get_resource: infra_l3_policy }
+
+    app_l3_policy_id:
+        value: { get_resource: app_l3_policy }
