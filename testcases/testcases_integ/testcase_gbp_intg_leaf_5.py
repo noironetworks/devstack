@@ -4,27 +4,24 @@ import sys
 import logging
 import os
 import datetime
-import yaml
 import string
 from time import sleep
 from libs.gbp_conf_libs import Gbp_Config
-from libs.gbp_verify_libs import Gbp_Verify
-from libs.gbp_fab_traff_libs import Gbp_def_traff
-from libs.gbp_pexp_traff_libs import Gbp_pexp_traff
 from libs.gbp_heat_libs import Gbp_Heat
 from libs.raise_exceptions import *
 from libs.gbp_aci_libs import Gbp_Aci
+from libs.gbp_nova_libs import Gbp_Nova
 from test_utils import *
 
 
-class testcase_gbp_intg_apic_3(object):
+class testcase_gbp_intg_leaf_5(object):
     """
     This is a GBP_ACI Integration TestCase
     """
     # Initialize logging
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
     _log = logging.getLogger( __name__ )
-    hdlr = logging.FileHandler('/tmp/testcase_gbp_intg_apic_3.log')
+    hdlr = logging.FileHandler('/tmp/testcase_gbp_intg_leaf_5.log')
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     hdlr.setFormatter(formatter)
     _log.addHandler(hdlr)
@@ -34,10 +31,8 @@ class testcase_gbp_intg_apic_3(object):
     def __init__(self,heattemp,cntlr_ip,leaf_ip,apic_ip,ntk_node,nova_agg,nova_az,\
                                         az_comp_node,leaf_port1,leaf_port2,comp_nodes):
       self.gbpcfg = Gbp_Config()
-      self.gbpverify = Gbp_Verify()
-      self.gbpdeftraff = Gbp_def_traff()
       self.gbpaci = Gbp_Aci()
-      self.heat_stack_name = 'gbpleaf4'
+      self.heat_stack_name = 'gbpleaf5'
       self.heat_temp_test = heattemp
       self.gbpheat = Gbp_Heat(cntlr_ip)
       self.gbpnova = Gbp_Nova(cntlr_ip)
@@ -47,62 +42,30 @@ class testcase_gbp_intg_apic_3(object):
       self.nova_agg = nova_agg
       self.nova_az = nova_az
       self.az_comp_node = az_comp_node
-      self.az_comp_node = comp_node
-      self.leaf_port1 = leaf_port1
+      self.leaf_port1 = leaf_port1 
       self.leaf_port2 = leaf_port2
-      objs_uuid = self.gbpverify.get_uuid_from_stack(heattemp,self.heat_stack_name)
-      self.ptg_1 = objs_uuid['server_ptg_1']
-      self.ptg_2 = objs_uuid['client_ptg_1']
-      self.test_1_prs = objs_uuid['demo_ruleset_icmp_id']
-      self.test_2_prs = objs_uuid['demo_ruleset_tcp_id']
-      self.test_3_prs = objs_uuid['demo_ruleset_udp_id']
-      self.test_4_prs = objs_uuid['demo_ruleset_icmp_tcp_id']
-      self.test_5_prs = objs_uuid['demo_ruleset_icmp_udp_id']
-      self.test_6_prs = objs_uuid['demo_ruleset_tcp_udp_id']
-      self.prs_proto = {self.test_1_prs:['icmp'],self.test_2_prs:['tcp'],self.test_3_prs:['udp'],\
-                   self.test_4_prs:['icmp','tcp'],self.test_5_prs:['icmp','udp'],self.test_6_prs:['tcp','udp']}
+      self.comp_nodes = comp_nodes
+
 
     def test_runner(self):
         """
         Method to run the Testcase in Ordered Steps
         """
-        if self.test_step_SetUpConfig()!=1:
-           self._log.info("Test Failed at Step_1 == SetUpConfig")
-           self.test_CleanUp()
-        if self.test_step_VerifyTraffic() != 1:
-           self._log.info("Test Failed at Step_2 == TestVerifyTraffic")
-           self.test_CleanUp()
-        testcase_steps = [self.test_step_DisconnectLeaf,
-                              self.test_step_UpdatePtg,
-                              self.test_step_ReconnectLeaf,
-                              self.test_step_RestartNeutron,
-                              #self.test_step_VerifyObjsApic,  #TODO:Need to check on APIC
-                              self.test_step_VerifyTraffic]
-        for prs,proto in self.prs_proto.iteritems():
-            for step in testcase_steps:  ##TODO: Needs FIX
-              try:
-                if step == 'self.test_step_VerifyTraffic':
-                   if step(proto) != 1:
-                      self._log.info("Test Failed at Step == VerifyTraffic for Protocol = %s" %(proto))
-                      raise TestFailed("%s_@_%s == FAILED" %(self.__class__.__name__.upper(),step.__name__.lstrip('self.')))
-                   elif step()!=1:
-                     self._log.info("Test Failed at Step == %s" %(step.__name__.lstrip('self')))
-                     raise TestFailed("%s_@_%s == FAILED" %(self.__class__.__name__.upper(),step.__name__.lstrip('self.')))
-              except TestFailed as err:
+        test_name = 'STOP_OPFLEXAGNT_SETUPCFG_START_OPFLEXAGNT'
+        testcase_steps = [self.test_step_StopOPflexAgent,
+                          self.test_step_SetUpConfig,
+                          self.test_step_StartOpflexAgent,
+                          self.test_step_VerifyTraffic]
+        for step in testcase_steps:  ##TODO: Needs FIX
+            try:
+               if step()!=1:
+                  self._log.info("Test Failed at Step == %s" %(step.__name__.lstrip('self')))
+                  raise TestFailed("%s_%s@_%s == FAILED" %(self.__class__.__name__.upper(),test_name,step.__name__.lstrip('self.')))
+            except TestFailed as err:
                print 'Noiro ==',err
                self.test_CleanUp()
-        self._log.info("%s == PASSED" %(self.__class__.__name__.upper())) ## TODO: Needs FIX
-
-
-    def test_CleanUp(self):
-        """
-        Cleanup the Testcase setup
-        """
-        self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
-        self.gbpnova.avail_zone('api','delete',self.agg_id)
-        self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
-        sys.exit(1)
-
+        self._log.info("%s_%s == PASSED" %(self.__class__.__name__.upper(),test_name))        
+        self.test_CleanUp()
 
     def test_step_SetUpConfig(self):
         """
@@ -124,46 +87,37 @@ class testcase_gbp_intg_apic_3(object):
            sys.exit(1)
         return 1
 
-    def test_step_UpdatePtg(self,prs):
-        """
-        Update the PTG with new PRS & Restart the Neutron-Server
-        """
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
-           and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs))==0:
-           self._log.info("Updating PTG = Failed")
-           return 0
 
-    def test_step_RestartNeutron(self):
-        getoutput('systemctl restart neutron-server.service')
-        sleep(5)
+    def test_step_StopOPflexAgent(self):
+        """
+        Test Step to  Stop OpflexAgent on two Comp-nodes
+        """
+        for node in self.comp_nodes:
+          if self.gbpcfg.restart_service(node,'agent-ovs.service',action='stop') == 0:
+             return 0
         return 1
 
-    def test_step_DisconnectLeaf(self):
+    def test_step_StartOpflexAgent(self):
         """
-        Test Step to Disconnect Leaf Port from two Comp-nodes
+        Test Step to Start OpflexAgent on two Comp-nodes
         """
-        for port in [self.leaf_port1,self.leaf_port2]:
-          if self.gbpaci.enable_disable_switch_port(self.apic_ip,self.node_id,'disable',port) == 0:
-           return 0
- 
-    def test_step_VerifyObjsApic(self):
-        """
-        Test Step to verify that all configured objs are available in APIC
-        """
-        if self.gbpaci.apic_verify_mos(self.apic_ip) == 0:
-           return 0
-
-    def test_step_ReconnectLeaf(self):
-        """
-        Test Step to Reconnect Leaf Port to two Comp-nodes
-        """
-        for port in [self.leaf_port1,self.leaf_port2]:
-          if self.gbpaci.enable_disable_switch_port(self.apic_ip,self.node_id,'enable',port) == 0:
-           return 0
- 
-    def test_step_VerifyTraffic(self,proto='all'):
+        for node in self.comp_nodes:
+          if self.gbpcfg.restart_service(node,'agent-ovs.service',action='start') == 0:
+             return 0
+        return 1
+       
+    def test_step_VerifyTraffic(self):
         """
         Send and Verify traffic
         """
-        return verify_traff(proto='all')
+        return verify_traff(self.ntk_node)
+
+    def test_CleanUp(self):
+        """
+        Cleanup the Testcase setup
+        """
+        self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
+        self.gbpnova.avail_zone('api','delete',self.agg_id)
+        self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
+        sys.exit(1)
 

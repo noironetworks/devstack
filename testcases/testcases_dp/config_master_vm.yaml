@@ -396,6 +396,7 @@ resources:
             policy_target_group_id: { get_resource: demo_diff_ptg_l2p_l3p_ptg2 }
 
 
+# <<< PLEASE NOTE: DO NOT CHANGE THE Name of VMs, as they have been referred in testcases >>>
 # Instantiating VM for Same_PTG_Same_L2P_Same_L3P
     vm1:
         type: OS::Nova::Server

@@ -23,9 +23,10 @@ class wrapper(object):
        self.nova_agg = config_file['nova_agg_name']
        self.nova_az = config_file['nova_az_name']
        self.az_comp_node = config_file['az_comp_node']
-       self.leaf_port1 = config_file['leaf1_to_comp1_conn']
-       self.leaf_por2 = config_file['leaf1_to_comp2_conn']
+       self.leaf_port1 = config_file['leaf1_to_compnode1_conn']
+       self.leaf_port2 = config_file['leaf1_to_compnode2_conn']
        self.comp_node_ips = config_file['comp_nodes']
+       self.node_id = config_file['leaf_node_id']
 
     def run(self):
        for class_name in [filename.strip('.py') for filename in glob.glob('testcase_gbp_intg*.py')]:
@@ -35,12 +36,13 @@ class wrapper(object):
               if class_name.find('leaf') > -1: #Testcase names with 'leaf' substring
                  cls = class_obj(self.heat_temp_file,self.cntrl_ip,self.leaf_ip,\
                                  self.apic_ip,self.ntk_node,self.nova_agg,\
-                                 self.nova_az,self.az_comp_node,self.leaf_port1,self.leaf_port2,self.comp_node_ips)
+                                 self.nova_az,self.az_comp_node,self.leaf_port1,\
+                                 self.leaf_port2,self.comp_node_ips,self.node_id)
               else:
                  cls = class_obj(self.heat_temp_file,self.cntrl_ip,self.leaf_ip,\
                               self.apic_ip,self.ntk_node,self.nova_agg,\
-                              self.nova_az,self.az_comp_node)
-              cls.test_runner('TESTCASE_ACI_INTEG')
+                              self.nova_az,self.az_comp_node,vm_location)
+              cls.test_runner()
 
 if __name__ == '__main__':
    main()

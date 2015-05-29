@@ -203,6 +203,7 @@ resources:
             policy_target_group_id: { get_resource: client_ptg_1 }
 
 # Instantiating VM for DIff_PTG_Same_L2P_Same_L3P
+# <<< PLEASE NOTE: DO NOT CHANGE THE name of VMs as they have been referred inside testcases >>>
     vm4:
         type: OS::Nova::Server
         depends_on: vm4_data_pt

@@ -63,6 +63,7 @@ class testcase_gbp_intg_apic_3(object):
         """
         Method to run the Testcase in Ordered Steps
         """
+        test_name = 'DISCONN_APIC_UPDATECFG_RECONN_APIC'
         if self.test_step_SetUpConfig()!=1:
            self._log.info("Test Failed at Step_1 == SetUpConfig")
            self.test_CleanUp()
@@ -81,25 +82,15 @@ class testcase_gbp_intg_apic_3(object):
                 if step == 'self.test_step_VerifyTraffic':
                    if step(proto) != 1:
                       self._log.info("Test Failed at Step == VerifyTraffic for Protocol = %s" %(proto))
-                      raise TestFailed("%s_@_%s == FAILED" %(self.__class__.__name__.upper(),step.__name__.lstrip('self.')))
+                      raise TestFailed("%s_%s_@_%s == FAILED" %(self.__class__.__name__.upper(),test_name,step.__name__.lstrip('self.')))
                    elif step()!=1:
                      self._log.info("Test Failed at Step == %s" %(step.__name__.lstrip('self')))
-                     raise TestFailed("%s_@_%s == FAILED" %(self.__class__.__name__.upper(),step.__name__.lstrip('self.')))
+                     raise TestFailed("%s_%s_@_%s == FAILED" %(self.__class__.__name__.upper(),test_name,step.__name__.lstrip('self.')))
               except TestFailed as err:
                print 'Noiro ==',err
                self.test_CleanUp()
-        self._log.info("%s == PASSED" %(self.__class__.__name__.upper())) ## TODO: Needs FIX
-
-
-    def test_CleanUp(self):
-        """
-        Cleanup the Testcase setup
-        """
-        self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
-        self.gbpnova.avail_zone('api','delete',self.agg_id)
-        self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
-        sys.exit(1)
-
+        self._log.info("%s_%s == PASSED" %(self.__class__.__name__.upper(),test_name)) ## TODO: Needs FIX
+        self.test_CleanUp()
 
     def test_step_SetUpConfig(self):
         """
@@ -141,6 +132,7 @@ class testcase_gbp_intg_apic_3(object):
         """
         if self.gbpaci.dev_conn_disconn(self.cntlr_ip,self.apic_ip,'disconnect') == 0:
            return 0
+        return 1
  
     def test_step_VerifyObjsApic(self):
         """
@@ -148,6 +140,7 @@ class testcase_gbp_intg_apic_3(object):
         """
         if self.gbpaci.apic_verify_mos(self.apic_ip) == 0:
            return 0
+        return 1
 
     def test_step_ReconnectApic(self):
         """
@@ -155,10 +148,20 @@ class testcase_gbp_intg_apic_3(object):
         """
         if self.gbpaci.dev_conn_disconn(self.cntlr_ip,self.apic_ip,'reconnect') == 0:
            return 0
-       
+        return 1
+
     def test_step_VerifyTraffic(self,proto='all'):
         """
         Send and Verify traffic
         """
-        return verify_traff(proto='all')
+        return verify_traff()
+
+    def test_CleanUp(self):
+        """
+        Cleanup the Testcase setup
+        """
+        self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
+        self.gbpnova.avail_zone('api','delete',self.agg_id)
+        self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
+        sys.exit(1)
 
