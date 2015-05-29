@@ -28,7 +28,7 @@ class testcase_gbp_intg_leaf_4(object):
     _log.setLevel(logging.DEBUG)
 
     def __init__(self,heattemp,cntlr_ip,leaf_ip,apic_ip,ntk_node,nova_agg,nova_az,\
-                                        az_comp_node,leaf_port1,leaf_port2,comp_nodes):
+                                        az_comp_node,leaf_port1,leaf_port2,comp_nodes,leaf_node_id):
       self.gbpaci = Gbp_Aci()
       self.heat_stack_name = 'gbpleaf2'
       self.heat_temp_test = heattemp
