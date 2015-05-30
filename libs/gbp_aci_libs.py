@@ -9,7 +9,7 @@ from time import sleep
 from commands import *
 from fabric.api import cd,run,env, hide, get, settings, local, lcd
 from raise_exceptions import *
-
+from passwdlib import *
 
 # Initialize logging
 logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
@@ -49,12 +49,14 @@ class Gbp_Aci(object):
     def get_root_password(self,ip,passwd='noir0123'):
         token = self.exec_admin_cmd(ip,cmd="acidiag dbgtoken",passwd=passwd)
         with lcd('/root/gbpauto/libs'):
-           password = local("./generate_token.sh %s" % token, capture=True)
+           password = local("./getrootpwd.py %s" % token, capture=True)
+        print 'Root Password == ',password
         return password
 
     def exec_root_cmd(self,ip,cmd):
         env.host_string = ip
         env.password = self.get_root_password(ip)
+        print env.password
         env.user = "root"
         env.disable_known_hosts = True
         out = run(cmd)
@@ -70,6 +72,7 @@ class Gbp_Aci(object):
         """
         cmd_ps = 'ps aux | grep svc_ifc_opflexp'
         out = re.search('\\broot\\b\s+(\d+).*/isan/bin/svc_ifc_opflexp',self.exec_root_cmd(leaf_ip,cmd_ps),re.I)
+        #out = re.search('\\broot\\b\s+(\d+).*/isan/bin/svc_ifc_opflexp',run(cmd_ps),re.I)
         if out != None:
            pid = int(out.group(1))        
         if act == 'stop':

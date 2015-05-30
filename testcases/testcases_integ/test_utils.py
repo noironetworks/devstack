@@ -32,7 +32,7 @@ def verify_traff(ntk_node,vm_loc='default',proto=['all']):
             samehosttrf = Gbp_pexp_traff(ntk_node,dhcp_ns,vm4_ip,vm5_ip)
             result_samehost = samehosttrf.test_run()
             diffhosttrf = Gbp_pexp_traff(ntk_node,dhcp_ns,vm4_ip,vm6_ip)
-            result_diffhost = diffhosttrf.testrun()
+            result_diffhost = diffhosttrf.test_run()
             results = {'same_host': result_samehost,\
                        'diff_host_same_leaf': result_diffhost}
         if vm_loc != 'default':

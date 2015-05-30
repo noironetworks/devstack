@@ -41,11 +41,12 @@ class testcase_gbp_intg_leaf_4(object):
       self.nova_az = nova_az
       self.az_comp_node = az_comp_node
 
-    def test_runner(self,log_string):
+    def test_runner(self):
         """
         Method to execute the testcase in Ordered Steps
         """
         test_name = 'RESTART_OPFLEX_PROXY_IN_LEAF'
+        self._log.info("\nSteps of the TESTCASE_GBP_INTG_LEAF_4_RESTART_OPFLEX_PROXY_IN_LEAF to be executed\n")
         testcase_steps = [self.test_step_SetUpConfig,
                           self.test_step_VerifyTraffic,
                           self.test_step_RestartOpflexProxy,
@@ -65,16 +66,19 @@ class testcase_gbp_intg_leaf_4(object):
         """
         Test Step using Heat, setup the Test Config
         """
+        self._log.info("\nSetupCfg: Create Aggregate & Availability Zone to be executed\n")
         self.agg_id = self.gbpnova.avail_zone('api','create',self.nova_agg,avail_zone_name=self.nova_az)
         if self.agg_id == 0:
             self._log.info("\n ABORTING THE TESTSUITE RUN,nova host aggregate creation Failed")
             sys.exit(1)
         self._log.info(" Agg %s" %(self.agg_id))
+        self._log.info("\nSetupCfg: Adding comp-node to Availability Zone to be executed\n")
         if self.gbpnova.avail_zone('api','addhost',self.agg_id,hostname=self.az_comp_node) == 0:
             self._log.info("\n ABORTING THE TESTSUITE RUN, availability zone creation Failed")
             self.gbpnova.avail_zone('api','delete',self.nova_agg,avail_zone_name=self.nova_az) # Cleaning up
             sys.exit(1)
         sleep(3)
+        self._log.info("\nSetupCfg: Heat Stack for GBP Config and VM Bringup to be executed\n")
         if self.gbpheat.cfg_all_cli(1,self.heat_stack_name,heat_temp=self.heat_temp_test) == 0:
            self._log.info("\n ABORTING THE TESTSUITE RUN, HEAT STACK CREATE of %s Failed" %(self.heat_stack_name))
            self.test_CleanUp()
@@ -83,19 +87,11 @@ class testcase_gbp_intg_leaf_4(object):
         sleep(120)
         return 1
 
-    def test_CleanUp(self):
-        """
-        Test Setup Cleanup
-        """
-        self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
-        self.gbpnova.avail_zone('api','delete',self.agg_id)
-        self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
-        sys.exit(1)
-
     def test_step_RestartOpflexProxy(self):
         """
         Test Step to restart Opflex Proxy
         """
+        self._log.info("\nRestart of OpflexProxy on Leaf to be executed\n")
         if self.gbpaci.opflex_proxy_act(self.leaf_ip) == 0:
            return 0
         return 1 
@@ -104,12 +100,14 @@ class testcase_gbp_intg_leaf_4(object):
         """
         Send and Verify traffic
         """
+        self._log.info("\nSend and Verify traffic for Intra & Inter Host\n")
         return verify_traff(self.ntk_node)
 
     def test_CleanUp(self):
         """
         Test Setup Cleanup
         """
+        self._log.info("\nCleanUp to be executed\n")
         self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
         self.gbpnova.avail_zone('api','delete',self.agg_id)
         self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
