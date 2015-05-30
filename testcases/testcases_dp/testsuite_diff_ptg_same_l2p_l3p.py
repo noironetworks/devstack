@@ -124,6 +124,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         """
         Run traff test when PTG is with NO Contract
         """
+        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: 10 Traffic Sub-Testcases with NO CONTRACT for arp,dns,dhcp,tcp,udp,icmp and their combos\n")
         return self.verify_traff()
 
     def test_2_traff_app_prs_no_rule(self):
@@ -131,6 +132,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Update the in-use PTG with a PRS which has NO-Rule
         Send traff
         """
+        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: 10 Traffic Sub-Testcases with CONTRACT But NO RULE for arp,dns,dhcp,tcp,udp,icmp and their combos\n")
         prs = self.test_2_prs
         if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
@@ -144,6 +146,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
+        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: Apply ICMP CONTRACT and Verify Traffic\n")
         prs = self.test_3_prs
         if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
@@ -157,6 +160,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
+        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: Apply TCP CONTRACT and Verify Traffic\n")
         prs = self.test_4_prs
         if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
@@ -170,6 +174,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
+        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: Apply UDP CONTRACT and Verify Traffic\n")
         prs = self.test_5_prs
         if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
@@ -182,6 +187,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
+        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: Apply ICMP-TCP combo CONTRACT and Verify Traffic\n")
         prs = self.test_6_prs
         if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
@@ -194,6 +200,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
+        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: Apply ICMP-UDP combo CONTRACT and Verify Traffic\n")
         prs = self.test_7_prs
         if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
@@ -206,6 +213,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
+        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: Apply TCP-UDP combo CONTRACT and Verify Traffic\n")
         prs = self.test_8_prs
         if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
@@ -218,6 +226,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
+        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: Apply ICMP-TCP-UDP combo CONTRACT and Verify Traffic\n")
         prs = self.test_9_prs
         if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
@@ -230,6 +239,7 @@ class test_diff_ptg_same_l2p_l3p(object):
         Remove the PRS/Contract from the PTG
         Test all traffic types
         """
+        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: 10 Sub-Testcases for REMOVING CONTRACT and Verify Traffic\n")
         if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="")\
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="") !=0:
            return self.verify_traff()

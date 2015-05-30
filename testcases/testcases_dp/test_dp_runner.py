@@ -37,13 +37,14 @@ def main():
        testsuite = val[1](objs_uuid)
 
        #now run the loop of test-combos
-       #print "Before Running Test .. sleeping for 120 secs to enable SSH Contract"  #TODO: Will remove this once implicit ssh contract
-       #sleep(120)
-       for ip in ['ipv4','ipv6']:  
+       print "Before Running Test .. sleeping for 120 secs to enable SSH Contract"  #TODO: Will remove this once implicit ssh contract
+       sleep(120)
+       for vpc in ['novpc','vpc_novpc','vpc_vpc']:
+        for ip in ['ipv4','ipv6']:  
          for bdtype in ['vxlan','vlan']:  
            for location in ['same_host','diff_host_same_leaf','diff_host_diff_leaf']: 
                    #Run the testcases specific to the initialized testsuite
-                   log_string = "%s_%s" %(bdtype,location)
+                   log_string = "%s_%s_%s_%s" %(vpc,ip,bdtype,location)
                    testsuite.test_runner(log_string,location)
        #Testsuite specific cleanup
        #header.cleanup()
