@@ -59,6 +59,8 @@ class testcase_gbp_intg_leaf_4(object):
             except TestFailed as err:
                print 'Noiro ==',err
                self.test_CleanUp()
+            if step == 'self.test_step_RestartOpflexProxy':
+               sleep(10) # Adding sleep to send traffic after opflex converges   
         self._log.info("%s_%s == PASSED" %(self.__class__.__name__.upper(),test_name))
         self.test_CleanUp()
 

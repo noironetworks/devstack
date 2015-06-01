@@ -20,12 +20,13 @@ def main():
     cfg_file = sys.argv[1]
     print "Setting up global config for all DP Testing"
     testbed_cfg = gbp_main_config(cfg_file)
-    #testbed_cfg.setup()
+    testbed_cfg.setup()
     
     # Fetch gbp objects via heat output
     gbpverify = Gbp_Verify()
     objs_uuid = gbpverify.get_uuid_from_stack(super_hdr.heat_temp,super_hdr.stack_name)
-
+    print "Before Running Test .. sleeping for 120 secs to enable SSH Contract"  #TODO: Will remove this once implicit ssh contract
+    sleep(120)
     for val in header_to_suite_map.itervalues():
        #Initialize Testsuite specific config setup/cleanup class
        header = val[0]()
@@ -37,8 +38,6 @@ def main():
        testsuite = val[1](objs_uuid)
 
        #now run the loop of test-combos
-       print "Before Running Test .. sleeping for 120 secs to enable SSH Contract"  #TODO: Will remove this once implicit ssh contract
-       sleep(120)
        for vpc in ['novpc','vpc_novpc','vpc_vpc']:
         for ip in ['ipv4','ipv6']:  
          for bdtype in ['vxlan','vlan']:  

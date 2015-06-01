@@ -56,7 +56,7 @@ class Gbp_Nova(object):
             sleep(2)
             cmd_verify = 'systemctl status %s' %(service)
             out = getoutput(cmd_verify)
-            if len(regex.findall('Active: active \(running\)',out)) > 0:
+            if len(re.findall('Active: active \(running\)',out)) > 0:
                return 1
             else:
                 _log.info('This service %s did not restart' %(service))

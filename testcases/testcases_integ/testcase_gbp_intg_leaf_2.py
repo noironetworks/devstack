@@ -86,8 +86,8 @@ class testcase_gbp_intg_leaf_2(object):
            self._log.info("\n ABORTING THE TESTSUITE RUN, HEAT STACK CREATE of %s Failed" %(self.heat_stack_name))
            self.test_CleanUp()
            sys.exit(1)
-        print 'Enable SSH .. sleeping for 120 secs'
-        sleep(120)
+        print 'Enable SSH .. sleeping for 60 secs'
+        sleep(60)
         return 1
 
 
@@ -105,6 +105,8 @@ class testcase_gbp_intg_leaf_2(object):
         """
         if self.gbpaci.enable_disable_switch_port(self.apic_ip,self.node_id,'enable',self.leaf_port_comp_node2) == 0:
            return 0
+        self._log.info("\n Sleeping for 60 secs for Opflex to converge\n")
+        sleep(60)
         return 1
        
     def test_step_VerifyTrafficIntraHost(self):
@@ -123,6 +125,7 @@ class testcase_gbp_intg_leaf_2(object):
         """
         Cleanup the Testcase setup
         """
+        self.gbpaci.enable_disable_switch_port(self.apic_ip,self.node_id,'enable',self.leaf_port_comp_node2)
         self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
         self.gbpnova.avail_zone('api','delete',self.agg_id)
         self.gbpheat.cfg_all_cli(0,self.heat_stack_name)

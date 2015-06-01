@@ -71,6 +71,7 @@ class testcase_gbp_intg_leaf_1(object):
         """
         Test Step using Heat, setup the Test Config
         """
+        self._log.info("\nSetupCfg: Create Aggregate & Availability Zone to be executed\n")
         self.agg_id = self.gbpnova.avail_zone('api','create',self.nova_agg,avail_zone_name=self.nova_az)
         if self.agg_id == 0:
             self._log.info("\n ABORTING THE TESTSUITE RUN,nova host aggregate creation Failed")
@@ -81,12 +82,13 @@ class testcase_gbp_intg_leaf_1(object):
             self.gbpnova.avail_zone('api','delete',self.nova_agg,avail_zone_name=self.nova_az) # Cleaning up
             sys.exit(1)
         sleep(3)
+        self._log.info("\nSetupCfg: Heat Stack for GBP Config and VM Bringup to be executed\n")
         if self.gbpheat.cfg_all_cli(1,self.heat_stack_name,heat_temp=self.heat_temp_test) == 0:
            self._log.info("\n ABORTING THE TESTSUITE RUN, HEAT STACK CREATE of %s Failed" %(self.heat_stack_name))
            self.test_CleanUp()
            sys.exit(1)
-        print 'Enable SSH .. sleeping for 120 secs'
-        sleep(120)
+        print 'Enable SSH .. sleeping for 60 secs'
+        sleep(60)
         return 1
 
 
@@ -94,6 +96,7 @@ class testcase_gbp_intg_leaf_1(object):
         """
         Test Step to Disconnect Leaf Port from One Comp-node1
         """
+        self._log.info("\nDisconnect Leaf Port connected to Comp-Node-1\n")
         if self.gbpaci.enable_disable_switch_port(self.apic_ip,self.node_id,'disable',self.leaf_port_comp_node1) == 0:
            return 0
         return 1
@@ -102,8 +105,11 @@ class testcase_gbp_intg_leaf_1(object):
         """
         Test Step to Reconnect Leaf Port to One Comp-node1
         """
+        self._log.info("\nReconnect Leaf Port connected to Comp-Node-1\n")
         if self.gbpaci.enable_disable_switch_port(self.apic_ip,self.node_id,'enable',self.leaf_port_comp_node1) == 0:
            return 0
+        self._log.info("\n Sleeping for 60 secs for Opflex to converge\n")
+        sleep(60)
         return 1
        
     def test_step_VerifyTraffic(self):
@@ -116,6 +122,7 @@ class testcase_gbp_intg_leaf_1(object):
         """
         Cleanup the Testcase setup
         """
+        self._log.info("\nCleanUp to be executed\n")
         self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
         self.gbpnova.avail_zone('api','delete',self.agg_id)
         self.gbpheat.cfg_all_cli(0,self.heat_stack_name)

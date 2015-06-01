@@ -72,7 +72,6 @@ class Gbp_Aci(object):
         """
         cmd_ps = 'ps aux | grep svc_ifc_opflexp'
         out = re.search('\\broot\\b\s+(\d+).*/isan/bin/svc_ifc_opflexp',self.exec_root_cmd(leaf_ip,cmd_ps),re.I)
-        #out = re.search('\\broot\\b\s+(\d+).*/isan/bin/svc_ifc_opflexp',run(cmd_ps),re.I)
         if out != None:
            pid = int(out.group(1))        
         if act == 'stop':
@@ -95,6 +94,8 @@ class Gbp_Aci(object):
            out = self.exec_root_cmd(leaf_ip,cmd)
         if out.failed:
             raise ErrorRemoteCommand("---ERROR---: Error running %s on %s as user root, stderr %s" % (cmd,leaf_ip,out.stderr))
+        print 'Checking whether process got new pid = \n', self.exec_root_cmd(leaf_ip,cmd_ps)
+        
         return 1 
 
     def apic_verify_mos(self,apic_ip,objs,tenant='admin'):
