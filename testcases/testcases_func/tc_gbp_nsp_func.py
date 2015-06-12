@@ -13,12 +13,12 @@ def main():
 
     #Run the Testcases:
     test = test_gbp_nsp_func()
-    if test.test_gbp_nsp_func_1()==0:
-       test.cleanup(tc_name='TESTCASE_GBP_NSP_FUNC_1') 
+    #if test.test_gbp_nsp_func_1()==0:
+    #   test.cleanup(tc_name='TESTCASE_GBP_NSP_FUNC_1') 
     if test.test_gbp_nsp_func_2()==0:
        test.cleanup(tc_name='TESTCASE_GBP_NSP_FUNC_2')
-    if test.test_gbp_nsp_func_3()==0:
-       test.cleanup(tc_name='TESTCASE_GBP_NSP_FUNC_3')
+    #if test.test_gbp_nsp_func_3()==0:
+    #   test.cleanup(tc_name='TESTCASE_GBP_NSP_FUNC_3')
     test.cleanup()
     report_results('test_gbp_nsp_func','test_results.txt')
     sys.exit(1)
