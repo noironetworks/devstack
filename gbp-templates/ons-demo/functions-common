@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+
+ACTIVE_TIMEOUT=300
+
+function set_user_password_tenant {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    export OS_USERNAME=$1
+    export OS_PASSWORD=$2
+    export OS_TENANT_NAME=$3
+    export PS1='[\u@\h \W(keystone_$1)]\$ '
+    $xtrace
+}
+
+function confirm_resource_created {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    if ! timeout $ACTIVE_TIMEOUT sh -c "while ! $1 \"$2\" | grep -i \"$3\"; do sleep 1; done"; then
+        set -o xtrace
+        echo "resource '$1 $2' did not become active!"
+        false
+    fi
+    $xtrace
+}
+
+function confirm_resource_deleted {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    if ! timeout $ACTIVE_TIMEOUT sh -c "while $1 \"$2\" | grep -i \"id\"; do sleep 1; done"; then
+        set -o xtrace
+        echo "resource '$1 $2' did not become active!"
+        false
+    fi
+    $xtrace
+}
+
+function get_field {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    local data field
+    while read data; do
+        if [ "$1" -lt 0 ]; then
+            field="(\$(NF$1))"
+        else
+            field="\$$(($1 + 1))"
+        fi
+        echo "$data" | awk -F'[ \t]*\\|[ \t]*' "{print $field}"
+    done
+    $xtrace
+}
+
+function unset_prs_for_groups {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    uuids="$(echo $(gbp group-list | get_field 1) | sed 's/id //g')"
+    for id in $uuids
+    do
+        set -o xtrace
+        gbp group-update $id --provided-policy-rule-sets ""
+        gbp group-update $id --consumed-policy-rule-sets ""
+        set +o xtrace
+    done
+    $xtrace
+}
+
+function unset_prs_and_external_segments_for_external_policies {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    uuids="$(echo $(gbp external-policy-list | get_field 1) | sed 's/id //g')"
+    for id in $uuids
+    do
+        set -o xtrace
+        gbp external-policy-update $id --provided-policy-rule-sets ""
+        gbp external-policy-update $id --consumed-policy-rule-sets ""
+        gbp external-policy-update $id --external-segments ""
+        set +o xtrace
+    done
+    $xtrace
+}
+
+function unset_external_segment_for_l3_policies {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    uuids="$(echo $(gbp l3policy-list | get_field 1) | sed 's/id //g')"
+    for id in $uuids
+    do
+        set -o xtrace
+        gbp l3policy-update $id --external-segment ""
+        set +o xtrace
+    done
+    $xtrace
+}
+
+function delete_external_segments {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    uuids="$(echo $(gbp external-segment-list | get_field 1) | sed 's/id //g')"
+    for id in $uuids
+    do
+        set -o xtrace
+        gbp external-segment-delete $id
+        set +o xtrace
+    done
+    $xtrace
+}
+
+function delete_vms {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    uuids="$(echo $(nova list | get_field 1) | sed 's/id //g')"
+    for id in $uuids
+    do
+        set -o xtrace
+        nova delete $id
+        set +o xtrace
+    done
+    $xtrace
+}
+
+function delete_policy_targets {
+    local xtrace=$(set +o | grep xtrace)
+    set +o xtrace
+    uuids="$(echo $(gbp policy-target-list | get_field 1) | sed 's/id //g')"
+    for id in $uuids
+    do
+        set -o xtrace
+        gbp policy-target-delete $id
+        set +o xtrace
+    done
+    $xtrace
+}
