@@ -31,7 +31,7 @@
                 "url_path": "/"
             }
         },
-        "HaproxyPool": {
+        "Pool": {
             "Type": "OS::Neutron::Pool",
             "Properties": {
                 "admin_state_up": true,
@@ -56,7 +56,7 @@
         "HaproxyLb": {
             "Type": "OS::Neutron::LoadBalancer",
             "Properties": {
-                "pool_id": {"Ref":"HaproxyPool"},
+                "pool_id": {"Ref":"Pool"},
                 "protocol_port": 80
             }
         }

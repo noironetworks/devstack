@@ -1,0 +1,30 @@
+{
+    "heat_template_version": "2013-05-23",
+    "description": "Configuration for Firewall service",
+    "resources": {
+        "Firewall": {
+            "type": "OS::Neutron::Firewall",
+            "properties": {
+                "admin_state_up": true,
+                "description": "Firewll Resource",
+                "name": "FWaaS",
+                "firewall_policy_id": {
+                    "get_resource": "Firewall_Policy"
+                }
+            }
+        },
+        "Firewall_Policy": {
+            "type": "OS::Neutron::FirewallPolicy",
+            "properties": {
+                "audited": false,
+                "name": "FW_policy",
+                "firewall_rules": [
+                    {
+                        "get_resource": "Rule_1"
+                    }
+                ],
+                "description": "firewall policy Resource"
+            }
+        }
+    }
+}

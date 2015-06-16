@@ -80,7 +80,7 @@ resources:
         properties:
             name: "OC-Firewall"
             service_type: FIREWALL_TRANSPARENT
-            config: { get_file: oc_fw_appliance.yaml }
+            config: { get_file: oc_fw_appliance.template }
             shared: True
 
 # Avi LB service chain spec
