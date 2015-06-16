@@ -56,7 +56,6 @@
             "Type": "OS::Neutron::LoadBalancer",
             "Properties": {
                 "pool_id": {"Ref":"Pool"},
-                "name": "Avi LB",
                 "protocol_port": 80
             }
         }

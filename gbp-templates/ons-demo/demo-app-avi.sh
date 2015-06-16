@@ -38,7 +38,6 @@ set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $ADMIN_TENANT_NAME
 
 confirm_resource_created "heat stack-show" "$CONTRACTS_STACK" "CREATE_COMPLETE"
 VIP_IP_POLICY_ID=`heat output-show "$CONTRACTS_STACK" "vip_ip_policy_id" | sed "s/\"//g"`
-VIP_IP_POLICY_OC_ID=`heat output-show "$CONTRACTS_STACK" "vip_ip_policy_oc_id" | sed "s/\"//g"`
 HTTP_RULE_SET_ID=`heat output-show "$CONTRACTS_STACK" "http_rule_set_id" | sed "s/\"//g"`
 HTTP_WITH_LB_REDIRECT_RULE_SET_ID=`heat output-show "$CONTRACTS_STACK" "http_with_avi_lb_redirect_rule_set_id" | sed "s/\"//g"`
 APP_RULE_SET_ID=`heat output-show "$CONTRACTS_STACK" "app_with_oc_lb_fw_redirect_rule_set_id" | sed "s/\"//g"`
@@ -73,13 +72,8 @@ set_user_password_tenant $NON_ADMIN_USERNAME $NON_ADMIN_PASSWORD $HR_TENANT_NAME
 DB_PTG_ID=`heat output-show "$HR_STACK" "db_ptg_id" | sed "s/\"//g"`
 APP_PTG_ID=`heat output-show "$HR_STACK" "app_ptg_id" | sed "s/\"//g"`
 WEB_PTG_ID=`heat output-show "$HR_STACK" "web_ptg_id" | sed "s/\"//g"`
-gbp group-update $DB_PTG_ID --provided-policy-rule-sets "$MYSQL_RULE_SET_ID=true"
-gbp group-update $APP_PTG_ID --network-service-policy "$VIP_IP_POLICY_OC_ID"
-gbp group-update $APP_PTG_ID --consumed-policy-rule-sets "$MYSQL_RULE_SET_ID=true"
-gbp group-update $APP_PTG_ID --provided-policy-rule-sets "$APP_RULE_SET_ID=true"
 gbp group-update $WEB_PTG_ID --network-service-policy "$VIP_IP_POLICY_ID"
 gbp group-update $WEB_PTG_ID --provided-policy-rule-sets "$HTTP_WITH_LB_REDIRECT_RULE_SET_ID=true"
-gbp group-update $WEB_PTG_ID --consumed-policy-rule-sets "$APP_RULE_SET_ID=true"
 # Launching the HR tenant's stack complete
 
 set_user_password_tenant $ADMIN_USERNAME $ADMIN_PASSWORD $ADMIN_TENANT_NAME
