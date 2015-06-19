@@ -89,7 +89,7 @@ class test_same_ptg_same_l2p_same_l3p(object):
         vm1_ip = gbpcfg.get_vm_subnet('VM1')[0]
         vm1_subn = gbpcfg.get_vm_subnet('VM1')[1]
         dhcp_ns = gbpcfg.get_netns(self.ntk_node,vm1_subn)
-        if self.vm_loc == 'diff_host_same_leaf': 
+        if self.vm_loc == 'diff_host_same_leaf' or self.vm_loc == 'diff_host_diff_leaf': 
            vm3_ip = gbpcfg.get_vm_subnet('VM3',ret='ip')
            print vm1_ip, vm1_subn, vm3_ip, dhcp_ns
            gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm1_ip,vm3_ip)

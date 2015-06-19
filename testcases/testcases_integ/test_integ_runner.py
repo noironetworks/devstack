@@ -29,7 +29,7 @@ class wrapper(object):
        self.node_id = config_file['leaf_node_id']
 
     def run(self):
-       for class_name in [filename.strip('.py') for filename in glob.glob('testcase_gbp_intg*.py')]:
+       for class_name in [filename.strip('.py') for filename in glob.glob('testcase_gbp_aci_intg*.py')]:
            imp_class = importlib.import_module(class_name)
            class_obj = getattr(imp_class,class_name)
            if callable(class_obj):

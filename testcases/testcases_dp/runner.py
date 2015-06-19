@@ -12,18 +12,17 @@ from testcases.testcases_dp.testsuite_diff_ptg_diff_l2p_diff_l3p import test_dif
 
 def main():
     print "Welcome"
-    header_to_suite_map = {
-                           'header2': [header2,test_diff_ptg_same_l2p_l3p],
-                           'header3': [header3,test_diff_ptg_diff_l2p_same_l3p]
-                          }
+    #header_to_suite_map = {'header1': [header1,test_same_ptg_same_l2p_same_l3p], 
+    #                       'header2': [header2,test_diff_ptg_same_l2p_l3p],
+    #                       'header3': [header3,test_diff_ptg_diff_l2p_same_l3p],
+    #                       'header4': [header4,test_diff_ptg_diff_l2p_diff_l3p]}
 
-    #header_to_suite_map = {'header4': [header4,test_diff_ptg_diff_l2p_diff_l3p]}    
+    header_to_suite_map = {'header1': [header1,test_same_ptg_same_l2p_same_l3p]}    
     # Build the Test Config to be used for all DataPath Testcases
     cfg_file = sys.argv[1]
     print "Setting up global config for all DP Testing"
     testbed_cfg = gbp_main_config(cfg_file)
     #testbed_cfg.setup()
-    
     # Fetch gbp objects via heat output
     gbpverify = Gbp_Verify()
     objs_uuid = gbpverify.get_uuid_from_stack(super_hdr.heat_temp,super_hdr.stack_name)
@@ -42,13 +41,12 @@ def main():
 
        #now run the loop of test-combos
        #for mode in ['novpc','vpc-novpc','vpc']:
-       for mode in ['vpc-novpc']:
+       for mode in ['vpc']:
         #for ip in ['ipv4','ipv6']:  #TODO: Enable this when ipv6 support is known
         for ip in ['ipv4']:
          #for bdtype in ['vxlan','vlan']:  #TODO: Enable this when vlan support is known
-         for bdtype in ['vlan']:
-           #for location in ['same_host','diff_host_same_leaf','diff_host_diff_leaf']: #TODO: Enable this when diff_leaf support is known
-           for location in ['diff_host_same_leaf','diff_host_diff_leaf']: #TODO: Enable this when diff_leaf support is known
+         for bdtype in ['vxlan']:
+           for location in ['same_host','diff_host_same_leaf','diff_host_diff_leaf']: #TODO: Enable this when diff_leaf support is known
                    #Run the testcases specific to the initialized testsuite
                    log_string = "%s_%s_%s_%s" %(mode,ip,bdtype,location)
                    testsuite.test_runner(log_string,location)
