@@ -31,7 +31,7 @@ class testcase_gbp_intg_leaf_8(object):
                                         az_comp_node,leaf_port1,leaf_port2,comp_nodes,leaf_node_id):
 
       self.gbpaci = Gbp_Aci()
-      self.heat_stack_name = 'gbpvpc1'
+      self.heat_stack_name = 'gbpvpc3'
       self.heat_temp_test = heattemp
       self.gbpheat = Gbp_Heat(cntlr_ip)
       self.gbpnova = Gbp_Nova(cntlr_ip)
@@ -49,7 +49,7 @@ class testcase_gbp_intg_leaf_8(object):
         """
         Method to run the Testcase in Ordered Steps
         """
-        test_name = 'VPC_DISCON_LEAF1_NODE1'
+        test_name = 'VPC_DISCON_LEAF1_NODE2'
         testcase_steps = [self.test_step_SetUpConfig,
                           self.test_step_DisconnectLeafOneHost,
                           self.test_step_VerifyTraffic
@@ -88,9 +88,9 @@ class testcase_gbp_intg_leaf_8(object):
 
     def test_step_DisconnectLeafOneHost(self):
         """
-        Test Step to Disconnect Leaf Port from One Comp-node1
+        Test Step to Disconnect Leaf1 Port from One Comp-node2
         """
-        self._log.info("\nDisconnect Link between Leaf1 and Comp-Node-1\n")
+        self._log.info("\nDisconnect Link between Leaf1 and Comp-Node-2\n")
         if self.gbpaci.enable_disable_switch_port(self.apic_ip,self.node_id,'disable',self.leaf_port_comp_node1) == 0:
            return 0
         return 1

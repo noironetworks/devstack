@@ -116,6 +116,7 @@ class testcase_gbp_intg_leaf_1(object):
         """
         Send and Verify traffic
         """
+        self._log.info("\nSend and Verify Traffic\n")
         return verify_traff(self.ntk_node)
 
     def test_CleanUp(self):
