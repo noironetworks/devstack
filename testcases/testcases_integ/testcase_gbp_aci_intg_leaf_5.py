@@ -28,23 +28,24 @@ class testcase_gbp_intg_leaf_5(object):
     _log.setLevel(logging.INFO)
     _log.setLevel(logging.DEBUG)
 
-    def __init__(self,heattemp,cntlr_ip,leaf_ip,apic_ip,ntk_node,nova_agg,nova_az,\
-                                        az_comp_node,leaf_port1,leaf_port2,comp_nodes,leaf_node_id):
+    def __init__(self,params):
+
       self.gbpcfg = Gbp_Config()
       self.gbpaci = Gbp_Aci()
       self.heat_stack_name = 'gbpleaf5'
-      self.heat_temp_test = heattemp
+      cntlr_ip = params['cntlr_ip']
+      self.heat_temp_test = params['heat_temp_file']
       self.gbpheat = Gbp_Heat(cntlr_ip)
       self.gbpnova = Gbp_Nova(cntlr_ip)
-      self.leaf_ip = leaf_ip
-      self.apic_ip = apic_ip
-      self.ntk_node = ntk_node
-      self.nova_agg = nova_agg
-      self.nova_az = nova_az
-      self.az_comp_node = az_comp_node
-      self.leaf_port1 = leaf_port1 
-      self.leaf_port2 = leaf_port2
-      self.comp_nodes = comp_nodes
+      self.leaf_ip = params['leaf1_ip']
+      self.apic_ip = params['apic_ip']
+      self.ntk_node = params['ntk_node']
+      self.az_comp_node = params['az_comp_node']
+      self.nova_agg = params['nova_agg']
+      self.nova_az = params['nova_az']
+      self.leaf_port1 = params['leaf1_port1']
+      self.leaf_port2 = params['leaf1_port2']
+      self.comp_nodes = params['comp_node_ips']
 
 
     def test_runner(self):
@@ -52,10 +53,12 @@ class testcase_gbp_intg_leaf_5(object):
         Method to run the Testcase in Ordered Steps
         """
         test_name = 'STOP_OPFLEXAGNT_SETUPCFG_START_OPFLEXAGNT'
+        self._log.info("\nSteps of the TESTCASE_GBP_INTG_LEAF_5_STOP_OPFLEXAGNT_SETUPCFG_START_OPFLEXAGNT to be executed\n")
         testcase_steps = [self.test_step_StopOPflexAgent,
                           self.test_step_SetUpConfig,
                           self.test_step_StartOpflexAgent,
-                          self.test_step_VerifyTraffic]
+                          self.test_step_VerifyTraffic
+                         ]
         for step in testcase_steps:  ##TODO: Needs FIX
             try:
                if step()!=1:
@@ -71,6 +74,7 @@ class testcase_gbp_intg_leaf_5(object):
         """
         Test Step using Heat, setup the Test Config
         """
+        self._log.info("\nSetupCfg: Create Aggregate & Availability Zone to be executed\n")
         self.agg_id = self.gbpnova.avail_zone('api','create',self.nova_agg,avail_zone_name=self.nova_az)
         if self.agg_id == 0:
             self._log.info("\n ABORTING THE TESTSUITE RUN,nova host aggregate creation Failed")
@@ -90,8 +94,9 @@ class testcase_gbp_intg_leaf_5(object):
 
     def test_step_StopOPflexAgent(self):
         """
-        Test Step to  Stop OpflexAgent on two Comp-nodes
+        Test Step to Stop OpflexAgent on two Comp-nodes
         """
+        self._log.info("\nStep to Stop OpflexAgent on two Comp-nodes\n")
         for node in self.comp_nodes:
           if self.gbpcfg.restart_service(node,'agent-ovs.service',action='stop') == 0:
              return 0
@@ -101,6 +106,7 @@ class testcase_gbp_intg_leaf_5(object):
         """
         Test Step to Start OpflexAgent on two Comp-nodes
         """
+        self._log.info("\nStep to Start OpflexAgent on two Comp-nodes\n")
         for node in self.comp_nodes:
           if self.gbpcfg.restart_service(node,'agent-ovs.service',action='start') == 0:
              return 0
@@ -110,12 +116,16 @@ class testcase_gbp_intg_leaf_5(object):
         """
         Send and Verify traffic
         """
+        self._log.info("\nSend and Verify traffic for Intra & Inter Host\n")
         return verify_traff(self.ntk_node)
 
     def test_CleanUp(self):
         """
         Cleanup the Testcase setup
         """
+        self._log.info("\nCleanUp to be executed\n")
+        for node in self.comp_nodes:
+           self.gbpcfg.restart_service(node,'agent-ovs.service',action='start')
         self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
         self.gbpnova.avail_zone('api','delete',self.agg_id)
         self.gbpheat.cfg_all_cli(0,self.heat_stack_name)

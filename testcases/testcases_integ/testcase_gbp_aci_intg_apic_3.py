@@ -31,23 +31,25 @@ class testcase_gbp_intg_apic_3(object):
     _log.setLevel(logging.INFO)
     _log.setLevel(logging.DEBUG)
 
-    def __init__(self,heattemp,cntlr_ip,leaf_ip,apic_ip,ntk_node,nova_agg,nova_az,az_comp_node):
+    def __init__(self,params):
 
       self.gbpcfg = Gbp_Config()
       self.gbpverify = Gbp_Verify()
       self.gbpdeftraff = Gbp_def_traff()
       self.gbpaci = Gbp_Aci()
       self.heat_stack_name = 'gbpapic3'
-      self.heat_temp_test = heattemp
+      cntlr_ip = params['cntlr_ip']
+      self.heat_temp_test = params['heat_temp_file']
       self.gbpheat = Gbp_Heat(cntlr_ip)
       self.gbpnova = Gbp_Nova(cntlr_ip)
-      self.leaf_ip = leaf_ip
-      self.apic_ip = apic_ip
-      self.ntk_node = ntk_node
-      self.nova_agg = nova_agg
-      self.nova_az = nova_az
-      self.az_comp_node = az_comp_node
-      objs_uuid = self.gbpverify.get_uuid_from_stack(heattemp,self.heat_stack_name)
+      self.leaf_ip = params['leaf1_ip']
+      self.apic_ip = params['apic_ip']
+      self.ntk_node = params['ntk_node']
+      self.az_comp_node = params['az_comp_node']
+      self.nova_agg = params['nova_agg']
+      self.nova_az = params['nova_az']
+
+      objs_uuid = self.gbpverify.get_uuid_from_stack(self.heat_temp_test,self.heat_stack_name)
       self.ptg_1 = objs_uuid['server_ptg_1']
       self.ptg_2 = objs_uuid['client_ptg_1']
       self.test_1_prs = objs_uuid['demo_ruleset_icmp_id']

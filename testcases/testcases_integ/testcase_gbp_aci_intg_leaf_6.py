@@ -28,31 +28,35 @@ class testcase_gbp_intg_leaf_6(object):
     _log.setLevel(logging.INFO)
     _log.setLevel(logging.DEBUG)
 
-    def __init__(self,heattemp,cntlr_ip,leaf_ip,apic_ip,ntk_node,nova_agg,nova_az,\
-                                        az_comp_node,leaf_port1,leaf_port2,comp_nodes,leaf_node_id):
+    def __init__(self,params):
+
       self.gbpcfg = Gbp_Config()
       self.gbpaci = Gbp_Aci()
       self.heat_stack_name = 'gbpleaf6'
-      self.heat_temp_test = heattemp
+      cntlr_ip = params['cntlr_ip']
+      self.heat_temp_test = params['heat_temp_file']
       self.gbpheat = Gbp_Heat(cntlr_ip)
-      self.gbpnova = Gbp_Nova(cntlr_ip)      
-      self.leaf_ip = leaf_ip
-      self.apic_ip = apic_ip
-      self.ntk_node = ntk_node
-      self.nova_agg = nova_agg
-      self.nova_az = nova_az
-      self.az_comp_node = az_comp_node
-      self.comp_nodes = comp_nodes
+      self.gbpnova = Gbp_Nova(cntlr_ip)
+      self.ntk_node = params['ntk_node']
+      self.az_comp_node = params['az_comp_node']
+      self.nova_agg = params['nova_agg']
+      self.nova_az = params['nova_az']
+      self.comp_nodes = params['comp_node_ips']
+      self.leaf_port1 = params['leaf1_port1']
+      self.leaf_port2 = params['leaf1_port2']
+
 
     def test_runner(self,log_string):
         """
         Method to execute the testcase in Ordered Steps
         """
-        test_name = 'RESTART_OPFLEXAGNT'
+        test_name = 'RESTART_OPFLEXAGNT_ON_BOTH_COMP_NODES'
+        self._log.info("\nSteps of the TESTCASE_GBP_INTG_LEAF_6_RESTART_OPFLEXAGNT_ON_BOTH_COMP_NODES to be executed\n")
         testcase_steps = [self.test_step_SetUpConfig,
                           self.test_step_VerifyTraffic,
                           self.test_step_RestartOpflexAgent,
-                          self.test_step_VerifyTraffic]      
+                          self.test_step_VerifyTraffic
+                         ]      
         for step in testcase_steps:  ##TODO: Needs FIX
             try:
                if step()!=1:
@@ -68,6 +72,7 @@ class testcase_gbp_intg_leaf_6(object):
         """
         Test Step using Heat, setup the Test Config
         """
+        self._log.info("\nSetupCfg: Create Aggregate & Availability Zone to be executed\n")
         self.agg_id = self.gbpnova.avail_zone('api','create',self.nova_agg,avail_zone_name=self.nova_az)
         if self.agg_id == 0:
             self._log.info("\n ABORTING THE TESTSUITE RUN,nova host aggregate creation Failed")
@@ -88,6 +93,7 @@ class testcase_gbp_intg_leaf_6(object):
         """
         Test Step to Restart OpflexAgent on both comp-nodes
         """
+        self._log.info("\nStep to Restart OpflexAgent on two Comp-nodes\n")
         for node in self.comp_nodes:
           if self.gbpcfg.restart_service(node,'agent-ovs.service') == 0:
              return 0
@@ -97,12 +103,14 @@ class testcase_gbp_intg_leaf_6(object):
         """
         Send and Verify traffic
         """
+        self._log.info("\nSend and Verify traffic for Intra & Inter Host\n")
         return verify_traff(self.ntk_node)
 
     def test_CleanUp(self):
         """
         Test Setup Cleanup
         """
+        self._log.info("\nCleanUp to be executed\n")
         self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
         self.gbpnova.avail_zone('api','delete',self.agg_id)
         self.gbpheat.cfg_all_cli(0,self.heat_stack_name)

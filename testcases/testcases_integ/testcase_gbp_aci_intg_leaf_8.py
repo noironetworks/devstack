@@ -31,15 +31,16 @@ class testcase_gbp_intg_leaf_8(object):
                                         az_comp_node,leaf_port1,leaf_port2,comp_nodes,leaf_node_id):
       self.gbpaci = Gbp_Aci()
       self.heat_stack_name = 'gbpleaf8'
-      self.heat_temp_test = heattemp
+      cntlr_ip = params['cntlr_ip']
+      self.heat_temp_test = params['heat_temp_file']
       self.gbpheat = Gbp_Heat(cntlr_ip)
       self.gbpnova = Gbp_Nova(cntlr_ip)
-      self.leaf_ip = leaf_ip
-      self.apic_ip = apic_ip
-      self.ntk_node = ntk_node
-      self.nova_agg = nova_agg
-      self.nova_az = nova_az
-      self.az_comp_node = az_comp_node
+      self.az_comp_node = params['az_comp_node']
+      self.nova_agg = params['nova_agg']
+      self.nova_az = params['nova_az']
+      self.ntk_node = params['ntk_node']
+      self.leaf_ip = params['leaf1_ip']
+
 
     def test_runner(self):
         """
@@ -48,7 +49,8 @@ class testcase_gbp_intg_leaf_8(object):
         test_name = 'LEAF_REBOOT'
         testcase_steps = [self.test_step_SetUpConfig,
                           self.test_step_RebootLeaf,
-                          self.test_step_VerifyTraffic]
+                          self.test_step_VerifyTraffic
+                         ]
         for step in testcase_steps:  ##TODO: Needs FIX
             try:
                if step == 'self.test_step_RebootLeaf':
@@ -97,7 +99,7 @@ class testcase_gbp_intg_leaf_8(object):
         """
         Send and Verify traffic
         """
-        return verify_traff()
+        return verify_traff(self.ntk_node)
 
     def test_CleanUp(self):
         """
