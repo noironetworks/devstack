@@ -13,22 +13,22 @@ from libs.gbp_nova_libs import Gbp_Nova
 from test_utils import *
 
 
-class testcase_gbp_intg_leaf_8(object):
+class  testcase_gbp_aci_intg_leaf_8(object):
     """
     This is a GBP_ACI Integration TestCase
     """
     # Initialize logging
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
     _log = logging.getLogger( __name__ )
-    hdlr = logging.FileHandler('/tmp/testcase_gbp_intg_leaf_8.log')
+    hdlr = logging.FileHandler('/tmp/ testcase_gbp_aci_intg_leaf_8.log')
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     hdlr.setFormatter(formatter)
     _log.addHandler(hdlr)
     _log.setLevel(logging.INFO)
     _log.setLevel(logging.DEBUG)
 
-    def __init__(self,heattemp,cntlr_ip,leaf_ip,apic_ip,ntk_node,nova_agg,nova_az,\
-                                        az_comp_node,leaf_port1,leaf_port2,comp_nodes,leaf_node_id):
+    def __init__(self,params):
+
       self.gbpaci = Gbp_Aci()
       self.heat_stack_name = 'gbpleaf8'
       cntlr_ip = params['cntlr_ip']
@@ -47,6 +47,7 @@ class testcase_gbp_intg_leaf_8(object):
         Method to run the Testcase in Ordered Steps
         """
         test_name = 'LEAF_REBOOT'
+        self._log.info("\nSteps of the TESTCASE_GBP_INTG_LEAF_8_LEAF_REBOOT to be executed\n")
         testcase_steps = [self.test_step_SetUpConfig,
                           self.test_step_RebootLeaf,
                           self.test_step_VerifyTraffic
@@ -70,6 +71,7 @@ class testcase_gbp_intg_leaf_8(object):
         """
         Test Step using Heat, setup the Test Config
         """
+        self._log.info("\nSetupCfg: Create Aggregate & Availability Zone to be executed\n")
         self.agg_id = self.gbpnova.avail_zone('api','create',self.nova_agg,avail_zone_name=self.nova_az)
         if self.agg_id == 0:
             self._log.info("\n ABORTING THE TESTSUITE RUN,nova host aggregate creation Failed")
@@ -91,6 +93,7 @@ class testcase_gbp_intg_leaf_8(object):
         """
         Test Step to Reboot Leaf from Ostack Controller
         """
+        self._log.info("\nStep to Reboot Leaf to be executed\n")
         if self.gbpaci.reboot_aci(self.leaf_ip) == 0:
            return 0
         return 1
@@ -99,12 +102,14 @@ class testcase_gbp_intg_leaf_8(object):
         """
         Send and Verify traffic
         """
+        self._log.info("\nSend and Verify traffic for Intra & Inter Host\n")
         return verify_traff(self.ntk_node)
 
     def test_CleanUp(self):
         """
         Cleanup the Testcase setup
         """
+        self._log.info("\nCleanUp to be executed\n")
         self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
         self.gbpnova.avail_zone('api','delete',self.agg_id)
         self.gbpheat.cfg_all_cli(0,self.heat_stack_name)

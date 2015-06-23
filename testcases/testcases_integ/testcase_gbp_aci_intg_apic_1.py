@@ -13,14 +13,14 @@ from libs.gbp_nova_libs import Gbp_Nova
 from test_utils import *
 
 
-class testcase_gbp_intg_apic_1(object):
+class  testcase_gbp_aci_intg_apic_1(object):
     """
     This is a GBP_ACI Integration TestCase
     """
     # Initialize logging
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
     _log = logging.getLogger( __name__ )
-    hdlr = logging.FileHandler('/tmp/testcase_gbp_intg_apic_1.log')
+    hdlr = logging.FileHandler('/tmp/ testcase_gbp_aci_intg_apic_1.log')
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     hdlr.setFormatter(formatter)
     _log.addHandler(hdlr)
@@ -106,7 +106,7 @@ class testcase_gbp_intg_apic_1(object):
         """
         Send and Verify traffic
         """
-        return verify_traff()
+        return verify_traff(self.ntk_node)
 
     def test_CleanUp(self):
         """

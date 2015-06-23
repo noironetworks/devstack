@@ -14,14 +14,14 @@ from libs.gbp_nova_libs import Gbp_Nova
 from test_utils import *
 
 
-class testcase_gbp_intg_leaf_5(object):
+class  testcase_gbp_aci_intg_leaf_5(object):
     """
     This is a GBP_ACI Integration TestCase
     """
     # Initialize logging
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
     _log = logging.getLogger( __name__ )
-    hdlr = logging.FileHandler('/tmp/testcase_gbp_intg_leaf_5.log')
+    hdlr = logging.FileHandler('/tmp/ testcase_gbp_aci_intg_leaf_5.log')
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     hdlr.setFormatter(formatter)
     _log.addHandler(hdlr)
