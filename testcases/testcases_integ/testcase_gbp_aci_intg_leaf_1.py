@@ -129,4 +129,4 @@ class  testcase_gbp_aci_intg_leaf_1(object):
         self.gbpnova.avail_zone('api','removehost',self.agg_id,hostname=self.az_comp_node)
         self.gbpnova.avail_zone('api','delete',self.agg_id)
         self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
-        sys.exit(1)
+        #sys.exit(1)

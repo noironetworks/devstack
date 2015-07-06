@@ -328,7 +328,7 @@ class GBPCrud(object):
     def update_gbp_policy_rule_set(self,name_uuid,property_type='name',**kwargs):
          """
          Update GBP Policy Rule editable attributes
-         Supported  keyword based attributes and their values:
+         Supported  keyword based attributes and their values/type:
          'policy_rules'= [list of policy-rule uuid]
          'shared'= 'True', 'False'
          'description'= any string
@@ -365,6 +365,27 @@ class GBPCrud(object):
            _log.info("Deleting Policy RuleSet = %s, failed" %(name))
            return 0
 
+    def get_gbp_policy_rule_set_list(self,getlist=False):
+        """
+        Fetch a List of GBP Policy RuleSet
+        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        """
+        try:
+           if getlist == True:
+              name_uuid = {}
+              for ruleset in self.client.list_policy_rule_sets()['policy_rule_sets']:
+                  name_uuid[ruleset['name'].encode('ascii')]= ruleset['id'].encode('ascii')
+           else:
+               rulesets = self.client.list_policy_rule_sets()
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Fetching Policy RuleSet List, failed")
+           return 0
+        if getlist == True:
+           return name_uuid
+        else:
+           return rulesets
+
     def create_gbp_policy_target_group(self,name,**kwargs):
         """
         Create a GBP Policy Target Group
@@ -391,30 +412,229 @@ class GBPCrud(object):
         """
         Verify the GBP Policy Target Group by passing its name and fetch its UUID
         """
-        for ptg in self.client.list_policy_rule_groups()['policy_target_groups']:
+        for ptg in self.client.list_policy_target_groups()['policy_target_groups']:
             if ptg['name'].encode('ascii') == name:
                return ptg['id'].encode('ascii')
             else:
                return 0
 
     def update_gbp_policy_target_group(self, name, consumed_policy_rulesets=None, provided_policy_rulesets=None):
-		# Lookup the group id from the group name
-		group_id =  self.verify_policy_target_group(name)
-		consumed_dict = {}
-		provided_dict = {}
-		if consumed_policy_rulesets:
-			for ruleset in consumed_policy_rulesets:
-				id = self.verify_policy_rule_set(ruleset)
-				consumed_dict[id] = "scope"
-		if provided_policy_rulesets:
-			for ruleset in provided_policy_rulesets:
-				id = self.verify_policy_rule_set(ruleset)
-				provided_dict[id] = "scope"
+        """
+        Update the Policy Target Group
+        """
+	group_id =  self.verify_policy_target_group(name)
+	consumed_dict = {}
+	provided_dict = {}
+	if consumed_policy_rulesets:
+		for ruleset in consumed_policy_rulesets:
+			id = self.verify_policy_rule_set(ruleset)
+			consumed_dict[id] = "scope"
+	if provided_policy_rulesets:
+		for ruleset in provided_policy_rulesets:
+			id = self.verify_policy_rule_set(ruleset)
+			provided_dict[id] = "scope"
 		
-		body = {
-			"policy_target_group" : {
-				"provided_policy_rule_sets" : provided_dict,
-				"consumed_policy_rule_sets" : consumed_dict
+	body = {
+		"policy_target_group" : {
+			                 "provided_policy_rule_sets" : provided_dict,
+			                 "consumed_policy_rule_sets" : consumed_dict
 			}
 		}
-		self.clients.update_policy_target_group(group_id, body)
+	self.clients.update_policy_target_group(group_id, body)
+
+    def delete_gbp_policy_target_group(self,name_uuid,property_type='name'):
+         """
+         Delete a GBP Policy Group
+         property_type='name' or 'uuid'
+         If property_type=='name', pass 'name_string' for name_uuid, else pass 'uuid_string' for name_uuid param
+         """
+         try:
+            if property_type=='name':
+               ptg_uuid=self.verify_gbp_policy_target_group(name_uuid)
+               self.client.delete_policy_target_group(ptg_uuid)
+            else:
+               self.client.delete_policy_target_group(name_uuid)
+         except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Deleting Policy Target Group = %s, failed" %(name))
+
+    def get_gbp_policy_target_group_list(self,getlist=False):
+        """
+        Fetch a List of GBP Policy Target Group
+        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        """
+        try:
+           if getlist == True:
+              name_uuid = {}
+              for ptg in self.client.list_policy_target_groups()['policy_target_groups']:
+                  name_uuid[ptg['name'].encode('ascii')]= ptg['id'].encode('ascii')
+           else:
+               ptgs = self.client.list_policy_target_groups()
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Fetching Policy Target Group List, failed")
+           return 0
+        if getlist == True:
+           return name_uuid
+        else:
+           return ptgs
+
+    def create_gbp_l3policy(self,name,**kwargs):
+        """
+        Create a GBP L3Policy
+        Supported  keyword based attributes and their values/type:
+        'ip_pool' = string (eg:'1.2.3.0/24')
+        'subnet_prefix_length' = integer
+        'external_segments': {}
+        'shared': True, False
+        'description': string
+        """
+        try:
+           l3policy={"name":name}
+           for arg,val in kwargs.items():
+               l3policy[arg]=val
+           body = {"l3_policy": l3policy}
+           self.client.create_l3_policy(body)
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Creating L3Policy = %s, failed" %(name))
+           return 0
+
+    def verify_gbp_l3policy(self,name):
+        """
+        Verify the GBP L3Policy by passing its name and fetch its UUID
+        """
+        for l3p in self.client.list_l3_policies()['l3_policies']:
+            if l3p['name'].encode('ascii') == name:
+               return l3p['id'].encode('ascii')
+            else:
+               return 0
+
+    def delete_gbp_l3policy(self,name_uuid,property_type='name'):
+         """
+         Delete a GBP L3Policy
+         property_type='name' or 'uuid'
+         If property_type=='name', pass 'name_string' for name_uuid, else pass 'uuid_string' for name_uuid param
+         """
+         try:
+            if property_type=='name':
+               ptg_uuid=self.verify_gbp_l3policy(name_uuid)
+               self.client.delete_l3_policy(l3p_uuid)
+            else:
+               self.client.delete_l3_policy(name_uuid)
+         except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Deleting L3Policy = %s, failed" %(name))
+
+    def update_gbp_l3policy(self,name_uuid,property_type='name',**kwargs):
+         """
+         Update GBP L3Policy editable attributes
+         Supported keyword based attributes and their values/type:
+         'subnet_prefix_length' = integer'
+         'shared'= 'True', 'False'
+         'description'= any string
+         """
+         if property_type=='uuid':
+            l3p_id=name_uuid
+         else:
+            l3p_id=self.verify_gbp_l3policy(name_uuid)
+         l3p = {}
+         try:
+            for arg,val in kwargs.items():
+               l3p[arg]=val
+            body = {"l3_policy":l3p}
+            self.client.update_l3_policy(l3p_id,body)
+         except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Update of L3Policy = %s, failed" %(name_uuid))
+           return 0
+ 
+    def get_gbp_l3policy_list(self,getlist=False):
+        """
+        Fetch a List of GBP L3Policy
+        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        """
+        try:
+           if getlist == True:
+              name_uuid = {}
+              for l3p  in self.client.list_l3_policies()['l3_policies']:
+                  name_uuid[l3p['name'].encode('ascii')]= l3p['id'].encode('ascii')
+           else:
+               l3ps = self.client.list_l3_policies()
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Fetching L3Policy List, failed")
+           return 0
+        if getlist == True:
+           return name_uuid
+        else:
+           return l3ps
+
+    def create_gbp_l2policy(self,name,**kwargs):
+        """
+        Create a GBP L2Policy
+        Supported  keyword based attributes and their values/type:
+        'l3_policy' = string (eg:'1.2.3.0/24')
+        'subnet_prefix_length' = integer
+        'external_segments': {}
+        'shared': True, False
+        'description': string
+        """
+        try:
+           l2policy={"name":name}
+           for arg,val in kwargs.items():
+               l2policy[arg]=val
+           body = {"l2_policy": l2policy}
+           self.client.create_l2_policy(body)
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Creating L2Policy = %s, failed" %(name))
+           return 0
+
+    def verify_gbp_l2policy(self,name):
+        """
+        Verify the GBP L2Policy by passing its name and fetch its UUID
+        """
+        for l2p in self.client.list_l2_policies()['l2_policies']:
+            if l2p['name'].encode('ascii') == name:
+               return l2p['id'].encode('ascii')
+            else:
+               return 0
+
+    def delete_gbp_l2policy(self,name_uuid,property_type='name'):
+         """
+         Delete a GBP L2Policy
+         property_type='name' or 'uuid'
+         If property_type=='name', pass 'name_string' for name_uuid, else pass 'uuid_string' for name_uuid param
+         """
+         try:
+            if property_type=='name':
+               ptg_uuid=self.verify_gbp_l2policy(name_uuid)
+               self.client.delete_l2_policy(l2p_uuid)
+            else:
+               self.client.delete_l2_policy(name_uuid)
+         except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Deleting L2Policy = %s, failed" %(name))
+
+    def get_gbp_l2policy_list(self,getlist=False):
+        """
+        Fetch a List of GBP L2Policy
+        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        """
+        try:
+           if getlist == True:
+              name_uuid = {}
+              for l2p  in self.client.list_l2_policies()['l2_policies']:
+                  name_uuid[l2p['name'].encode('ascii')]= l2p['id'].encode('ascii')
+           else:
+               l2ps = self.client.list_l2_policies()
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Fetching L2Policy List, failed")
+           return 0
+        if getlist == True:
+           return name_uuid
+        else:
+           return l2ps
+

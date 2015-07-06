@@ -92,16 +92,6 @@ class  testcase_gbp_aci_intg_leaf_3(object):
         sleep(120)
         return 1
 
-
-    def test_step_DisconnectLeafOneHost(self):
-        """
-        Test Step to Disconnect Leaf Port from One Comp-node
-        """
-        self._log.info("\nStep to Disconnect Leaf Port from One Comp-node= CompNode1\n")
-        if self.gbpaci.enable_disable_switch_port(self.apic_ip,self.node_id,'disable',self.leaf_port_comp_node1) == 0:
-           return 0
-        return 1
- 
     def test_step_DisconnectLeaf(self):
         """
         Test Step to Disconnect Leaf Port from two Comp-nodes
@@ -112,15 +102,6 @@ class  testcase_gbp_aci_intg_leaf_3(object):
            return 0
         return 1
 
-    def test_step_ReconnectLeafOneHost(self):
-        """
-        Test Step to Reconnect Leaf Port to One Comp-nodes
-        """
-        self._log.info("\nStep to RE-connect Leaf Port to One Comp-node= CompNode1\n")
-        if self.gbpaci.enable_disable_switch_port(self.apic_ip,self.node_id,'enable',self.leaf_port_comp_node1) == 0:
-           return 0
-        return 1
-       
     def test_step_ReconnectLeaf(self):
         """
         Test Step to Reconnect Leaf Port to two Comp-nodes
@@ -129,6 +110,7 @@ class  testcase_gbp_aci_intg_leaf_3(object):
         for port in [self.leaf_port_comp_node1,self.leaf_port_comp_node2]:
           if self.gbpaci.enable_disable_switch_port(self.apic_ip,self.node_id,'enable',port) == 0:
            return 0
+        sleep(60)  ##For Opflex to re-converge
         return 1
 
     def test_step_VerifyTraffic(self):

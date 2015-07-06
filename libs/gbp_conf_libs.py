@@ -415,7 +415,7 @@ class Gbp_Config(object):
            sleep(2)
            result = run("systemctl status %s" %(service_name))
            if result.succeeded:
-              if result.find('Active: active \(running\)') > -1:
+              if result.find('active (running)') > -1:
                  return 1
               else:
                  _log.info('Service is NOT ACTIVE/RUNNING post-%s' %(action))
