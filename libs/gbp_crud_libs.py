@@ -101,7 +101,7 @@ class GBPCrud(object):
                self.client.delete_policy_action(name_uuid)
          except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting Policy Action = %s, failed" %(name))
+           _log.info("Deleting Policy Action = %s, failed" %(name_uuid))
            return 0
 
     def create_gbp_policy_classifier(self,name,**kwargs): 
@@ -185,7 +185,7 @@ class GBPCrud(object):
                self.client.delete_policy_classifier(name_uuid)
          except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting Policy Classifier = %s, failed" %(name))
+           _log.info("Deleting Policy Classifier = %s, failed" %(name_uuid))
            return 0
 
     def verify_gbp_policy_classifier(self,name):
@@ -295,7 +295,7 @@ class GBPCrud(object):
                self.client.delete_policy_rule(name_uuid)
          except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting Policy Rule = %s, failed" %(name))
+           _log.info("Deleting Policy Rule = %s, failed" %(name_uuid))
            return 0
 
     def create_gbp_policy_ruleset(self,name,rule_list=[],property_type='name',**kwargs):
@@ -371,7 +371,7 @@ class GBPCrud(object):
                self.client.delete_policy_rule_set(name_uuid)
          except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting Policy RuleSet = %s, failed" %(name))
+           _log.info("Deleting Policy RuleSet = %s, failed" %(name_uuid))
            return 0
 
     def get_gbp_policy_rule_set_list(self,getlist=False):
@@ -465,7 +465,7 @@ class GBPCrud(object):
                self.client.delete_policy_target_group(name_uuid)
          except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting Policy Target Group = %s, failed" %(name))
+           _log.info("Deleting Policy Target Group = %s, failed" %(name_uuid))
 
     def get_gbp_policy_target_group_list(self,getlist=False):
         """
@@ -527,13 +527,13 @@ class GBPCrud(object):
          """
          try:
             if property_type=='name':
-               ptg_uuid=self.verify_gbp_l3policy(name_uuid)
+               l3p_uuid=self.verify_gbp_l3policy(name_uuid)
                self.client.delete_l3_policy(l3p_uuid)
             else:
                self.client.delete_l3_policy(name_uuid)
          except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting L3Policy = %s, failed" %(name))
+           _log.info("Deleting L3Policy = %s, failed" %(name_uuid))
 
     def update_gbp_l3policy(self,name_uuid,property_type='name',**kwargs):
          """
@@ -623,13 +623,13 @@ class GBPCrud(object):
          """
          try:
             if property_type=='name':
-               ptg_uuid=self.verify_gbp_l2policy(name_uuid)
+               l2p_uuid=self.verify_gbp_l2policy(name_uuid)
                self.client.delete_l2_policy(l2p_uuid)
             else:
                self.client.delete_l2_policy(name_uuid)
          except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting L2Policy = %s, failed" %(name))
+           _log.info("Deleting L2Policy = %s, failed" %(name_uuid))
 
     def get_gbp_l2policy_list(self,getlist=False):
         """
