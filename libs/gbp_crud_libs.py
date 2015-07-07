@@ -1,5 +1,14 @@
 #!/usr/bin/env python
+import sys
+import logging
 from gbpclient.v2_0 import client as gbpclient
+
+# Initialize logging
+logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
+_log = logging.getLogger( __name__ )
+
+_log.setLevel(logging.INFO)
+_log.setLevel(logging.DEBUG)
 
 class GBPCrud(object):
     """
@@ -42,8 +51,8 @@ class GBPCrud(object):
         for action in self.client.list_policy_actions()['policy_actions']:
             if action['name'].encode('ascii') == name:
                return action['id'].encode('ascii')
-            else:
-               return 0
+        _log.info("Policy Action NOT Found")
+        return 0
  
     def get_gbp_policy_action_list(self,getlist=False):
         """
@@ -186,8 +195,8 @@ class GBPCrud(object):
         for classifier in self.client.list_policy_classifiers()['policy_classifiers']:
             if classifier['name'].encode('ascii') == name:
                return classifier['id'].encode('ascii')
-            else:
-               return 0
+        _log.info("Policy Classifier NOT Found")
+        return 0
 
     def create_gbp_policy_rule(self,name,classifier,action,property_type='name',**kwargs):
         """
@@ -248,8 +257,8 @@ class GBPCrud(object):
         for rule in self.client.list_policy_rules()['policy_rules']:
             if rule['name'].encode('ascii') == name:
                return rule['id'].encode('ascii')
-            else:
-               return 0
+        _log.info("Policy Rule NOT Found")
+        return 0
 
     def get_gbp_policy_rule_list(self,getlist=False):
         """
@@ -309,7 +318,7 @@ class GBPCrud(object):
            for arg,val in kwargs.items():
                policy_rule_set[arg]=val
            body = {"policy_rule_set":policy_rule_set}
-           self.clients.create_policy_rule_set(body)
+           self.client.create_policy_rule_set(body)
         except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
            _log.info("Creating Policy RuleSet = %s, failed" %(name))
@@ -322,8 +331,8 @@ class GBPCrud(object):
         for ruleset in self.client.list_policy_rule_sets()['policy_rule_sets']:
             if ruleset['name'].encode('ascii') == name:
                return ruleset['id'].encode('ascii')
-            else:
-               return 0
+        _log.info("Policy RuleSet NOT Found")
+        return 0
 
     def update_gbp_policy_rule_set(self,name_uuid,property_type='name',**kwargs):
          """
@@ -390,7 +399,7 @@ class GBPCrud(object):
         """
         Create a GBP Policy Target Group
         Supported  keyword based attributes and their values/types:
-        'l2_policy-id' = l2policy_uuid
+        'l2_policy_id' = l2policy_uuid
         'network_service_policy_id' = nsp_uuid
         'consumed_policy_rule_sets' = [list of policy_rule_set_uuid]
         'provided_policy_rule_sets' = [list policy_rule_set_uuid]
@@ -402,7 +411,7 @@ class GBPCrud(object):
            for arg,val in kwargs.items():
                policy_target_group[arg]=val
            body = {"policy_target_group":policy_target_group}
-           self.clients.create_policy_target_group(body)
+           self.client.create_policy_target_group(body)
         except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
            _log.info("Creating Policy Target Group = %s, failed" %(name))
@@ -415,8 +424,8 @@ class GBPCrud(object):
         for ptg in self.client.list_policy_target_groups()['policy_target_groups']:
             if ptg['name'].encode('ascii') == name:
                return ptg['id'].encode('ascii')
-            else:
-               return 0
+        _log.info("Policy Target Group NOT Found")
+        return 0
 
     def update_gbp_policy_target_group(self, name, consumed_policy_rulesets=None, provided_policy_rulesets=None):
         """
@@ -440,7 +449,7 @@ class GBPCrud(object):
 			                 "consumed_policy_rule_sets" : consumed_dict
 			}
 		}
-	self.clients.update_policy_target_group(group_id, body)
+	self.client.update_policy_target_group(group_id, body)
 
     def delete_gbp_policy_target_group(self,name_uuid,property_type='name'):
          """
@@ -507,8 +516,8 @@ class GBPCrud(object):
         for l3p in self.client.list_l3_policies()['l3_policies']:
             if l3p['name'].encode('ascii') == name:
                return l3p['id'].encode('ascii')
-            else:
-               return 0
+        _log.info("L3Policy NOT Found")
+        return 0
 
     def delete_gbp_l3policy(self,name_uuid,property_type='name'):
          """
@@ -595,11 +604,16 @@ class GBPCrud(object):
         """
         Verify the GBP L2Policy by passing its name and fetch its UUID
         """
-        for l2p in self.client.list_l2_policies()['l2_policies']:
+        try:
+          for l2p in self.client.list_l2_policies()['l2_policies']:
             if l2p['name'].encode('ascii') == name:
                return l2p['id'].encode('ascii')
-            else:
-               return 0
+          _log.info("L2Policy NOT Found")     
+          return 0
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Verifying L2Policy = %s, failed" %(name))
+           return 0
 
     def delete_gbp_l2policy(self,name_uuid,property_type='name'):
          """

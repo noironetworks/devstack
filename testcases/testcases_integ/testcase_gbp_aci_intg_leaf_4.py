@@ -5,6 +5,7 @@ import logging
 import os
 import datetime
 import string
+import pdb
 from time import sleep
 from libs.raise_exceptions import *
 from libs.gbp_aci_libs import Gbp_Aci
@@ -52,7 +53,7 @@ class  testcase_gbp_aci_intg_leaf_4(object):
         testcase_steps = [self.test_step_SetUpConfig,
                           self.test_step_VerifyTraffic,
                           self.test_step_RestartOpflexProxy,
-                          self.test_step_VerifyTraffic
+                          self.test_step_VerifyTrafficAfterOpflexRestart
                           ]      
         for step in testcase_steps:  ##TODO: Needs FIX
             try:
@@ -61,6 +62,8 @@ class  testcase_gbp_aci_intg_leaf_4(object):
                   raise TestFailed("%s_%s@_%s == FAILED" %(self.__class__.__name__.upper(),test_name,step.__name__.lstrip('self.')))
             except TestFailed as err:
                print 'Noiro ==',err
+               pdb.set_trace()
+               continue
                self.test_CleanUp()
             if step == 'self.test_step_RestartOpflexProxy':
                sleep(10) # Adding sleep to send traffic after opflex converges   
@@ -100,6 +103,13 @@ class  testcase_gbp_aci_intg_leaf_4(object):
         if self.gbpaci.opflex_proxy_act(self.leaf_ip) == 0:
            return 0
         return 1 
+
+    def test_step_VerifyTrafficAfterOpflexRestart(self):
+        """
+        Send and Verify traffic after Opflex Restart
+        """
+        self._log.info("\nSend and Verify traffic for Intra & Inter Host\n")
+        return verify_traff(self.ntk_node)
 
     def test_step_VerifyTraffic(self):
         """
