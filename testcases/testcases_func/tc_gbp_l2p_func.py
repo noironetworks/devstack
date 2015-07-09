@@ -12,8 +12,8 @@ def main():
 
     #Run the Testcases:
     test = test_gbp_l2p_func()
-    if test.test_gbp_l2p_func_1()==0:
-       test.cleanup(tc_name='TESTCASE_GBP_L2P_FUNC_1') 
+    #if test.test_gbp_l2p_func_1()==0:
+    #   test.cleanup(tc_name='TESTCASE_GBP_L2P_FUNC_1') 
     if test.test_gbp_l2p_func_2()==0:
        test.cleanup(tc_name='TESTCASE_GBP_L2P_FUNC_2')
     test.cleanup()
