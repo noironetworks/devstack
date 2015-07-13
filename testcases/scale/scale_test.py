@@ -10,7 +10,7 @@ from time import sleep
 from libs.raise_exceptions import *
 from libs.gbp_crud_libs import GBPCrud
 
-gdb_crud = GBPCrud('172.28.184.45')
+gdb_crud = GBPCrud(sys.argv[1])
 
 l3p = gdb_crud.create_gbp_l3policy('scale_l3p',ip_pool='1.2.3.0/16',subnet_prefix_length=30)
 l3p_id = gdb_crud.verify_gbp_l3policy('scale_l3p')
