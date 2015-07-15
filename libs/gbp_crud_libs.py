@@ -208,13 +208,13 @@ class GBPCrud(object):
         'description'= any string
         """
         if property_type == 'name':
-           classifier_id = self.verify_policy_classifier(classifier)
-           action_id = self.verify_policy_actions(action)
+           classifier_id = self.verify_gbp_policy_classifier(classifier)
+           action_id = self.verify_gbp_policy_action(action)
         else:
            classifier_id = classifier
            action_id = action
         body = {"policy_rule": {
-				"policy_actions": action_id,
+				"policy_actions": [action_id],
 				"policy_classifier_id": classifier_id,
 				"name": name
 			      }
@@ -223,7 +223,7 @@ class GBPCrud(object):
            self.client.create_policy_rule(body)
         except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
-           _log.info("Creating Policy Classifier = %s, failed" %(name))
+           _log.info("Creating Policy Rule = %s, failed" %(name))
            return 0
         
     def update_gbp_policy_rule(self,name_uuid,property_type='name',**kwargs):
