@@ -488,6 +488,48 @@ class GBPCrud(object):
         else:
            return ptgs
 
+    def create_gbp_policy_target(self,name,ptg_name,pt_count=1):
+        """
+        Create a Policy Target for a given PTG
+        'pt_count'= number of PTs to be created for a given PTG
+        """
+        try:
+           ptg_id = self.verify_gbp_policy_target_group(ptg_name)
+           for i in range(pt_count):
+               body = {"policy_target" : {
+                                          "policy_target_group_id" : ptg_id,
+                                          "name" : name
+                                         }
+                      }
+           self.client.create_policy_target(body)
+
+    def verify_gbp_policy_target(self,name):
+        """
+        Verify the GBP Policy Target by passing its name and fetch its UUID
+        """
+        for pt in self.client.list_policy_targets()['policy_targets']:
+            if pt['name'].encode('ascii') == name:
+               return pt['id'].encode('ascii')
+        _log.info("Policy Target NOT Found")
+        return 0
+
+    def delete_gbp_policy_target(self,name_uuid,property_type='name'):
+         """
+         Delete a GBP Policy Target
+         property_type='name' or 'uuid'
+         If property_type=='name', pass 'name_string' for name_uuid, else pass 'uuid_string' for name_uuid param
+         """
+         try:
+            if property_type=='name':
+               pt_uuid=self.verify_gbp_policy_target(name_uuid)
+               self.client.delete_policy_target(pt_uuid)
+            else:
+               self.client.delete_policy_target(name_uuid)
+         except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Deleting Policy Target = %s, failed" %(name_uuid))
+           return 0
+
     def create_gbp_l3policy(self,name,**kwargs):
         """
         Create a GBP L3Policy
