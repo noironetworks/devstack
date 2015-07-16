@@ -502,16 +502,31 @@ class GBPCrud(object):
                                          }
                       }
            self.client.create_policy_target(body)
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Creating L3Policy = %s, failed" %(name))
+           return 0
 
     def verify_gbp_policy_target(self,name):
         """
-        Verify the GBP Policy Target by passing its name and fetch its UUID
+        Verify the GBP Policy Target by passing its name
+        Returns PT and its corresponding Neutron Port UUIDs
         """
         for pt in self.client.list_policy_targets()['policy_targets']:
             if pt['name'].encode('ascii') == name:
-               return pt['id'].encode('ascii')
+               return pt['id'].encode('ascii'),pt['port_id'].encode('ascii')
         _log.info("Policy Target NOT Found")
         return 0
+
+    def get_gbp_policy_target_list(self):
+        """
+        Fetches a list of Policy Targets
+        Returns a dict of Policy Targets UUIDs and their corresponding Neutron Port UUIDs
+        """
+        pt_nic_id = {}
+        for pt in self.client.list_policy_targets()['policy_targets']:
+            pt_nic_id[pt['id']] = pt['port_id']
+        return pt_nic_id
 
     def delete_gbp_policy_target(self,name_uuid,property_type='name'):
          """
