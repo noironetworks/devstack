@@ -7,8 +7,10 @@ import re
 import datetime
 from time import sleep
 from commands import *
-import keystoneclient.v2_0.client as ksclient
-from novaclient import client as nvclient
+from keystoneclient.auth.identity import v2
+from keystoneclient import session
+from novaclient.v1_1 import client as nvclient
+from libs.gbp_utils import gen_ssh_key as gensshkey
 
 # Initialize logging
 logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
@@ -20,22 +22,14 @@ _log.setLevel(logging.DEBUG)
 class Gbp_Nova(object):
 
     key_name = "gbpkey"
-    def __init__(self,ostack_controller, os_username='admin', os_password='noir0123', os_tenant='admin'):
-        """ Creating a Nova CLient Instance using keystoneclient API """
-        os_auth_url = "http://%s:5000/v2.0/" %(ostack_controller)
-        keystone = ksclient.Client(
-                                     auth_url = os_auth_url,
-                                     username = os_username,
-                                     password = os_password,
-                                     tenant = os_tenant)
-        ksconn = ksclient.Client(auth_url=os_auth_url, username=os_username,password=os_password,tenant=os_tenant)
-        print ksconn.authenticate()
-        os_token = ksconn.get_token(ksconn.session)
-        print os_token
-        raw_token = ksconn.get_raw_token_from_identity_service(auth_url=os_auth_url, username=os_username,password=os_password,tenant_name=os_tenant)
-        os_tenant_id = raw_token['token']['tenant']['id']
-        self.nova = nvclient.Client('2',auth_url=os_auth_url,username=os_username,auth_token=os_token,tenant_id=os_tenant_id)
-        self.err_strings=['Unable','Conflict','Bad Request','Error', 'Unknown','Exception']
+    def __init__(self,ostack_controller, username='admin', password='noir0123', tenant='admin'):
+          cred = {}
+          cred['username'] = username
+          cred['api_key'] = password #api_key is the keyword in nova.v1
+          cred['project_id'] = tenant
+          cred['auth_url'] = "http://%s:5000/v2.0/" % ostack_controller
+          self.nova = nvclient.Client(**cred)
+          self.err_strings=['Unable','Conflict','Bad Request','Error', 'Unknown','Exception']
 
 
     def cmd_error_check(self,cmd_out):
@@ -124,29 +118,27 @@ class Gbp_Nova(object):
                  return 0
               return 1
 
-    def add_host_avail_zone(self,hostname,availzone_name):
-        """
-        Add host to avail_zone
-        """
-        ## keeping avail_zone_name same as agg_name
-        agg_id = self.avail_zone('api','create',availzone_name,avail_zone_name=availzone_name)
-        self.nova.aggregates.add_host(agg_id,hostname)
-        
-    def vm_create_api(self,vmname,vm_image,portid,flavor_name='m1.medium',avail_zone=''):
+
+    def vm_create_api(self,vmname,vm_image,portid_netid,sshkeyname,flavor_name='m1.medium',avail_zone=''):
         """
         Call Nova API to create VM and check for ACTIVE status
+        portid_netid = MUST be passed as a dictionary comprising keys: port-id & net-id, for each nic. Eg:
+                       [{'port-id':'33f4f198-24ef-4f6e-b40c-93e952e17155','net-id': 'd436c32c-4973-4031-862d-723a65109ae1'},
+                        {'port-id':'50336f51-0a3c-4730-80ed-800493225eaa','net-id':'77144ab1-4ff2-4b9c-b809-c70fba4415c9'}]
         """
+        ## Create and Upload ssh keypair
+        keypath=gensshkey(sshkeyname)
+        if not self.nova.keypairs.findall(name=sshkeyname):
+           with open(os.path.expanduser(keypath)) as publickey:
+             self.nova.keypairs.create(name=sshkeyname, public_key=publickey.read())
         vm_image = self.nova.images.find(name=vm_image)
         vm_flavor = self.nova.flavors.find(name=flavor_name)
-        port_id = [{'port-id': '%s' %(portid)}]
         if avail_zone != '':
-           instance = self.nova.servers.create(name=vmname, image=vm_image, flavor=vm_flavor, nics=port_id,availability_zone=avail_zone)
+           instance = self.nova.servers.create(name=vmname, image=vm_image, flavor=vm_flavor, key_name=sshkeyname, nics=ports,availability_zone=avail_zone)
         else:
-           instance = self.nova.servers.create(name=vmname, image=vm_image, flavor=vm_flavor, nics=port_id)
-        print instance
-        #Polling at 5 second intervals, until the status is ACTIVE
+           instance = self.nova.servers.create(name=vmname, image=vm_image, flavor=vm_flavor, key_name=sshkeyname, nics=ports)
+        # Polling at 5 second intervals, until the status is 'ACTIVE'
         vm_status = instance.status
-        print vm_status
         status_try=1
         while vm_status != 'ACTIVE':
           if status_try < 11:
@@ -159,6 +151,7 @@ class Gbp_Nova(object):
               return 0
           status_try +=1
         return 1
+
 
     #def vm_create_cli(self,vmname,vm_image,ports,sshkeyname,avail_zone=''): #Jishnu: change on 05/06
     def vm_create_cli(self,vmname,vm_image,ports,avail_zone=''):
