@@ -504,7 +504,7 @@ class GBPCrud(object):
            self.client.create_policy_target(body)
         except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
-           _log.info("Creating L3Policy = %s, failed" %(name))
+           _log.info("Creating PT = %s, failed" %(name))
            return 0
 
     def verify_gbp_policy_target(self,name):
@@ -525,7 +525,7 @@ class GBPCrud(object):
         """
         pt_nic_id = {}
         for pt in self.client.list_policy_targets()['policy_targets']:
-            pt_nic_id[pt['id']] = pt['port_id']
+            pt_nic_id[pt['id'].encode('ascii')] = pt['port_id'].encode('ascii')
         return pt_nic_id
 
     def delete_gbp_policy_target(self,name_uuid,property_type='name'):
