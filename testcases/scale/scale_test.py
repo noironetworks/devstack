@@ -12,11 +12,11 @@ from libs.gbp_crud_libs import GBPCrud
 
 gdb_crud = GBPCrud(sys.argv[1])
 
-l3p = gdb_crud.create_gbp_l3policy('scale_l3p',ip_pool='1.2.3.0/16',subnet_prefix_length=30)
+l3p = gdb_crud.create_gbp_l3policy('scale_l3p',ip_pool='1.2.3.0/16',subnet_prefix_length=24)
 l3p_id = gdb_crud.verify_gbp_l3policy('scale_l3p')
 print 'L3Policy == ', l3p_id
 
-for i in range(1, 3):
+for i in range(1, 101):
     
     action_name = 'scale_action_%s' %(i)
     gdb_crud.create_gbp_policy_action(action_name, action_type='allow')
@@ -74,11 +74,11 @@ print '\nL2POLICY LIST IDs ==\n', l2p_list_ids
 print '\nPTG LIST == \n', ptg_list
 print '\nPT Dict == \n', pt_dict
 
-for pt in pt_dict.iterkeys():
-    gdb_crud.delete_gbp_policy_target(pt, 'uuid')
+#for pt in pt_dict.iterkeys():
+#    gdb_crud.delete_gbp_policy_target(pt, 'uuid')
 
-for ptg in ptg_list.itervalues():
-    gdb_crud.delete_gbp_policy_target_group(ptg, 'uuid')
+#for ptg in ptg_list.itervalues():
+#    gdb_crud.delete_gbp_policy_target_group(ptg, 'uuid')
 
 for l2p in l2p_list_ids.itervalues():
     gdb_crud.delete_gbp_l2policy(l2p, 'uuid')
