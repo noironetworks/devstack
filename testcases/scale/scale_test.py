@@ -16,7 +16,7 @@ l3p = gdb_crud.create_gbp_l3policy('scale_l3p',ip_pool='1.2.3.0/16',subnet_prefi
 l3p_id = gdb_crud.verify_gbp_l3policy('scale_l3p')
 print 'L3Policy == ', l3p_id
 
-for i in range(1, 101):
+for i in range(1, 65):
     
     action_name = 'scale_action_%s' %(i)
     gdb_crud.create_gbp_policy_action(action_name, action_type='allow')
