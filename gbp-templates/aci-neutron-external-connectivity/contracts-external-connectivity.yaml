@@ -1,0 +1,80 @@
+#!highlight yaml
+
+heat_template_version: 2014-10-16
+
+parameters:
+
+  allow_sharing:
+    type: string
+    label: infra_external_segment_name
+    description: Name of the external segment used by infra services
+    default: False
+
+
+resources:
+
+
+#### Policy Classifiers, Actions, Rules Setup ####
+
+# Allow action
+    allow_action:
+        type: OS::Neutron::PolicyAction
+        properties:
+            name: "Allow"
+            action_type: allow
+            shared: { get_param: allow_sharing }
+
+# Classifier for icmp traffic
+    icmp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "ICMP-Traffic"
+            protocol: icmp
+            direction: bi
+            shared: { get_param: allow_sharing }
+
+# Rule to allow all icmp traffic
+    icmp_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ icmp_classifier, allow_action ]
+        properties:
+            name: "ICMP-BI"
+            policy_classifier_id: { get_resource: icmp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: { get_param: allow_sharing }
+
+# Classifier for all tcp traffic
+    tcp_classifier:
+        type: OS::Neutron::PolicyClassifier
+        properties:
+            name: "TCP-Traffic"
+            protocol: tcp
+            direction: bi
+            shared: { get_param: allow_sharing }
+
+# Rule to allow all tcp traffic
+    tcp_traffic_rule:
+        type: OS::Neutron::PolicyRule
+        depends_on: [ tcp_classifier, allow_action ]
+        properties:
+            name: "TCP-BI"
+            policy_classifier_id: { get_resource: tcp_classifier }
+            policy_actions: [{ get_resource: allow_action }]
+            shared: { get_param: allow_sharing }
+
+#### Policy-Rules-Sets (Contracts) Setup ####
+
+#  Allow all TCP and ICMP rule set
+    icmp_tcp_rule_set:
+        type: OS::Neutron::PolicyRuleSet
+        depends_on: [icmp_traffic_rule, tcp_traffic_rule]
+        properties:
+            name: "Allow-ICMP-TCP"
+            policy_rules: [{ get_resource: icmp_traffic_rule }, { get_resource: tcp_traffic_rule }] 
+            child_policy_rule_sets: []
+            shared: { get_param: allow_sharing }
+
+outputs:
+
+    icmp_tcp_rule_set_id:
+        value: { get_resource: icmp_tcp_rule_set }
