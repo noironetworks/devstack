@@ -9,6 +9,7 @@ import pdb
 from time import sleep
 from libs.raise_exceptions import *
 from libs.gbp_crud_libs import GBPCrud
+from libs.gbp_nova_libs import Gbp_Nova
 
 gdb_crud = GBPCrud(sys.argv[1])
 
@@ -16,7 +17,9 @@ l3p = gdb_crud.create_gbp_l3policy('scale_l3p',ip_pool='1.2.3.0/16',subnet_prefi
 l3p_id = gdb_crud.verify_gbp_l3policy('scale_l3p')
 print 'L3Policy == ', l3p_id
 
-for i in range(1, 65):
+pt_list = []
+
+for i in range(1, 33):
     
     action_name = 'scale_action_%s' %(i)
     gdb_crud.create_gbp_policy_action(action_name, action_type='allow')
@@ -55,8 +58,9 @@ for i in range(1, 65):
 
     pt_name = 'scale_pt_%s' %(i)
     gdb_crud.create_gbp_policy_target(pt_name, ptg_name)
-    pt_dict = gdb_crud.verify_gbp_policy_target(pt_name)
-    print 'PT Dict ==', pt_dict
+    pt_mapping = gdb_crud.verify_gbp_policy_target(pt_name)
+    print 'PT Mapping ==', pt_mapping
+    pt_list.append(pt_mapping[1])
 
 action_ids = gdb_crud.get_gbp_policy_action_list(getlist=True)
 classifier_ids = gdb_crud.get_gbp_policy_classifier_list(getlist=True)	
@@ -64,7 +68,7 @@ policy_rule_ids = gdb_crud.get_gbp_policy_rule_list(getlist=True)
 policy_ruleset_ids = gdb_crud.get_gbp_policy_rule_set_list(getlist=True)
 l2p_list_ids = gdb_crud.get_gbp_l2policy_list(getlist=True)
 ptg_list = gdb_crud.get_gbp_policy_target_group_list(getlist=True)
-pt_dict = gdb_crud.get_gbp_policy_target_list()
+#pt_dict = gdb_crud.get_gbp_policy_target_list()
 
 print '\nAction IDs == \n', action_ids
 print '\nClassifier IDs == \n', classifier_ids
@@ -72,7 +76,18 @@ print '\nPolicy Rule IDs == \n', policy_rule_ids
 print '\nPolicy Rule Set IDs == \n', policy_ruleset_ids
 print '\nL2POLICY LIST IDs ==\n', l2p_list_ids
 print '\nPTG LIST == \n', ptg_list
-print '\nPT Dict == \n', pt_dict
+print '\nPT List == \n', pt_list
+
+# launch the VMs
+
+gbp_nova = Gbp_Nova(sys.argv[1])
+
+i = 1
+for pt in pt_list:
+    vm_name = 'scale_vm_%s' %(i)
+    gbp_nova.vm_create_api(vm_name, 'cirros', pt, 'm1.tiny', 'nova')
+    #gbp_nova.vm_delete(vm_name, 'api')
+    i = i + 1
 
 #for pt in pt_dict.iterkeys():
 #    gdb_crud.delete_gbp_policy_target(pt, 'uuid')
