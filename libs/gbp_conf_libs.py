@@ -359,7 +359,7 @@ class Gbp_Config(object):
           return netns
 
 
-    def del_netns(self,net_node_ip,netns):
+    def del_netns(self,net_node_ip,netns=[]):
         """
         Deletes the Network Node's Ntk NameSpace
         Associated with every VM
@@ -367,16 +367,13 @@ class Gbp_Config(object):
         env.host_string = net_node_ip
         env.user = 'root'
         env.password = 'noir0123'
-        if isinstance(netns,list):
-         for ns in netns:
+        if netns == []:
+         with settings(warn_only=True):
+                result = run("ip netns | grep qdhcp")
+                netns = [x.strip() for x in result.split('\n')]
+        for ns in netns:
            with settings(warn_only=True):
                result = run("ip netns delete %s" %(ns))
-        else:
-               result = run("ip netns delete %s" %(netns))
-        if result.succeeded:
-           return 1
-        else: 
-           return 0
 
 
     def get_vm_subnet(self,vm_string,ret=''):
