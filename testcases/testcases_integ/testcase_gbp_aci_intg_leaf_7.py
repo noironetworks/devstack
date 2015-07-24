@@ -12,6 +12,7 @@ from libs.gbp_verify_libs import Gbp_Verify
 from libs.gbp_heat_libs import Gbp_Heat
 from libs.raise_exceptions import *
 from libs.gbp_aci_libs import Gbp_Aci
+from libs.gbp_nova_libs import Gbp_Nova
 from test_utils import *
 
 
@@ -47,17 +48,17 @@ class  testcase_gbp_aci_intg_leaf_7(object):
       self.leaf_port1 = params['leaf1_port1']
       self.leaf_port2 = params['leaf1_port2']
       self.node_id = params['leaf1_node_id']
-      objs_uuid = self.gbpverify.get_uuid_from_stack(self.heat_temp_test,self.heat_stack_name)
-      self.ptg_1 = objs_uuid['server_ptg_1']
-      self.ptg_2 = objs_uuid['client_ptg_1']
-      self.test_1_prs = objs_uuid['demo_ruleset_icmp_id']
-      self.test_2_prs = objs_uuid['demo_ruleset_tcp_id']
-      self.test_3_prs = objs_uuid['demo_ruleset_udp_id']
-      self.test_4_prs = objs_uuid['demo_ruleset_icmp_tcp_id']
-      self.test_5_prs = objs_uuid['demo_ruleset_icmp_udp_id']
-      self.test_6_prs = objs_uuid['demo_ruleset_tcp_udp_id']
-      self.prs_proto = {self.test_1_prs:['icmp'],self.test_2_prs:['tcp'],self.test_3_prs:['udp'],\
-                   self.test_4_prs:['icmp','tcp'],self.test_5_prs:['icmp','udp'],self.test_6_prs:['tcp','udp']}
+      #objs_uuid = self.gbpverify.get_uuid_from_stack(self.heat_temp_test,self.heat_stack_name)
+      #self.ptg_1 = objs_uuid['server_ptg_1']
+      #self.ptg_2 = objs_uuid['client_ptg_1']
+      #self.test_1_prs = objs_uuid['demo_ruleset_icmp_id']
+      #self.test_2_prs = objs_uuid['demo_ruleset_tcp_id']
+      #self.test_3_prs = objs_uuid['demo_ruleset_udp_id']
+      #self.test_4_prs = objs_uuid['demo_ruleset_icmp_tcp_id']
+      #self.test_5_prs = objs_uuid['demo_ruleset_icmp_udp_id']
+      #self.test_6_prs = objs_uuid['demo_ruleset_tcp_udp_id']
+      #self.prs_proto = {self.test_1_prs:['icmp'],self.test_2_prs:['tcp'],self.test_3_prs:['udp'],\
+      #             self.test_4_prs:['icmp','tcp'],self.test_5_prs:['icmp','udp'],self.test_6_prs:['tcp','udp']}
 
     def test_runner(self):
         """
@@ -71,7 +72,8 @@ class  testcase_gbp_aci_intg_leaf_7(object):
         if self.test_step_VerifyTraffic() != 1:
            self._log.info("Test Failed at Step_2 == TestVerifyTraffic")
            self.test_CleanUp()
-        testcase_steps = [self.test_step_DisconnectLeaf,
+        testcase_steps = [
+                              self.test_step_DisconnectLeaf,
                               self.test_step_UpdatePtg,
                               self.test_step_ReconnectLeaf,
                               self.test_step_VerifyTraffic
@@ -111,6 +113,17 @@ class  testcase_gbp_aci_intg_leaf_7(object):
            self._log.info("\n ABORTING THE TESTSUITE RUN, HEAT STACK CREATE of %s Failed" %(self.heat_stack_name))
            self.test_CleanUp()
            sys.exit(1)
+        objs_uuid = self.gbpverify.get_uuid_from_stack(self.heat_temp_test,self.heat_stack_name)
+        self.ptg_1 = objs_uuid['server_ptg_id']
+        self.ptg_2 = objs_uuid['client_ptg_id']
+        self.test_1_prs = objs_uuid['demo_ruleset_icmp_id']
+        self.test_2_prs = objs_uuid['demo_ruleset_tcp_id']
+        self.test_3_prs = objs_uuid['demo_ruleset_udp_id']
+        self.test_4_prs = objs_uuid['demo_ruleset_icmp_tcp_id']
+        self.test_5_prs = objs_uuid['demo_ruleset_icmp_udp_id']
+        self.test_6_prs = objs_uuid['demo_ruleset_tcp_udp_id']
+        self.prs_proto = {self.test_1_prs:['icmp'],self.test_2_prs:['tcp'],self.test_3_prs:['udp'],\
+                   self.test_4_prs:['icmp','tcp'],self.test_5_prs:['icmp','udp'],self.test_6_prs:['tcp','udp']}
         return 1
 
     def test_step_UpdatePtg(self,prs):

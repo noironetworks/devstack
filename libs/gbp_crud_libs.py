@@ -411,11 +411,13 @@ class GBPCrud(object):
            for arg,val in kwargs.items():
                policy_target_group[arg]=val
            body = {"policy_target_group":policy_target_group}
-           self.client.create_policy_target_group(body)
+           ptg_uuid = self.client.create_policy_target_group(body)['policy_target_group']['id'].encode('ascii')
+           
         except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
            _log.info("Creating Policy Target Group = %s, failed" %(name))
            return 0
+        return ptg_uuid
 
     def verify_gbp_policy_target_group(self,name):
         """
@@ -501,11 +503,14 @@ class GBPCrud(object):
                                           "name" : name
                                          }
                       }
-           self.client.create_policy_target(body)
+           post_result = self.client.create_policy_target(body)['policy_target']
+           pt_uuid = post_result['id'].encode('ascii')
+           neutron_port_id = post_result['port_id'].encode('ascii')
         except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
            _log.info("Creating PT = %s, failed" %(name))
            return 0
+        return pt_uuid,neutron_port_id
 
     def verify_gbp_policy_target(self,name):
         """
@@ -560,11 +565,12 @@ class GBPCrud(object):
            for arg,val in kwargs.items():
                l3policy[arg]=val
            body = {"l3_policy": l3policy}
-           self.client.create_l3_policy(body)
+           l3p_uuid = self.client.create_l3_policy(body)['l3_policy']['id'].encode('ascii')
         except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
            _log.info("Creating L3Policy = %s, failed" %(name))
            return 0
+        return l3p_uuid
 
     def verify_gbp_l3policy(self,name):
         """
@@ -651,11 +657,12 @@ class GBPCrud(object):
            for arg,val in kwargs.items():
                l2policy[arg]=val
            body = {"l2_policy": l2policy}
-           self.client.create_l2_policy(body)
+           l2p_uuid = self.client.create_l2_policy(body)['l2_policy']['id'].encode('ascii')
         except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
            _log.info("Creating L2Policy = %s, failed" %(name))
            return 0
+        return l2p_uuid
 
     def verify_gbp_l2policy(self,name):
         """

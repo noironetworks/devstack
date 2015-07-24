@@ -44,13 +44,14 @@ class  testcase_gbp_aci_intg_leaf_6(object):
       self.comp_nodes = params['comp_node_ips']
 
 
-    def test_runner(self,log_string):
+    def test_runner(self):
         """
         Method to execute the testcase in Ordered Steps
         """
         test_name = 'RESTART_OPFLEXAGNT_ON_BOTH_COMP_NODES'
         self._log.info("\nSteps of the TESTCASE_GBP_INTG_LEAF_6_RESTART_OPFLEXAGNT_ON_BOTH_COMP_NODES to be executed\n")
-        testcase_steps = [self.test_step_SetUpConfig,
+        testcase_steps = [
+                          self.test_step_SetUpConfig,
                           self.test_step_VerifyTraffic,
                           self.test_step_RestartOpflexAgent,
                           self.test_step_VerifyTraffic
@@ -62,7 +63,7 @@ class  testcase_gbp_aci_intg_leaf_6(object):
                   raise TestFailed("%s_%s@_%s == FAILED" %(self.__class__.__name__.upper(),test_name,step.__name__.lstrip('self.')))
             except TestFailed as err:
                print 'Noiro ==',err
-               self.test_CleanUp()
+               self.test_CleanUp() 
         self._log.info("%s_%s == PASSED" %(self.__class__.__name__.upper(),test_name))
         self.test_CleanUp()
 
@@ -95,13 +96,14 @@ class  testcase_gbp_aci_intg_leaf_6(object):
         for node in self.comp_nodes:
           if self.gbpcfg.restart_service(node,'agent-ovs.service') == 0:
              return 0
+        sleep(10)
         return 1
 
     def test_step_VerifyTraffic(self):
         """
         Send and Verify traffic
         """
-        self._log.info("\nSend and Verify traffic for Intra & Inter Host\n")
+        self._log.info("\nSending and Verify traffic for Intra & Inter Host\n")
         return verify_traff(self.ntk_node)
 
     def test_CleanUp(self):

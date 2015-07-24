@@ -54,7 +54,8 @@ class  testcase_gbp_aci_intg_leaf_5(object):
         """
         test_name = 'STOP_OPFLEXAGNT_SETUPCFG_START_OPFLEXAGNT'
         self._log.info("\nSteps of the TESTCASE_GBP_INTG_LEAF_5_STOP_OPFLEXAGNT_SETUPCFG_START_OPFLEXAGNT to be executed\n")
-        testcase_steps = [self.test_step_StopOPflexAgent,
+        testcase_steps = [
+                          self.test_step_StopOPflexAgent,
                           self.test_step_SetUpConfig,
                           self.test_step_StartOpflexAgent,
                           self.test_step_VerifyTraffic
@@ -110,6 +111,7 @@ class  testcase_gbp_aci_intg_leaf_5(object):
         for node in self.comp_nodes:
           if self.gbpcfg.restart_service(node,'agent-ovs.service',action='start') == 0:
              return 0
+        sleep(30)
         return 1
        
     def test_step_VerifyTraffic(self):

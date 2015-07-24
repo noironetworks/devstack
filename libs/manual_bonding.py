@@ -216,8 +216,11 @@ def main():
     """
     Run the complete setup in the below order
     """
-    host_ip = sys.argv[1]
-    member_intf_list = [sys.argv[2],sys.argv[3]]
+    hostname = sys.argv[1]
+    host_ip = sys.argv[2]
+    mem_intf_1 = sys.argv[3]
+    mem_intf_2 = sys.argv[4]
+    member_intf_list = [mem_intf_1,mem_intf_2]
     print "User passed == %s, %s" %(host_ip,member_intf_list)
 
     ##Initialize the BaseClass
@@ -234,15 +237,15 @@ def main():
     bndg.create_bond_intf()
     ## Bring up the interfaces
     print "Bring all three interfaces in order of mem1,mem2, bond0"
-    intf_list = [sys.argv[2],sys.argv[3],'bond0']
+    intf_list = [mem_intf_1,mem_intf_2,'bond0']
     print "Interface List for IFUP == %s" %(intf_list)
-    #bndg.if_down_up(nic_state='up', nic_name=intf_list)
+    bndg.if_down_up(nic_state='up', nic_name=intf_list)
     ## Verify the Bonding
     print " Verify the LACP Bonding"
     bndg.verify_bond(member_intf_list)
     ## Bring up Virtual Interface on the parent interface bond0
     print "Bring up Virtual Interface on the parent interface bond0"
-    bndg.add_virtual_intf_script('f3-compute-1')
+    bndg.add_virtual_intf_script(hostname)
 
 if __name__ == "__main__":
    main()
