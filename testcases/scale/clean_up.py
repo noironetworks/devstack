@@ -10,6 +10,7 @@ from time import sleep
 from libs.raise_exceptions import *
 from libs.gbp_crud_libs import GBPCrud
 from libs.gbp_nova_libs import Gbp_Nova
+from libs.gbp_conf_libs import Gbp_Config
 from okeystone import Keystone
 
 for j in range(1, 101):
@@ -24,6 +25,11 @@ for j in range(1, 101):
         gbp_nova = Gbp_Nova(ostack_controller=sys.argv[1], os_tenant=tenantName)
         vm_name = '%s_scale_vm_%s' % (j, i)
         gbp_nova.vm_delete(vm_name, 'api')
+
+gbp_conf = Gbp_Config()
+gbp_conf.del_netns('172.28.184.84')
+
+gdb_crud = GBPCrud(ostack_controller=sys.argv[1])
     
 """ 
 action_ids = gdb_crud.get_gbp_policy_action_list(getlist=True)
@@ -31,8 +37,6 @@ classifier_ids = gdb_crud.get_gbp_policy_classifier_list(getlist=True)
 policy_rule_ids = gdb_crud.get_gbp_policy_rule_list(getlist=True)
 policy_ruleset_ids = gdb_crud.get_gbp_policy_rule_set_list(getlist=True)
 """
-
-gdb_crud = GBPCrud(ostack_controller=sys.argv[1])
 
 l3p_list_ids = gdb_crud.get_gbp_l3policy_list(getlist=True)    
 l2p_list_ids = gdb_crud.get_gbp_l2policy_list(getlist=True)
