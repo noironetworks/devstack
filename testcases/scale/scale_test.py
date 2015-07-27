@@ -6,7 +6,7 @@ import os
 import datetime
 import string
 import pdb
-from time import sleep
+import time
 from libs.raise_exceptions import *
 from libs.gbp_crud_libs import GBPCrud
 from libs.gbp_nova_libs import Gbp_Nova
@@ -24,7 +24,7 @@ for j in range(1, 101):
     key_stone = Keystone(ostack_controller=sys.argv[1])
     key_stone.create_tenant(tenant_name=tenantName)
 
-    print "tenant name = " + tenantName
+    print "\ntenant name = " + tenantName
 
     tenant_id = key_stone.get_tenant_attribute(tenant_name=tenantName, attribute='id')
     admin_user_id = key_stone.get_user_attribute('admin', 'id')
@@ -63,19 +63,34 @@ for j in range(1, 101):
         """
         
         l2p_name = '%s_scale_l2p_%s' % (j, i)
+
+        start = time.time()
         l2p_id = gdb_crud.create_gbp_l2policy(l2p_name, l3_policy_id=l3p_id)
+        end = time.time()
+        print '\n', end - start
+
         print 'L2P ID ==', l2p_id
   
         #ruleset_dict = {} 
         #ruleset_dict[policy_ruleset_id] = "scope"
  
         ptg_name = '%s_scale_ptg_%s' % (j, i)
+
+        start = time.time()
         ptg_id = gdb_crud.create_gbp_policy_target_group(ptg_name, l2_policy_id=l2p_id)
         #ptg_id = gdb_crud.create_gbp_policy_target_group(ptg_name, l2_policy_id=l2p_id, consumed_policy_rule_sets=ruleset_dict, provided_policy_rule_sets=ruleset_dict)
+        end = time.time()
+        print end - start
+
         print 'PTG ID ==', ptg_id
 
         pt_name = '%s_scale_pt_%s' % (j, i)
+
+        start = time.time()
         pt_mapping = gdb_crud.create_gbp_policy_target(pt_name, ptg_name)
+        end = time.time()
+        print end - start        
+ 
         print 'PT Mapping ==', pt_mapping
         pt_list.append(pt_mapping[1])
     
@@ -86,8 +101,8 @@ for j in range(1, 101):
     policy_ruleset_ids = gdb_crud.get_gbp_policy_rule_set_list(getlist=True)
     """
     
-    l2p_list_ids = gdb_crud.get_gbp_l2policy_list(getlist=True)
-    ptg_list = gdb_crud.get_gbp_policy_target_group_list(getlist=True)
+    #l2p_list_ids = gdb_crud.get_gbp_l2policy_list(getlist=True)
+    #ptg_list = gdb_crud.get_gbp_policy_target_group_list(getlist=True)
     #pt_dict = gdb_crud.get_gbp_policy_target_list()
 
     """
@@ -97,8 +112,8 @@ for j in range(1, 101):
     print '\nPolicy Rule Set IDs == \n', policy_ruleset_ids
     """
 
-    print '\nL2POLICY LIST IDs ==\n', l2p_list_ids
-    print '\nPTG LIST == \n', ptg_list
+    #print '\nL2POLICY LIST IDs ==\n', l2p_list_ids
+    #print '\nPTG LIST == \n', ptg_list
     print '\nPT List == \n\n', pt_list
 
     # launch the VMs
@@ -111,29 +126,4 @@ for j in range(1, 101):
         gbp_nova.vm_create_api(vm_name, 'cirros', pt, 'm1.tiny', 'nova')
         #gbp_nova.vm_delete(vm_name, 'api')
         k = k + 1
-
-    #for pt in pt_dict.iterkeys():
-    #    gdb_crud.delete_gbp_policy_target(pt, 'uuid')
-
-    #for ptg in ptg_list.itervalues():
-    #    gdb_crud.delete_gbp_policy_target_group(ptg, 'uuid')
-
-    for l2p in l2p_list_ids.itervalues():
-        gdb_crud.delete_gbp_l2policy(l2p, 'uuid')
-
-    for ruleset in policy_ruleset_ids.itervalues():
-        gdb_crud.delete_gbp_policy_rule_set(ruleset, 'uuid')
-
-    for rule in policy_rule_ids.itervalues():
-        gdb_crud.delete_gbp_policy_rules(rule, 'uuid')
-
-    for action in action_ids.itervalues():
-        gdb_crud.delete_gbp_policy_action(action, 'uuid')
-
-    for classifier in classifier_ids.itervalues():
-        gdb_crud.delete_gbp_policy_classifier(classifier, 'uuid')
     """
-
-#gdb_crud.delete_gbp_l3policy(l3p_id, 'uuid')
-
-
