@@ -42,6 +42,8 @@ class wrapper(object):
 
 
     def run(self):
+       #Reason: Any new testcase added to the directory will be automatically run
+       #provided i's name string starts with testcase_gbp_aci_intg
        for class_name in [filename.strip('.py') for filename in glob.glob('testcase_gbp_aci_intg*.py')]:
            imp_class = importlib.import_module(class_name)
            class_obj = getattr(imp_class,class_name)

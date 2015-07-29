@@ -5,10 +5,12 @@ import logging
 import os
 import datetime
 import yaml
+from time import sleep
 from libs.gbp_conf_libs import Gbp_Config
 from libs.gbp_verify_libs import Gbp_Verify
 from libs.gbp_heat_libs import Gbp_Heat
 from libs.gbp_nova_libs import Gbp_Nova
+from libs.gbp_utils import *
 
 class gbp_main_config(object):
     """
@@ -33,6 +35,7 @@ class gbp_main_config(object):
       self.comp_node = conf['az_comp_node']
       self.ntk_node = conf['ntk_node']
       self.cntlr_ip = conf['controller_ip']
+      self.apic_ip = conf['apic_ip']
       #self.setup_file = conf['main_setup_heat_temp']
       self.heat_temp_test = conf['main_setup_heat_temp']
       self.num_hosts = conf['num_comp_nodes']
@@ -67,15 +70,22 @@ class gbp_main_config(object):
             self.gbpnova.avail_zone('cli','delete',self.agg_id) #Cleanup Agg_ID
             sys.exit(1)
          
-      #if self.gbpnova.sshkey_for_vm() == 0:
-      #   self._log.info("\n ABORTING THE TESTSUITE RUN, ssh key creation Failed")
-      #   sys.exit(1)
-
       if self.gbpheat.cfg_all_cli(1,self.heat_stack_name,heat_temp=self.heat_temp_test) == 0:
          self._log.info("\n ABORTING THE TESTSUITE RUN, HEAT STACK CREATE of %s Failed" %(self.heat_stack_name))
          #self.gbpheat.cfg_all_cli(0,self.heat_stack_name) ## Stack delete will cause cleanup
          self.cleanup()
          sys.exit(1)
+      
+      sleep(5) # Sleep 5s assuming that all objects areated in APIC
+      self._log.info("\n ADDING SSH-Filter to Svc_epg created for every dhcp_agent")
+      svc_epg_list = [
+                      'demo_same_ptg_l2p_l3p_bd',\
+                      'demo_diff_ptg_same_l2p_l3p_bd',\
+                      'demo_diff_ptg_l2p_same_l3p_bd',\
+                      'demo_srvr_bd','demo_clnt_bd'
+                     ]
+      create_add_filter(self.apic_ip,svc_epg_list)
+
 
     def cleanup(self):
         ##Need to call for instance delete if there is an instance
@@ -90,5 +100,5 @@ class gbp_main_config(object):
             vm_subn = gbpcfg.get_vm_subnet(vm)[1]
             subnet_list.append(vm_subn)
         dhcp_ns_list = gbpcfg.get_netns(self.ntk_node,subnet_list)
-        gbpcfg.del_netns(self.ntk_node,dhcp_ns_list)
+        gbpcfg.del_netns(self.ntk_node)
         sys.exit(1)
