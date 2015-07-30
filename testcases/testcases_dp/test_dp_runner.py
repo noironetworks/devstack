@@ -25,8 +25,9 @@ def main():
     # Fetch gbp objects via heat output
     gbpverify = Gbp_Verify()
     objs_uuid = gbpverify.get_uuid_from_stack(super_hdr.heat_temp,super_hdr.stack_name)
-    print "Before Running Test .. sleeping for 120 secs to enable SSH Contract"  #TODO: Will remove this once implicit ssh contract
-    sleep(120)
+    print "Waiting for IP/MAC learning by Fabric via both VMM & Datapath before we start the test"
+    sleep(30)
+
     for val in header_to_suite_map.itervalues():
        #Initialize Testsuite specific config setup/cleanup class
        header = val[0]()
@@ -38,12 +39,12 @@ def main():
        testsuite = val[1](objs_uuid)
 
        #now run the loop of test-combos
-       for vpc in ['novpc','vpc_novpc','vpc_vpc']:
-        for ip in ['ipv4','ipv6']:  
-         for bdtype in ['vxlan','vlan']:  
+       for bdtype in ['vxlan','vlan']:
+        for ip in ['ipv4','ipv6']:
+         for vpc in ['novpc','vpc_novpc','vpc_vpc']:
            for location in ['same_host','diff_host_same_leaf','diff_host_diff_leaf']: 
                    #Run the testcases specific to the initialized testsuite
-                   log_string = "%s_%s_%s_%s" %(vpc,ip,bdtype,location)
+                   log_string = "%s_%s_%s_%s" %(bdtype,ip,vpc,location)
                    testsuite.test_runner(log_string,location)
        #Testsuite specific cleanup
        #header.cleanup()

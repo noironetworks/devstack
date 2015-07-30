@@ -32,6 +32,7 @@ class  testcase_gbp_aci_intg_leaf_8(object):
       self.gbpaci = Gbp_Aci()
       self.heat_stack_name = 'gbpleaf8'
       cntlr_ip = params['cntlr_ip']
+      self.apic_ip = params['apic_ip']
       self.heat_temp_test = params['heat_temp_file']
       self.gbpheat = Gbp_Heat(cntlr_ip)
       self.gbpnova = Gbp_Nova(cntlr_ip)
@@ -86,6 +87,10 @@ class  testcase_gbp_aci_intg_leaf_8(object):
            self._log.info("\n ABORTING THE TESTSUITE RUN, HEAT STACK CREATE of %s Failed" %(self.heat_stack_name))
            self.test_CleanUp()
            sys.exit(1)
+        sleep(5) # Sleep 5s assuming that all objects areated in APIC
+        self._log.info("\n ADDING SSH-Filter to Svc_epg created for every dhcp_agent")
+        svc_epg_list = ['demo_bd']
+        create_add_filter(self.apic_ip,svc_epg_list)
         return 1
 
 
