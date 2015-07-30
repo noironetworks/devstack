@@ -94,26 +94,6 @@ for j in range(1, 101):
         print 'PT Mapping ==', pt_mapping
         pt_list.append(pt_mapping[1])
     
-    """
-    action_ids = gdb_crud.get_gbp_policy_action_list(getlist=True)
-    classifier_ids = gdb_crud.get_gbp_policy_classifier_list(getlist=True)	
-    policy_rule_ids = gdb_crud.get_gbp_policy_rule_list(getlist=True)
-    policy_ruleset_ids = gdb_crud.get_gbp_policy_rule_set_list(getlist=True)
-    """
-    
-    #l2p_list_ids = gdb_crud.get_gbp_l2policy_list(getlist=True)
-    #ptg_list = gdb_crud.get_gbp_policy_target_group_list(getlist=True)
-    #pt_dict = gdb_crud.get_gbp_policy_target_list()
-
-    """
-    print '\nAction IDs == \n', action_ids
-    print '\nClassifier IDs == \n', classifier_ids
-    print '\nPolicy Rule IDs == \n', policy_rule_ids
-    print '\nPolicy Rule Set IDs == \n', policy_ruleset_ids
-    """
-
-    #print '\nL2POLICY LIST IDs ==\n', l2p_list_ids
-    #print '\nPTG LIST == \n', ptg_list
     print '\nPT List == \n\n', pt_list
 
     # launch the VMs
