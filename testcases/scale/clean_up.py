@@ -6,6 +6,7 @@ import os
 import datetime
 import string
 import pdb
+import subprocess
 from time import sleep
 from libs.raise_exceptions import *
 from libs.gbp_crud_libs import GBPCrud
@@ -79,4 +80,8 @@ for classifier in classifier_ids.itervalues():
 
 for l3p in l3p_list_ids.itervalues():
     gdb_crud.delete_gbp_l3policy(l3p, 'uuid')
+
+for k in range(1, 101):
+    tenantName = 'scale_tenant_%s' %(k)
+    subprocess.Popen(["keystone", "tenant-delete", tenantName])
 
