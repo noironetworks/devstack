@@ -13,11 +13,11 @@ from libs.gbp_nova_libs import Gbp_Nova
 from okeystone import Keystone
 
 # create shared L3 policy
-
+"""
 gdb_crud = GBPCrud(ostack_controller=sys.argv[1])
 l3p_id = gdb_crud.create_gbp_l3policy('scale_l3p', ip_pool='1.2.3.0/8', subnet_prefix_length=24, shared=True)
 print 'L3Policy == ', l3p_id
-
+"""
 for j in range(1, 101):
 
     tenantName = 'scale_tenant_%s' %(j)	
@@ -36,9 +36,13 @@ for j in range(1, 101):
     key_stone.client.roles.add_user_role(user=admin_user_id, role=member_role_id, tenant=tenant_id)
 
     gdb_crud = GBPCrud(ostack_controller=sys.argv[1], tenant=tenantName)
+    
+    l3p_name = '%s_scale_l3p' % (j)
+    l3p_id = gdb_crud.create_gbp_l3policy(l3p_name, ip_pool='1.2.3.0/8', subnet_prefix_length=24, shared=True)
+    print 'L3Policy == ', l3p_id
 
     pt_list = []
-    for i in range(1, 36):
+    for i in range(1, 18):
     
         """ 
         action_name = '%s_scale_action_%s' % (j, i)
