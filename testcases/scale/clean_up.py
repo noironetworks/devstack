@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import sys
-import sys
 import logging
 import os
 import datetime
@@ -14,21 +13,23 @@ from libs.gbp_nova_libs import Gbp_Nova
 from libs.gbp_conf_libs import Gbp_Config
 from okeystone import Keystone
 
-for j in range(1, 101):
+for j in range(1, 6):
 
     tenantName = 'scale_tenant_%s' %(j)	
 #    key_stone = Keystone(ostack_controller=sys.argv[1])
     print "tenant name = " + tenantName
 
-    for i in range(1, 36):
+    for i in range(1, 18):
 
-        # launch the VMs
+        # delete the VMs
         gbp_nova = Gbp_Nova(ostack_controller=sys.argv[1], os_tenant=tenantName)
         vm_name = '%s_scale_vm_%s' % (j, i)
         gbp_nova.vm_delete(vm_name, 'api')
 
 gbp_conf = Gbp_Config()
 gbp_conf.del_netns('172.28.184.84')
+
+print 'Done deleting VMs'
 
 gdb_crud = GBPCrud(ostack_controller=sys.argv[1])
     
@@ -58,11 +59,17 @@ print '\nPT Dict == \n\n', pt_dict
 for pt in pt_dict.iterkeys():
     gdb_crud.delete_gbp_policy_target(pt, 'uuid')
 
+print 'Done deleting PTs'
+
 for ptg in ptg_list.itervalues():
     gdb_crud.delete_gbp_policy_target_group(ptg, 'uuid')
 
+print 'Done deleting PTGs'
+
 for l2p in l2p_list_ids.itervalues():
     gdb_crud.delete_gbp_l2policy(l2p, 'uuid')
+
+print 'Done deleting L2s'
 
 """
 for ruleset in policy_ruleset_ids.itervalues():
@@ -81,7 +88,11 @@ for classifier in classifier_ids.itervalues():
 for l3p in l3p_list_ids.itervalues():
     gdb_crud.delete_gbp_l3policy(l3p, 'uuid')
 
+print 'Done deleting L3s'
+
 for k in range(1, 101):
     tenantName = 'scale_tenant_%s' %(k)
     subprocess.Popen(["keystone", "tenant-delete", tenantName])
+
+print 'Done deleting tenants'
 
