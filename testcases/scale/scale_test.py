@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import sys
-import sys
 import logging
 import os
 import datetime
