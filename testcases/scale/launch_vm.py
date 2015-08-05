@@ -9,7 +9,7 @@ from libs.raise_exceptions import *
 from libs.gbp_crud_libs import GBPCrud
 from libs.gbp_nova_libs import Gbp_Nova
 
-for j in range(1, 6):                                                                                      
+for j in range(1, 7):                                                                                      
 
     tenantName = 'scale_tenant_%s' % (j)
     gbp_crud = GBPCrud(sys.argv[1], tenant=tenantName)
