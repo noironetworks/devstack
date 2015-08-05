@@ -13,7 +13,7 @@ from libs.gbp_nova_libs import Gbp_Nova
 from libs.gbp_conf_libs import Gbp_Config
 from okeystone import Keystone
 
-for j in range(1, 6):
+for j in range(1, 7):
 
     tenantName = 'scale_tenant_%s' %(j)	
 #    key_stone = Keystone(ostack_controller=sys.argv[1])
@@ -25,9 +25,6 @@ for j in range(1, 6):
         gbp_nova = Gbp_Nova(ostack_controller=sys.argv[1], os_tenant=tenantName)
         vm_name = '%s_scale_vm_%s' % (j, i)
         gbp_nova.vm_delete(vm_name, 'api')
-
-gbp_conf = Gbp_Config()
-gbp_conf.del_netns('172.28.184.84')
 
 print 'Done deleting VMs'
 
@@ -96,3 +93,5 @@ for k in range(1, 101):
 
 print 'Done deleting tenants'
 
+gbp_conf = Gbp_Config()
+gbp_conf.del_netns('172.28.184.84')
