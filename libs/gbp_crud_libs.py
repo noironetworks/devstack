@@ -403,6 +403,7 @@ class GBPCrud(object):
         'network_service_policy_id' = nsp_uuid
         'consumed_policy_rule_sets' = [list of policy_rule_set_uuid]
         'provided_policy_rule_sets' = [list policy_rule_set_uuid]
+        'nextwork_service_policy' = name_uuid_network_service_policy
         'shared' = False,True
         'description' = any string
         """
@@ -429,7 +430,9 @@ class GBPCrud(object):
         _log.info("Policy Target Group NOT Found")
         return 0
 
-    def update_gbp_policy_target_group(self, name, consumed_policy_rulesets=None, provided_policy_rulesets=None):
+    def update_gbp_policy_target_group(self, name, consumed_policy_rulesets=None, 
+                                       provided_policy_rulesets=None, shared=False,
+                                       network_service_policy=None):
         """
         Update the Policy Target Group
         """
@@ -448,7 +451,9 @@ class GBPCrud(object):
 	body = {
 		"policy_target_group" : {
 			                 "provided_policy_rule_sets" : provided_dict,
-			                 "consumed_policy_rule_sets" : consumed_dict
+			                 "consumed_policy_rule_sets" : consumed_dict,
+                                         "shared" : shared,
+                                         "network_service_policy" : network_service_policy
 			}
 		}
 	self.client.update_policy_target_group(group_id, body)
@@ -716,3 +721,124 @@ class GBPCrud(object):
         else:
            return l2ps
 
+    def create_gbp_external_segment(self,name,**kwargs):
+        """
+        Create an External Segment
+        Return Ext_Seg_uuid
+        Supported  keyword based attributes and their values/type:
+        'cidr' = string
+        'external_policies'= [](list of external-policies)
+        'external_routes' = [{'destination'=<>,'nexthop'=<>}](Pass list of dictionaries for each dest/nexthop pair)
+        'nexthop' = string('address should be part of the cidr')
+        'shared': True, False
+        'description': string
+        """
+        try:
+           external_segment={"name":name}
+           for arg,val in kwargs.items():
+               if arg == 'external_policies' or arg == 'external_routes':
+                  if not isinstance(val,list):
+                     raise TypeError
+               external_segment[arg]=val
+           body = {"external_segment": external_segment}
+           ext_seg_uuid = self.client.create_external_segment(body)['external_segment']['id'].encode('ascii')
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Creating External Segment = %s, failed" %(name))
+           return 0
+        return ext_seg_uuid
+
+    def delete_gbp_external_segment(self,uuid):
+         """
+         Delete a GBP External Segment
+         """
+         try:
+             self.client.delete_external_segment(uuid)
+         except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Deleting External Segment = %s, failed" %(uuid))
+
+
+    def update_gbp_external_segment(self,uuid,**kwargs):
+        """
+        Update an External Segment
+        Supported  keyword based attributes and their values/type:
+        'cidr' = string
+        'external_policies'= [](list of external-policies)
+        'external_routes' = [{'destination'=<>,'nexthop'=<>}](Pass list of dictionaries for each dest/nexthop pair)
+        'nexthop' = string('address should be part of the cidr')
+        'shared': True, False
+        'description': string
+        """
+        external_segment = {}
+        try:
+            for arg,val in kwargs.items():
+               external_segment[arg]=val
+            body = {"external_segment":external_segment}
+            self.client.update_external_segment(uuid,body)
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Update of External Segment = %s, failed" %(uuid))
+           return 0
+
+    def create_gbp_nat_pool(self,name,**kwargs):
+        """
+        Create a NAT Pool
+        Supported keywords based attributes and their values/type:
+        'ip-pool' = string(must be exact or subnet of cidr)
+        'external-segment' = string(name/uuid)
+        """
+        nat_pool = {'name':name}
+        try:
+            for arg,val in kwargs.items():
+               nat_pool[arg]=val
+            body = {"nat_pool":nat_pool}
+            nat_pool_uuid = self.client.create_nat_pool(body)['nat_pool']['id'].encode('ascii')
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Create of NAT Pool = %s, failed" %(uuid))
+           return 0 
+        return nat_pool_uuid
+
+    def delete_gbp_external_segment(self,uuid):
+         """
+         Delete a GBP NAT Pool
+         """
+         try:
+             self.client.delete_nat_pool(uuid)
+         except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Deleting NAT Pool = %s, failed" %(uuid))
+
+    def update_gbp_nat_pool(self,name,**kwargs):
+        """
+        Update a NAT Pool
+        Supported keywords based attributes and their values/type:
+        'ip-pool' = string(must be exact or subnet of cidr)
+        'external-segment' = string(name/uuid)
+        """
+        nat_pool = {}
+        try:
+            for arg,val in kwargs.items():
+               nat_pool[arg]=val
+            body = {"nat_pool":nat_pool}
+            self.client.update_nat_pool(uuid,body)
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Update of NAT Pool = %s, failed" %(uuid))
+           return 0
+
+    def create_gbp_network_service_policy_for_nat(self,shared=False):
+        """
+        Create Network Service Policy
+        """
+        network_service_params = [{"type": "ip_pool", "name": "nat", "value": "nat_pool"}]
+        nsp_nat = {'name' : name, 'network_service_params' : network_service_params}
+        try:
+           body = {'network_service_policy':nsp_nat}
+           nsp_nat_uuid = self.client.create_network_service_policy(body)['network_service_policy']['id'].encode('ascii')
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Creating NAT NSP = %s, failed" %(uuid))
+           return 0
+        return nsp_nat_uuid   

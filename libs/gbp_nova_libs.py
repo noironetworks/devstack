@@ -230,7 +230,38 @@ class Gbp_Nova(object):
             status_try +=1
         return 1
 
+    def get_floating_ip(self,vm_name):
+        """
+        Returns the Floating IP associated for the vm_name
+        """
+        instance = self.nova.servers.find(name=vmname)
+        try:
+           floating_ip = self.nova.floating_ips.find(instance_id=instance.id).ip.encode('ascii')
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            _log.info('Exception Type = %s, Exception Object = %s' %(exc_type,exc_obj))
+            return 0
+        return floating_ip
 
+    def get_any_vm_property(self,vm_name):
+        """
+        Returns any VM property
+        Pass vm_name string & the property name string
+        """
+        instance = self.nova.servers.find(name=vmname)
+        vm_dict = {}
+        try:
+           vm_dict['name'] = instance.name.encode('ascii')
+           vm_dict['ip'] = instance.ip.encode('ascii')
+           vm_dict['id'] = instance.id.encode('ascii')
+           vm_dict['networks'] = instance.networks
+           vm_dict['hostid'] = instance.hostId.encode('ascii')
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            _log.info('Exception Type = %s, Exception Object = %s' %(exc_type,exc_obj))
+            return 0
+        return vm_dict
+ 
     def sshkey_for_vm(self,sshkeyname,method='cli',action='create'):
         """
         Creates and Upload SSH key for VM
