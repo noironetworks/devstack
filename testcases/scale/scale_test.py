@@ -13,8 +13,8 @@ from okeystone import Keystone
 
 # create shared L3 policy
 """
-gdb_crud = GBPCrud(ostack_controller=sys.argv[1])
-l3p_id = gdb_crud.create_gbp_l3policy('scale_l3p', ip_pool='1.2.3.0/8', subnet_prefix_length=24, shared=True)
+gbp_crud = GBPCrud(ostack_controller=sys.argv[1])
+l3p_id = gbp_crud.create_gbp_l3policy('scale_l3p', ip_pool='1.2.3.0/8', subnet_prefix_length=24, shared=True)
 print 'L3Policy == ', l3p_id
 """
 for j in range(1, 101):
@@ -34,10 +34,10 @@ for j in range(1, 101):
     key_stone.client.roles.add_user_role(user=admin_user_id, role=hstack_owner_role_id, tenant=tenant_id)
     key_stone.client.roles.add_user_role(user=admin_user_id, role=member_role_id, tenant=tenant_id)
 
-    gdb_crud = GBPCrud(ostack_controller=sys.argv[1], tenant=tenantName)
+    gbp_crud = GBPCrud(ostack_controller=sys.argv[1], tenant=tenantName)
     
     l3p_name = '%s_scale_l3p' % (j)
-    l3p_id = gdb_crud.create_gbp_l3policy(l3p_name, ip_pool='1.2.3.0/8', subnet_prefix_length=24, shared=True)
+    l3p_id = gbp_crud.create_gbp_l3policy(l3p_name, ip_pool='1.2.3.0/8', subnet_prefix_length=24, shared=True)
     print 'L3Policy == ', l3p_id
 
     pt_list = []
@@ -45,30 +45,30 @@ for j in range(1, 101):
     
         """ 
         action_name = '%s_scale_action_%s' % (j, i)
-        gdb_crud.create_gbp_policy_action(action_name, action_type='allow')
-        action_id = gdb_crud.verify_gbp_policy_action(action_name)
+        gbp_crud.create_gbp_policy_action(action_name, action_type='allow')
+        action_id = gbp_crud.verify_gbp_policy_action(action_name)
         print '\naction_id ==', action_id
 
         classifier_name = '%s_scale_classifier_%s' % (j, i)
-        gdb_crud.create_gbp_policy_classifier(classifier_name, direction='bi', protocol='icmp')
-        classifier_id = gdb_crud.verify_gbp_policy_classifier(classifier_name)
+        gbp_crud.create_gbp_policy_classifier(classifier_name, direction='bi', protocol='icmp')
+        classifier_id = gbp_crud.verify_gbp_policy_classifier(classifier_name)
         print 'classifier_id ==', classifier_id
 
         policy_rule_name = '%s_scale_policy_rule_%s' % (j, i)
-        gdb_crud.create_gbp_policy_rule(policy_rule_name, classifier_id, action_id, 'uuid')
-        policy_rule_id = gdb_crud.verify_gbp_policy_rule(policy_rule_name)
+        gbp_crud.create_gbp_policy_rule(policy_rule_name, classifier_id, action_id, 'uuid')
+        policy_rule_id = gbp_crud.verify_gbp_policy_rule(policy_rule_name)
         print 'policy_rule_id ==', policy_rule_id
 
         policy_ruleset_name = '%s_scale_policy_ruleset_%s' % (j, i)
-        gdb_crud.create_gbp_policy_ruleset(policy_ruleset_name, [policy_rule_id] ,'uuid')
-        policy_ruleset_id = gdb_crud.verify_gbp_policy_rule_set(policy_ruleset_name)
+        gbp_crud.create_gbp_policy_ruleset(policy_ruleset_name, [policy_rule_id] ,'uuid')
+        policy_ruleset_id = gbp_crud.verify_gbp_policy_rule_set(policy_ruleset_name)
         print 'policy_ruleset_id ==', policy_ruleset_id
         """
         
         l2p_name = '%s_scale_l2p_%s' % (j, i)
 
         start = time.time()
-        l2p_id = gdb_crud.create_gbp_l2policy(l2p_name, l3_policy_id=l3p_id)
+        l2p_id = gbp_crud.create_gbp_l2policy(l2p_name, l3_policy_id=l3p_id)
         end = time.time()
         print '\n', end - start
 
@@ -80,8 +80,8 @@ for j in range(1, 101):
         ptg_name = '%s_scale_ptg_%s' % (j, i)
 
         start = time.time()
-        ptg_id = gdb_crud.create_gbp_policy_target_group(ptg_name, l2_policy_id=l2p_id)
-        #ptg_id = gdb_crud.create_gbp_policy_target_group(ptg_name, l2_policy_id=l2p_id, consumed_policy_rule_sets=ruleset_dict, provided_policy_rule_sets=ruleset_dict)
+        ptg_id = gbp_crud.create_gbp_policy_target_group(ptg_name, l2_policy_id=l2p_id)
+        #ptg_id = gbp_crud.create_gbp_policy_target_group(ptg_name, l2_policy_id=l2p_id, consumed_policy_rule_sets=ruleset_dict, provided_policy_rule_sets=ruleset_dict)
         end = time.time()
         print end - start
 
@@ -90,7 +90,7 @@ for j in range(1, 101):
         pt_name = '%s_scale_pt_%s' % (j, i)
 
         start = time.time()
-        pt_mapping = gdb_crud.create_gbp_policy_target(pt_name, ptg_name)
+        pt_mapping = gbp_crud.create_gbp_policy_target(pt_name, ptg_name)
         end = time.time()
         print end - start        
  

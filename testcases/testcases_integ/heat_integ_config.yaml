@@ -25,7 +25,7 @@ resources:
 
 # Creating a classifier for all tcp traffic
     demo_class_tcp:
-        type: OS::Neutron::PolicyClassifier
+        type: OS::GroupBasedPolicy::PolicyClassifier
         properties:
             name: demo_class_tcp
             protocol: tcp
@@ -34,7 +34,7 @@ resources:
 
 # Creating a classifier for all udp traffic
     demo_class_udp:
-        type: OS::Neutron::PolicyClassifier
+        type: OS::GroupBasedPolicy::PolicyClassifier
         properties:
             name: demo_class_udp
             protocol: udp
@@ -43,7 +43,7 @@ resources:
 
 # Creating a classifier for ICMP traffic
     demo_class_icmp:
-        type: OS::Neutron::PolicyClassifier
+        type: OS::GroupBasedPolicy::PolicyClassifier
         properties:
             name: demo_class_icmp
             protocol: icmp
@@ -52,7 +52,7 @@ resources:
 
 # Creating allow action
     demo_act:
-        type: OS::Neutron::PolicyAction
+        type: OS::GroupBasedPolicy::PolicyAction
         properties:
             name: demo_act
             action_type: allow
@@ -60,7 +60,7 @@ resources:
 
 # Creating a policy rule and policy rule-set
     demo_rule_tcp:
-        type: OS::Neutron::PolicyRule
+        type: OS::GroupBasedPolicy::PolicyRule
         properties:
             name: demo_rule_tcp
             policy_classifier_id: { get_resource: demo_class_tcp }
@@ -68,7 +68,7 @@ resources:
             shared: False
 
     demo_ruleset_tcp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_tcp
             policy_rules: [{ get_resource: demo_rule_tcp }]
@@ -76,7 +76,7 @@ resources:
             shared: False
 
     demo_rule_udp:
-        type: OS::Neutron::PolicyRule
+        type: OS::GroupBasedPolicy::PolicyRule
         properties:
             name: demo_rule_udp
             policy_classifier_id: { get_resource: demo_class_udp }
@@ -84,7 +84,7 @@ resources:
             shared: False
 
     demo_ruleset_udp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_udp
             policy_rules: [{ get_resource: demo_rule_udp }]
@@ -92,7 +92,7 @@ resources:
             shared: False
 
     demo_rule_icmp:
-        type: OS::Neutron::PolicyRule
+        type: OS::GroupBasedPolicy::PolicyRule
         properties:
             name: demo_rule_icmp
             policy_classifier_id: { get_resource: demo_class_icmp }
@@ -100,7 +100,7 @@ resources:
             shared: False
 
     demo_ruleset_icmp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_icmp
             policy_rules: [{ get_resource: demo_rule_icmp }]
@@ -108,7 +108,7 @@ resources:
             shared: False
 
     demo_ruleset_icmp_tcp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_icmp_tcp
             policy_rules: [{ get_resource: demo_rule_icmp }, { get_resource: demo_rule_tcp }]
@@ -116,7 +116,7 @@ resources:
             shared: False
 
     demo_ruleset_icmp_udp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_icmp_udp
             policy_rules: [{ get_resource: demo_rule_icmp },{ get_resource: demo_rule_udp }]
@@ -124,7 +124,7 @@ resources:
             shared: False
 
     demo_ruleset_tcp_udp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_tcp_udp
             policy_rules: [{ get_resource: demo_rule_tcp }, { get_resource: demo_rule_udp }]
@@ -132,7 +132,7 @@ resources:
             shared: False
 
     demo_ruleset_all:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_all
             policy_rules: [{ get_resource: demo_rule_icmp }, { get_resource: demo_rule_tcp }, { get_resource: demo_rule_udp }]
@@ -141,7 +141,7 @@ resources:
 
 # Creating L2 and L3Policy for rendering DHCP
     demo_l3_policy:
-        type: OS::Neutron::L3Policy
+        type: OS::GroupBasedPolicy::L3Policy
         properties:
             name: demo_subnet
             ip_pool: "17.17.17.0/24"
@@ -149,7 +149,7 @@ resources:
             shared: False
 
     demo_l2_policy:
-        type: OS::Neutron::L2Policy
+        type: OS::GroupBasedPolicy::L2Policy
         depends_on: demo_l3_policy
         properties:
             name: demo_bd
@@ -159,7 +159,7 @@ resources:
 
 # Create EPGs for DHCP rendering by Admin
     server_ptg_1:
-        type: OS::Neutron::PolicyTargetGroup
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: server_ptg_1
             l2_policy_id: {get_resource: demo_l2_policy}
@@ -169,7 +169,7 @@ resources:
             shared: False
             
     client_ptg_1:
-        type: OS::Neutron::PolicyTargetGroup
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: client_ptg_1
             l2_policy_id: {get_resource: demo_l2_policy}
@@ -179,7 +179,7 @@ resources:
             shared: False    
 
     vm4_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: server_ptg_1
         properties:
             name: vm4_data_pt
@@ -187,7 +187,7 @@ resources:
             policy_target_group_id: { get_resource: server_ptg_1 }
 
     vm5_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: client_ptg_1
         properties:
             name: vm5_data_pt
@@ -195,7 +195,7 @@ resources:
             policy_target_group_id: { get_resource: client_ptg_1 }
 
     vm6_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: client_ptg_1
         properties:
             name: vm6_data_pt

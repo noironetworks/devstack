@@ -24,14 +24,14 @@ parameters:
 resources:
 # Creating allow action
     demo_act:
-        type: OS::Neutron::PolicyAction
+        type: OS::GroupBasedPolicy::PolicyAction
         properties:
             name: demo_act
             action_type: allow
             shared: False
 
     demo_act_dup:
-        type: OS::Neutron::PolicyAction
+        type: OS::GroupBasedPolicy::PolicyAction
         properties:
             name: demo_act_dup
             action_type: allow
@@ -40,7 +40,7 @@ resources:
 
 # Creating a classifier,policy-rule,policy-ruleset(Contract) for ICMP traffic
     demo_class_icmp:
-        type: OS::Neutron::PolicyClassifier
+        type: OS::GroupBasedPolicy::PolicyClassifier
         properties:
             name: demo_class_icmp
             protocol: icmp
@@ -48,7 +48,7 @@ resources:
             shared: False
 
     demo_rule_icmp:
-        type: OS::Neutron::PolicyRule
+        type: OS::GroupBasedPolicy::PolicyRule
         properties:
             name: demo_rule_icmp
             policy_classifier_id: { get_resource: demo_class_icmp }
@@ -56,7 +56,7 @@ resources:
             shared: False
 
     demo_ruleset_icmp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_icmp
             policy_rules: [{ get_resource: demo_rule_icmp }]
@@ -65,7 +65,7 @@ resources:
 
 # Creating a classifier,policy-rule,policy-ruleset(Contract) for any tcp traffic
     demo_class_tcp:
-        type: OS::Neutron::PolicyClassifier
+        type: OS::GroupBasedPolicy::PolicyClassifier
         properties:
             name: demo_class_tcp
             protocol: tcp
@@ -73,7 +73,7 @@ resources:
             shared: False
 
     demo_rule_tcp:
-        type: OS::Neutron::PolicyRule
+        type: OS::GroupBasedPolicy::PolicyRule
         properties:
             name: demo_rule_tcp
             policy_classifier_id: { get_resource: demo_class_tcp }
@@ -81,7 +81,7 @@ resources:
             shared: False
 
     demo_ruleset_tcp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_tcp
             policy_rules: [{ get_resource: demo_rule_tcp }]
@@ -90,7 +90,7 @@ resources:
 
 # Creating a classifier,policy-rule,policy-ruleset(Contract) for any udp traffic
     demo_class_udp:
-        type: OS::Neutron::PolicyClassifier
+        type: OS::GroupBasedPolicy::PolicyClassifier
         properties:
             name: demo_class_udp
             protocol: udp
@@ -98,7 +98,7 @@ resources:
             shared: False
 
     demo_rule_udp:
-        type: OS::Neutron::PolicyRule
+        type: OS::GroupBasedPolicy::PolicyRule
         properties:
             name: demo_rule_udp
             policy_classifier_id: { get_resource: demo_class_udp }
@@ -106,7 +106,7 @@ resources:
             shared: False
 
     demo_ruleset_udp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_udp
             policy_rules: [{ get_resource: demo_rule_udp }]
@@ -116,7 +116,7 @@ resources:
 # Creating Policy-RuleSet with proto ICMP & TCP
 
     demo_ruleset_icmp_tcp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_icmp_tcp
             policy_rules: [{ get_resource: demo_rule_icmp }, { get_resource: demo_rule_tcp }]
@@ -126,7 +126,7 @@ resources:
 # Creating Policy-RuleSet with proto ICMP & UDP
 
     demo_ruleset_icmp_udp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_icmp_udp
             policy_rules: [{ get_resource: demo_rule_icmp },{ get_resource: demo_rule_udp }]
@@ -136,7 +136,7 @@ resources:
 # Creating Policy-RuleSet with proto TCP & UDP
 
     demo_ruleset_tcp_udp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_tcp_udp
             policy_rules: [{ get_resource: demo_rule_tcp }, { get_resource: demo_rule_udp }]
@@ -146,7 +146,7 @@ resources:
 # Creating a policy-ruleset(Contract) for allow all protocol(ICMP,TCP,UDP)
 
     demo_ruleset_all:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_all
             policy_rules: [{ get_resource: demo_rule_icmp }, { get_resource: demo_rule_tcp }, { get_resource: demo_rule_udp }]
@@ -156,7 +156,7 @@ resources:
 # Creating a policy-ruleset with no rule
 
     demo_ruleset_norule:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_norule
             policy_rules: []
@@ -165,7 +165,7 @@ resources:
 
 # Creating L3Policy,L2Policy and PTG and PTs for header SamePTG_SameL2P_SameL3P
     demo_same_ptg_l2p_l3p_l3_policy:
-        type: OS::Neutron::L3Policy
+        type: OS::GroupBasedPolicy::L3Policy
         properties:
             name: demo_same_ptg_l2p_l3p_l3p
             ip_pool: "5.5.5.0/24"
@@ -173,7 +173,7 @@ resources:
             shared: False
 
     demo_same_ptg_l2p_l3p_l2_policy:
-        type: OS::Neutron::L2Policy
+        type: OS::GroupBasedPolicy::L2Policy
         depends_on: demo_same_ptg_l2p_l3p_l3_policy
         properties:
             name: demo_same_ptg_l2p_l3p_bd
@@ -181,7 +181,7 @@ resources:
             shared: False
 
     demo_same_ptg_l2p_l3p_ptg:
-        type: OS::Neutron::PolicyTargetGroup
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: demo_same_ptg_l2p_l3p_ptg
             l2_policy_id: {get_resource: demo_same_ptg_l2p_l3p_l2_policy}
@@ -189,7 +189,7 @@ resources:
 
 
     vm1_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: demo_same_ptg_l2p_l3p_ptg
         properties:
             name: vm1_data_pt
@@ -197,7 +197,7 @@ resources:
             policy_target_group_id: { get_resource: demo_same_ptg_l2p_l3p_ptg }
 
     vm2_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: demo_same_ptg_l2p_l3p_ptg
         properties:
             name: vm2_data_pt
@@ -205,7 +205,7 @@ resources:
             policy_target_group_id: { get_resource: demo_same_ptg_l2p_l3p_ptg }
 
     vm3_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: demo_same_ptg_l2p_l3p_ptg
         properties:
             name: vm3_data_pt
@@ -214,7 +214,7 @@ resources:
 
 # Creating L3Policy,L2Policy and PTG and PTs for header DiffPTG_SameL2P_SameL3P
     demo_diff_ptg_same_l2p_l3p_l3_policy:
-        type: OS::Neutron::L3Policy
+        type: OS::GroupBasedPolicy::L3Policy
         properties:
             name: demo_diff_ptg_same_l2p_l3p_l3p
             ip_pool: "6.6.6.0/24"
@@ -222,7 +222,7 @@ resources:
             shared: False
 
     demo_diff_ptg_same_l2p_l3p_l2_policy:
-        type: OS::Neutron::L2Policy
+        type: OS::GroupBasedPolicy::L2Policy
         depends_on: demo_diff_ptg_same_l2p_l3p_l3_policy
         properties:
             name: demo_diff_ptg_same_l2p_l3p_bd
@@ -230,21 +230,21 @@ resources:
             shared: False
 
     demo_diff_ptg_same_l2p_l3p_ptg1:
-        type: OS::Neutron::PolicyTargetGroup
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: demo_diff_ptg_same_l2p_l3p_ptg1
             l2_policy_id: {get_resource: demo_diff_ptg_same_l2p_l3p_l2_policy}
             shared: False
 
     demo_diff_ptg_same_l2p_l3p_ptg2:
-        type: OS::Neutron::PolicyTargetGroup
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: demo_diff_ptg_same_l2p_l3p_ptg2
             l2_policy_id: {get_resource: demo_diff_ptg_same_l2p_l3p_l2_policy}
             shared: False
 
     vm4_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: demo_diff_ptg_same_l2p_l3p_ptg1
         properties:
             name: vm4_data_pt
@@ -252,7 +252,7 @@ resources:
             policy_target_group_id: { get_resource: demo_diff_ptg_same_l2p_l3p_ptg1 }
 
     vm5_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: demo_diff_ptg_same_l2p_l3p_ptg2
         properties:
             name: vm5_data_pt
@@ -260,7 +260,7 @@ resources:
             policy_target_group_id: { get_resource: demo_diff_ptg_same_l2p_l3p_ptg2}
 
     vm6_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: demo_diff_ptg_same_l2p_l3p_ptg2
         properties:
             name: vm6_data_pt
@@ -270,7 +270,7 @@ resources:
 
 # Creating L3Policy,L2Policy and PTG and PTs for header DiffPTG_DiffL2P_SameL3P
     demo_diff_ptg_l2p_same_l3p_l3_policy:
-        type: OS::Neutron::L3Policy
+        type: OS::GroupBasedPolicy::L3Policy
         properties:
             name: demo_diff_ptg_l2p_same_l3p_l3p
             ip_pool: "7.7.7.0/24"
@@ -278,7 +278,7 @@ resources:
             shared: False
 
     demo_diff_ptg_l2p_same_l3p_l2_policy:
-        type: OS::Neutron::L2Policy
+        type: OS::GroupBasedPolicy::L2Policy
         depends_on: demo_diff_ptg_l2p_same_l3p_l3_policy
         properties:
             name: demo_diff_ptg_l2p_same_l3p_bd
@@ -286,21 +286,21 @@ resources:
             shared: False
 
     demo_diff_ptg_l2p_same_l3p_ptg1:
-        type: OS::Neutron::PolicyTargetGroup
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: demo_diff_ptg_l2p_same_l3p_ptg1
             l2_policy_id: {get_resource: demo_diff_ptg_l2p_same_l3p_l2_policy}
             shared: False
 
     demo_diff_ptg_l2p_same_l3p_ptg2:
-        type: OS::Neutron::PolicyTargetGroup
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: demo_diff_ptg_l2p_same_l3p_ptg2
             l2_policy_id: {get_resource: demo_diff_ptg_l2p_same_l3p_l2_policy}
             shared: False
 
     vm7_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: demo_diff_ptg_l2p_same_l3p_ptg1
         properties:
             name: vm7_data_pt
@@ -308,7 +308,7 @@ resources:
             policy_target_group_id: { get_resource: demo_diff_ptg_l2p_same_l3p_ptg1 }
 
     vm8_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: demo_diff_ptg_l2p_same_l3p_ptg2
         properties:
             name: vm8_data_pt
@@ -316,7 +316,7 @@ resources:
             policy_target_group_id: { get_resource: demo_diff_ptg_l2p_same_l3p_ptg2 }
 
     vm9_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: demo_diff_ptg_l2p_same_l3p_ptg2
         properties:
             name: vm9_data_pt
@@ -326,7 +326,7 @@ resources:
 
 # Creating L3Policy,L2Policy and PTG and PTs for header DiffPTG_DiffL2P_DiffL3P
     demo_l3policy_1:
-        type: OS::Neutron::L3Policy
+        type: OS::GroupBasedPolicy::L3Policy
         properties:
             name: demo_subnet_1
             ip_pool: "30.30.30.0/24"
@@ -334,7 +334,7 @@ resources:
             shared: False
 
     demo_l3policy_2:
-        type: OS::Neutron::L3Policy
+        type: OS::GroupBasedPolicy::L3Policy
         properties:
             name: demo_subnet_2
             ip_pool: "40.40.40.0/24"
@@ -342,7 +342,7 @@ resources:
             shared: False
 
     demo_l2_policy_1:
-        type: OS::Neutron::L2Policy
+        type: OS::GroupBasedPolicy::L2Policy
         depends_on: demo_l3policy_1
         properties:
             name: demo_srvr_bd
@@ -350,7 +350,7 @@ resources:
             shared: False
 
     demo_l2_policy_2:
-        type: OS::Neutron::L2Policy
+        type: OS::GroupBasedPolicy::L2Policy
         depends_on: demo_l3policy_2
         properties:
             name: demo_clnt_bd
@@ -358,21 +358,21 @@ resources:
             shared: False
 
     demo_diff_ptg_l2p_l3p_ptg1:
-        type: OS::Neutron::PolicyTargetGroup
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: demo_diff_ptg_l2p_l3p_ptg1
             l2_policy_id: {get_resource: demo_l2_policy_1}
             shared: False
 
     demo_diff_ptg_l2p_l3p_ptg2:
-        type: OS::Neutron::PolicyTargetGroup
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: demo_diff_ptg_l2p_l3p_ptg2
             l2_policy_id: {get_resource: demo_l2_policy_2}
             shared: False
 
     vm10_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: demo_diff_ptg_l2p_l3p_ptg1
         properties:
             name: vm10_data_pt
@@ -380,7 +380,7 @@ resources:
             policy_target_group_id: { get_resource: demo_diff_ptg_l2p_l3p_ptg1 }
 
     vm11_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: demo_diff_ptg_l2p_l3p_ptg2
         properties:
             name: vm11_data_pt
@@ -388,7 +388,7 @@ resources:
             policy_target_group_id: { get_resource: demo_diff_ptg_l2p_l3p_ptg2 }
 
     vm12_data_pt:
-        type: OS::Neutron::PolicyTarget
+        type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: demo_diff_ptg_l2p_l3p_ptg2
         properties:
             name: vm12_data_pt

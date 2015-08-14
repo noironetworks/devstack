@@ -6,7 +6,7 @@ resources:
 
 # Creating a classifier for all tcp traffic
     demo_class_tcp:
-        type: OS::Neutron::PolicyClassifier
+        type: OS::GroupBasedPolicy::PolicyClassifier
         properties:
             name: demo_class_tcp
             protocol: tcp
@@ -15,7 +15,7 @@ resources:
 
 # Creating a classifier for all udp traffic
     demo_class_udp:
-        type: OS::Neutron::PolicyClassifier
+        type: OS::GroupBasedPolicy::PolicyClassifier
         properties:
             name: demo_class_udp
             protocol: udp
@@ -24,7 +24,7 @@ resources:
 
 # Creating a classifier for ICMP traffic
     demo_class_icmp:
-        type: OS::Neutron::PolicyClassifier
+        type: OS::GroupBasedPolicy::PolicyClassifier
         properties:
             name: demo_class_icmp
             protocol: icmp
@@ -33,7 +33,7 @@ resources:
 
 # Creating allow action
     demo_act:
-        type: OS::Neutron::PolicyAction
+        type: OS::GroupBasedPolicy::PolicyAction
         properties:
             name: demo_act
             action_type: allow
@@ -41,7 +41,7 @@ resources:
 
 # Creating a policy rule and policy rule-set
     demo_rule_tcp:
-        type: OS::Neutron::PolicyRule
+        type: OS::GroupBasedPolicy::PolicyRule
         properties:
             name: demo_rule_tcp
             policy_classifier_id: { get_resource: demo_class_tcp }
@@ -49,7 +49,7 @@ resources:
             shared: False
 
     demo_ruleset_tcp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_tcp
             policy_rules: [{ get_resource: demo_rule_tcp }]
@@ -57,7 +57,7 @@ resources:
             shared: False
 
     demo_rule_udp:
-        type: OS::Neutron::PolicyRule
+        type: OS::GroupBasedPolicy::PolicyRule
         properties:
             name: demo_rule_udp
             policy_classifier_id: { get_resource: demo_class_udp }
@@ -65,7 +65,7 @@ resources:
             shared: False
 
     demo_ruleset_udp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_udp
             policy_rules: [{ get_resource: demo_rule_udp }]
@@ -73,7 +73,7 @@ resources:
             shared: False
 
     demo_rule_icmp:
-        type: OS::Neutron::PolicyRule
+        type: OS::GroupBasedPolicy::PolicyRule
         properties:
             name: demo_rule_icmp
             policy_classifier_id: { get_resource: demo_class_icmp }
@@ -81,7 +81,7 @@ resources:
             shared: False
 
     demo_ruleset_icmp:
-        type: OS::Neutron::PolicyRuleSet
+        type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
             name: demo_ruleset_icmp
             policy_rules: [{ get_resource: demo_rule_icmp }]
@@ -90,7 +90,7 @@ resources:
 
 # Creating L2 and L3Policy for rendering DHCP
     demo_l3_policy:
-        type: OS::Neutron::L3Policy
+        type: OS::GroupBasedPolicy::L3Policy
         properties:
             name: demo_subnet
             ip_pool: "30.30.30.0/24"
@@ -98,7 +98,7 @@ resources:
             shared: False
 
     demo_srvr_l2_policy:
-        type: OS::Neutron::L2Policy
+        type: OS::GroupBasedPolicy::L2Policy
         depends_on: demo_l3_policy
         properties:
             name: demo_srvr_bd
@@ -106,7 +106,7 @@ resources:
             shared: False
 
     demo_clnt_l2_policy:
-        type: OS::Neutron::L2Policy
+        type: OS::GroupBasedPolicy::L2Policy
         depends_on: demo_l3_policy
         properties:
             name: demo_clnt_bd
@@ -115,7 +115,7 @@ resources:
 
 # Create EPGs for DHCP rendering by Admin
     server_ptg:
-        type: OS::Neutron::PolicyTargetGroup
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: server_ptg_1
             l2_policy_id: {get_resource: demo_srvr_l2_policy}
@@ -128,7 +128,7 @@ resources:
             shared: False
             
     client_ptg:
-        type: OS::Neutron::PolicyTargetGroup
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: client_ptg_1
             l2_policy_id: {get_resource: demo_clnt_l2_policy}

@@ -28,19 +28,19 @@ for j in range(1, 7):
 
 print 'Done deleting VMs'
 
-gdb_crud = GBPCrud(ostack_controller=sys.argv[1])
+gbp_crud = GBPCrud(ostack_controller=sys.argv[1])
     
 """ 
-action_ids = gdb_crud.get_gbp_policy_action_list(getlist=True)
-classifier_ids = gdb_crud.get_gbp_policy_classifier_list(getlist=True)	
-policy_rule_ids = gdb_crud.get_gbp_policy_rule_list(getlist=True)
-policy_ruleset_ids = gdb_crud.get_gbp_policy_rule_set_list(getlist=True)
+action_ids = gbp_crud.get_gbp_policy_action_list(getlist=True)
+classifier_ids = gbp_crud.get_gbp_policy_classifier_list(getlist=True)	
+policy_rule_ids = gbp_crud.get_gbp_policy_rule_list(getlist=True)
+policy_ruleset_ids = gbp_crud.get_gbp_policy_rule_set_list(getlist=True)
 """
 
-l3p_list_ids = gdb_crud.get_gbp_l3policy_list(getlist=True)    
-l2p_list_ids = gdb_crud.get_gbp_l2policy_list(getlist=True)
-ptg_list = gdb_crud.get_gbp_policy_target_group_list(getlist=True)
-pt_dict = gdb_crud.get_gbp_policy_target_list()
+l3p_list_ids = gbp_crud.get_gbp_l3policy_list(getlist=True)    
+l2p_list_ids = gbp_crud.get_gbp_l2policy_list(getlist=True)
+ptg_list = gbp_crud.get_gbp_policy_target_group_list(getlist=True)
+pt_dict = gbp_crud.get_gbp_policy_target_list()
 
 """
 print '\nAction IDs == \n', action_ids
@@ -54,36 +54,36 @@ print '\nPTG LIST == \n', ptg_list
 print '\nPT Dict == \n\n', pt_dict
 
 for pt in pt_dict.iterkeys():
-    gdb_crud.delete_gbp_policy_target(pt, 'uuid')
+    gbp_crud.delete_gbp_policy_target(pt, 'uuid')
 
 print 'Done deleting PTs'
 
 for ptg in ptg_list.itervalues():
-    gdb_crud.delete_gbp_policy_target_group(ptg, 'uuid')
+    gbp_crud.delete_gbp_policy_target_group(ptg, 'uuid')
 
 print 'Done deleting PTGs'
 
 for l2p in l2p_list_ids.itervalues():
-    gdb_crud.delete_gbp_l2policy(l2p, 'uuid')
+    gbp_crud.delete_gbp_l2policy(l2p, 'uuid')
 
 print 'Done deleting L2s'
 
 """
 for ruleset in policy_ruleset_ids.itervalues():
-    gdb_crud.delete_gbp_policy_rule_set(ruleset, 'uuid')
+    gbp_crud.delete_gbp_policy_rule_set(ruleset, 'uuid')
 
 for rule in policy_rule_ids.itervalues():
-    gdb_crud.delete_gbp_policy_rules(rule, 'uuid')
+    gbp_crud.delete_gbp_policy_rules(rule, 'uuid')
 
 for action in action_ids.itervalues():
-    gdb_crud.delete_gbp_policy_action(action, 'uuid')
+    gbp_crud.delete_gbp_policy_action(action, 'uuid')
 
 for classifier in classifier_ids.itervalues():
-    gdb_crud.delete_gbp_policy_classifier(classifier, 'uuid')
+    gbp_crud.delete_gbp_policy_classifier(classifier, 'uuid')
 """
 
 for l3p in l3p_list_ids.itervalues():
-    gdb_crud.delete_gbp_l3policy(l3p, 'uuid')
+    gbp_crud.delete_gbp_l3policy(l3p, 'uuid')
 
 print 'Done deleting L3s'
 

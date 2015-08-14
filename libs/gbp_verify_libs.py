@@ -11,11 +11,9 @@ import yaml
 from commands import *
 
 # Initialize logging
-logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
-_log = logging.getLogger( __name__ )
-
+#logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
+_log = logging.getLogger()
 _log.setLevel(logging.INFO)
-_log.setLevel(logging.DEBUG)
 
 class Gbp_Verify(object):
 
@@ -129,7 +127,8 @@ class Gbp_Verify(object):
         kwargs addresses the need for passing required/optional params
         """
         cfgobj_dict={"action":"policy-action","classifier":"policy-classifier","rule":"policy-rule",
-                      "ruleset":"policy-rule-set","group":"group","target":"policy-target"}
+                      "ruleset":"policy-rule-set","group":"group","target":"policy-target",
+                      "extseg":"external-segment","extpol":"external-policy","natpool":"nat-pool"}
         if cfgobj != '':
            if cfgobj not in cfgobj_dict:
               raise KeyError
@@ -150,8 +149,7 @@ class Gbp_Verify(object):
         # Catch for non-exception error strings
         for err in self.err_strings:
             if re.search('\\b%s\\b' %(err), cmd_out, re.I):
-               _log.info(cmd_out)
-               _log.info( "Cmd execution failed! with this Return Error: \n%s" %(cmd_out))
+               _log.info( "Cmd execution failed! with this Return Error: %s\n" %(cmd_out))
                return 0
         if cmd_val == 0:
            if cmd_out == '': # The case when grep returns null
@@ -201,8 +199,7 @@ class Gbp_Verify(object):
         # Catch for non-exception error strings
         for err in self.err_strings:
             if re.search('\\b%s\\b' %(err), cmd_out, re.I):
-               _log.info(cmd_out)
-               _log.info( "Cmd execution failed! with this Return Error: \n%s" %(cmd_out))
+               _log.info("Cmd execution failed! with the above Return Error: %s\n" %(cmd_out))
                return 0
         if cmd_val == 0:
            if cmd_out == '': # The case when grep returns null
@@ -260,12 +257,11 @@ class Gbp_Verify(object):
         _log.info('Neutron Cmd == %s\n' %(cmd))
         # Execute the policy-object-verify-cmd
         cmd_out = getoutput(cmd)
-        _log.info(cmd_out)
+        #_log.info(cmd_out)
         # Catch for non-exception error strings
         for err in self.err_strings:
             if re.search('\\b%s\\b' %(err), cmd_out, re.I):
-               _log.info(cmd_out)
-               _log.info( "Neutron Cmd execution failed! with this Return Error: \n%s" %(cmd_out))
+               _log.info("Neutron Cmd execution failed! with this Return Error: %s\n" %(cmd_out))
                return 0
         if ret !='':
            match=re.search("\\b%s\\b\s+\| (.*) \|" %(ret),cmd_out,re.I)

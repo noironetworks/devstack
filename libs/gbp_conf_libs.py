@@ -15,11 +15,9 @@ from keystoneclient import session
 from keystoneclient.auth.identity import v2 as ident
 
 # Initialize logging
-logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
-_log = logging.getLogger( __name__ )
-
+#logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
+_log = logging.getLogger()
 _log.setLevel(logging.INFO)
-_log.setLevel(logging.DEBUG)
 
 class Gbp_Config(object):
 
@@ -196,15 +194,20 @@ class Gbp_Config(object):
            return obj_uuid.rstrip(),neutr_port_id.rstrip()
          if cmd_val==1 and cfgobj=="l2p":
             obj_uuid = self.gbp_uuid_get(cmd_out)
-            match = re.search("\\l3_policy_id\\b\s+\| (.*) \|",cmd_out,re.I)
+            match = re.search("\\bl3_policy_id\\b\s+\| (.*) \|",cmd_out,re.I)
             l3p_uuid = match.group(1)
             return obj_uuid.rstrip(),l3p_uuid.rstrip()
+         if cmd_val==1 and cfgobj=="extseg":
+            obj_uuid = self.gbp_uuid_get(cmd_out)
+            match = re.search("\\bsubnet_id\\b\s+\| (.*) \|",cmd_out,re.I)
+            subnet_uuid = match.group(1)
+            return obj_uuid.rstrip(),subnet_uuid.rstrip()
          if cmd_val==1:
            obj_uuid = self.gbp_uuid_get(cmd_out)
            return obj_uuid.rstrip()
         except Exception as e:
            exc_type, exc_value, exc_traceback = sys.exc_info()
-           _log.info('Exception Type = %s, Exception Object = %s' %(exc_type,exc_obj))
+           _log.info('Exception Type = %s, Exception Object = %s' %(exc_type,exc_traceback))
            return 0
         return 1
 
@@ -422,3 +425,18 @@ class Gbp_Config(object):
                 _log.info('Systemctl Status cmd failed for the Service %s' %(service_name))
                 return 0
         return 1
+
+    def write_to_conf_file(self,conf_file_with_path,config_section,**kwargs):
+        """
+        Write/update any config section using crudini
+        kwargs = 'param & value' for a given section
+        """
+        # Build the cmd string for optional/non-default args/values
+        crud_cmd = 'crudini --set '+conf_file_with_path+' '+ config_section
+        for arg, value in kwargs.items():
+          cmd = crud_cmd +' '+"".join( '%s %s' %(arg, value ))
+          _log.info(cmd)
+          # Execute the cmd
+          cmd_out = getoutput(cmd)
+        check_config = 'crudini --get '+conf_file_with_path+' '+ config_section
+        _log.info(getoutput(check_config))
