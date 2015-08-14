@@ -92,13 +92,6 @@ class gbp_main_config(object):
         self.gbpheat.cfg_all_cli(0,self.heat_stack_name)
         self.gbpnova.avail_zone('cli','removehost',self.nova_agg,hostname=self.comp_node)
         self.gbpnova.avail_zone('cli','delete',self.agg_id)
-        self.gbpnova.sshkey_for_vm(action='delete')
         #Ntk namespace cleanup in Network-Node.. VM names are static throughout the test-cycle
-        subnet_list = []
-        for vm in ['VM1','VM4','VM7','VM10','VM11']:
-            vm_ip = gbpcfg.get_vm_subnet(vm)[0]
-            vm_subn = gbpcfg.get_vm_subnet(vm)[1]
-            subnet_list.append(vm_subn)
-        dhcp_ns_list = gbpcfg.get_netns(self.ntk_node,subnet_list)
-        gbpcfg.del_netns(self.ntk_node)
+        self.gbpcfg.del_netns(self.ntk_node)
         sys.exit(1)
