@@ -20,7 +20,7 @@ def main():
 
 class  testcase_gbp_extsegnat_crud_cli_1(object):
     """
-    This is a GBP_ACI Integration TestCase
+    This is a GBP NAT CRUD TestCase
     """
     # Initialize logging
     _log = logging.getLogger()

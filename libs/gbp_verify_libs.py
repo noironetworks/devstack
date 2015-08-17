@@ -120,17 +120,17 @@ class Gbp_Verify(object):
         #_log.info("All attributes & values found Valid for the object Policy Classifier == %s" %(classifier_name))
         return 1
 
-    def gbp_policy_verify_all(self,cmd_val,cfgobj,name_uuid,*args,**kwargs):
+    def gbp_policy_verify_all(self,cmd_val,verifyobj,name_uuid,*args,**kwargs):
         """
-        --cfgobj== policy-*(where *=action;classifer,rule,rule-set,target-group,target)
+        --verifyobj== policy-*(where *=action;classifer,rule,rule-set,target-group,target)
         --cmd_val== 0:list; 1:show
         kwargs addresses the need for passing required/optional params
         """
-        cfgobj_dict={"action":"policy-action","classifier":"policy-classifier","rule":"policy-rule",
+        verifyobj_dict={"action":"policy-action","classifier":"policy-classifier","rule":"policy-rule",
                       "ruleset":"policy-rule-set","group":"group","target":"policy-target",
                       "extseg":"external-segment","extpol":"external-policy","natpool":"nat-pool"}
-        if cfgobj != '':
-           if cfgobj not in cfgobj_dict:
+        if verifyobj != '':
+           if verifyobj not in verifyobj_dict:
               raise KeyError
         if cmd_val == '' or name_uuid == '':
            _log.info('''Function Usage: gbp_policy_verify_all(0,'action','name_uuid')\n
@@ -139,11 +139,11 @@ class Gbp_Verify(object):
            return 0
         #Build the command with mandatory params
         if cmd_val == 0:
-           cmd = 'gbp %s-list | grep ' % cfgobj_dict[cfgobj]+str(name_uuid)
+           cmd = 'gbp %s-list | grep ' % verifyobj_dict[verifyobj]+str(name_uuid)
            for arg in args:
              cmd = cmd + ' | grep %s' % arg
         if cmd_val == 1:
-           cmd = 'gbp %s-show ' % cfgobj_dict[cfgobj]+str(name_uuid)
+           cmd = 'gbp %s-show ' % verifyobj_dict[verifyobj]+str(name_uuid)
         # Execute the policy-object-verify-cmd
         cmd_out = getoutput(cmd)
         # Catch for non-exception error strings
@@ -158,28 +158,28 @@ class Gbp_Verify(object):
               for arg in args:
                 if cmd_out.find(arg) == -1 or cmd_out.find(name_uuid) == -1:
                   _log.info(cmd_out)
-                  _log.info("The Attribute== %s DID NOT MATCH for the Policy Object == %s in LIST cmd" %(arg,cfgobj))
+                  _log.info("The Attribute== %s DID NOT MATCH for the Policy Object == %s in LIST cmd" %(arg,verifyobj))
                   return 0
         # If "verify" cmd succeeds then parse the cmd_out to match the user-fed expected attributes & their values
         if cmd_val == 1:
          for arg, val in kwargs.items():
            if re.search("\\b%s\\b\s+\| \\b%s\\b.*" %(arg,val),cmd_out,re.I)==None:
              _log.info(cmd_out)
-             _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the PolicyObject == %s" %(arg,val,cfgobj))
+             _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the PolicyObject == %s" %(arg,val,verifyobj))
              return 0
-        #_log.info("All attributes & values found Valid for the object Policy %s" %(cfgobj))
+        #_log.info("All attributes & values found Valid for the object Policy %s" %(verifyobj))
         return 1
 
-    def gbp_l2l3ntk_pol_ver_all(self,cmd_val,cfgobj,name_uuid,ret='',*args,**kwargs):
+    def gbp_l2l3ntk_pol_ver_all(self,cmd_val,verifyobj,name_uuid,ret='',*args,**kwargs):
         """
-        --cfgobj== *policy(where *=l2;l3,network)
+        --verifyobj== *policy(where *=l2;l3,network)
         --cmd_val== 0:list; 1:show
-        --ret=='default' <<< function will return some attribute values depending upon the cfgobj
+        --ret=='default' <<< function will return some attribute values depending upon the verifyobj
         kwargs addresses the need for passing required/optional params
         """
-        cfgobj_dict={"l2p":"l2policy","l3p":"l3policy","nsp":"network-service-policy"}
-        if cfgobj != '':
-           if cfgobj not in cfgobj_dict:
+        verifyobj_dict={"l2p":"l2policy","l3p":"l3policy","nsp":"network-service-policy"}
+        if verifyobj != '':
+           if verifyobj not in verifyobj_dict:
               raise KeyError
         if cmd_val == '' or name_uuid == '':
            _log.info('''Function Usage: gbp_l2l3ntk_pol_ver_all(0,'l2p','name') \n
@@ -188,11 +188,11 @@ class Gbp_Verify(object):
            return 0
         #Build the command with mandatory params
         if cmd_val == 0:
-           cmd = 'gbp %s-list | grep ' % cfgobj_dict[cfgobj]+str(name_uuid)
+           cmd = 'gbp %s-list | grep ' % verifyobj_dict[verifyobj]+str(name_uuid)
            for arg in args:
              cmd = cmd + ' | grep %s' % arg
         if cmd_val == 1:
-           cmd = 'gbp %s-show ' % cfgobj_dict[cfgobj]+str(name_uuid)
+           cmd = 'gbp %s-show ' % verifyobj_dict[verifyobj]+str(name_uuid)
         # Execute the policy-object-verify-cmd
         cmd_out = getoutput(cmd)
         #_log.info(cmd_out)
@@ -208,22 +208,26 @@ class Gbp_Verify(object):
               for arg in args:
                 if cmd_out.find(arg) == -1 or cmd_out.find(name_uuid) == -1:
                   _log.info(cmd_out)
-                  _log.info("The Attribute== %s DID NOT MATCH for the Policy Object == %s in LIST cmd" %(arg,cfgobj))
+                  _log.info("The Attribute== %s DID NOT MATCH for the Policy Object == %s in LIST cmd" %(arg,verifyobj))
                   return 0
         # If "verify" succeeds cmd then parse the cmd_out to match the user-fed expected attributes & their values
         if cmd_val==1 and ret=='default':
           for arg, val in kwargs.items():
-            if re.search("\\b%s\\b\s+\| \\b%s\\b.*" %(arg,val),cmd_out,re.I)==None: 
-              _log.info(cmd_out)
-              _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the PolicyObject == %s" %(arg,val,cfgobj))
-              return 0
-          if cfgobj=="l2p":
+            if arg == 'external_segments':
+               if  cmd_out.find(val) == -1: # Special case for ExtSeg Check in L3Policy show cmd output
+                   return 0
+            else:
+              if re.search("\\b%s\\b\s+\| \\b%s\\b.*" %(arg,val),cmd_out,re.I)==None: 
+                 _log.info(cmd_out)
+                 _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the PolicyObject == %s" %(arg,val,verifyobj))
+                 return 0
+          if verifyobj=="l2p":
              match = re.search("\\bl3_policy_id\\b\s+\| (.*) \|" ,cmd_out,re.I)
              l3pid = match.group(1)
              match  = re.search("\\bnetwork_id\\b\s+\| (.*) \|" ,cmd_out,re.I)
              ntkid = match.group(1)
              return l3pid.rstrip(),ntkid.rstrip()
-          if cfgobj=="l3p":
+          if verifyobj=="l3p":
              match = re.search("\\brouters\\b\s+\| (.*) \|" ,cmd_out,re.I)
              rtrid = match.group(1)
              return rtrid.rstrip()
@@ -232,20 +236,20 @@ class Gbp_Verify(object):
            if arg == 'network_service_params': #Had to make this extra block only for NSP
                if re.findall('(%s)' %(val),cmd_out) == []:
                   _log.info(cmd_out)
-                  _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the PolicyObject == %s" %(arg,val,cfgobj))
+                  _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the PolicyObject == %s" %(arg,val,verifyobj))
                   return 0
            elif re.search("\\b%s\\b\s+\| \\b%s\\b.*" %(arg,val),cmd_out,re.I)==None:
              _log.info(cmd_out)
-             _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the PolicyObject == %s" %(arg,val,cfgobj))
+             _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the PolicyObject == %s" %(arg,val,verifyobj))
              return 0
         else:
-           #_log.info("All attributes & values found Valid for the Policy Object %s" %(cfgobj))
+           #_log.info("All attributes & values found Valid for the Policy Object %s" %(verifyobj))
            return 1
 
-    def neut_ver_all(self,cfgobj,name_uuid,ret='',**kwargs):
+    def neut_ver_all(self,verifyobj,name_uuid,ret='',**kwargs):
         """
-        --cfgobj== net,subnet,port,router
-        --ret=='default' <<< function will return some attribute values depending upon the cfgobj
+        --verifyobj== net,subnet,port,router
+        --ret=='default' <<< function will return some attribute values depending upon the verifyobj
         kwargs addresses the need for passing required/optional params
         """
         if name_uuid == '':
@@ -253,7 +257,7 @@ class Gbp_Verify(object):
                       -- name_uuid == UUID or name_string\n''')
            return 0
         #Build the command with mandatory params
-        cmd = 'neutron %s-show ' % cfgobj+str(name_uuid)
+        cmd = 'neutron %s-show ' % verifyobj+str(name_uuid)
         _log.info('Neutron Cmd == %s\n' %(cmd))
         # Execute the policy-object-verify-cmd
         cmd_out = getoutput(cmd)
@@ -274,32 +278,32 @@ class Gbp_Verify(object):
               for i in val:
                   if cmd_out.find(i) == -1:
                     _log.info(cmd_out)
-                    _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the NeutronObject == %s" %(arg,i,cfgobj)) 
+                    _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the NeutronObject == %s" %(arg,i,verifyobj)) 
                     return 0
            else:
              if re.search("\\b%s\\b\s+\| \\b%s\\b.*" %(arg,val),cmd_out,re.I)==None:
                 _log.info(cmd_out)
-                _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the NeutronObject == %s" %(arg,val,cfgobj))
+                _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the NeutronObject == %s" %(arg,val,verifyobj))
                 return 0
-        #_log.info("All attributes & values found Valid for the object Policy %s" %(cfgobj))
+        #_log.info("All attributes & values found Valid for the object Policy %s" %(verifyobj))
         return 1
 
-    def gbp_obj_ver_attr_all_values(self,cfgobj,name_uuid,attr,values):
+    def gbp_obj_ver_attr_all_values(self,verifyobj,name_uuid,attr,values):
         """
         Function will verify multiple entries for any given attribute
         of a Policy Object
         --values=Must be a list
         """
-        cfgobj_dict={"action":"policy-action","classifier":"policy-classifier","rule":"policy-rule",
+        verifyobj_dict={"action":"policy-action","classifier":"policy-classifier","rule":"policy-rule",
                       "ruleset":"policy-rule-set","group":"group","target":"policy-target",
                       "l2p":"l2policy","l3p":"l3policy","nsp":"network-service-policy"}
-        if cfgobj != '':
-           if cfgobj not in cfgobj_dict:
+        if verifyobj != '':
+           if verifyobj not in verifyobj_dict:
               raise KeyError
         if not isinstance(values,list):
               raise TypeError
         #Build the command with mandatory params
-        cmd = 'gbp %s-show ' % cfgobj_dict[cfgobj]+str(name_uuid)+' -F %s' %(attr)
+        cmd = 'gbp %s-show ' % verifyobj_dict[verifyobj]+str(name_uuid)+' -F %s' %(attr)
         # Execute the policy-object-verify-cmd
         cmd_out = getoutput(cmd)
         # Catch for non-exception error strings
@@ -314,7 +318,7 @@ class Gbp_Verify(object):
         if len(_misses)>0:
               _log.info("\nFollowing Values of the Attribute for the Policy Object was NOT FOUND=%s" %(_misses))   
               return 0
-        #_log.info("All attributes & values found Valid for the object Policy %s" %(cfgobj))
+        #_log.info("All attributes & values found Valid for the object Policy %s" %(verifyobj))
         return 1
 
     def get_uuid_from_stack(self,yaml_file,heat_stack_name):
