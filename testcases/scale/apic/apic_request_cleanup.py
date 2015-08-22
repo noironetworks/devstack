@@ -51,7 +51,7 @@ def delete_policy():
 		req = apic.post(path, data)
 		print req.text
 
-                time.sleep(15) 
+                time.sleep(5) 
 		
 if __name__ == '__main__':
 	delete_policy()
