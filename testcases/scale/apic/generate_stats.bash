@@ -9,5 +9,4 @@ do
 	do	
 		arping -I "ep_if$i" 8.8.8.8 -c 1
 	done
-	sleep 30
 done
