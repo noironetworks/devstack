@@ -14,17 +14,17 @@ from commands import *
 
 def main():
     #Run the Testcase: # when suite_runner is ready ensure to delete main & __name__ at EOF
-    test = testcase_gbp_extsegnat_crud_cli_6()
+    test = testcase_gbp_extsegnat_crud_cli_7()
     test.test_runner()
     sys.exit(1)
 
-class  testcase_gbp_extsegnat_crud_cli_6(object):
+class  testcase_gbp_extsegnat_crud_cli_7(object):
     """
     This is a GBP NAT CRUD TestCase
     """
     # Initialize logging
     _log = logging.getLogger()
-    hdlr = logging.FileHandler('/tmp/testcase_gbp_extsegnat_crud_cli_6.log')
+    hdlr = logging.FileHandler('/tmp/testcase_gbp_extsegnat_crud_cli_7.log')
     #formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     formatter = logging.Formatter('%(asctime)s %(message)s')
     hdlr.setFormatter(formatter)
@@ -49,18 +49,18 @@ class  testcase_gbp_extsegnat_crud_cli_6(object):
         """
         Method to run the Testcase in Ordered Steps
         """
-        test_name = 'TESTCASE_GBP_EXTERNAL_SEGMENT_CRUD_6'
+        test_name = 'TESTCASE_GBP_EXTERNAL_SEGMENT_CRUD_7'
         self.write_neutron_conf()
-        self._log.info("\nSteps of the TESTCASE_GBP_EXTERNAL_SEGMENT_CRUD_6 to be executed\n")
+        self._log.info("\nSteps of the TESTCASE_GBP_EXTERNAL_SEGMENT_CRUD_7 to be executed\n")
         testcase_steps = [self.test_step_CreateExternalSeg,
-                          self.test_step_CreateL3PolWoExtSeg,
-                          self.test_step_UpdateL3PolWExtSeg,
+                          self.test_step_CreatePtg,
+                          self.test_step_UpdateDefL3PolWExtSeg,
                           self.test_step_VerifyExternalSeg,
                           self.test_step_VerifyL3Pol,
-                          self.test_step_DeleteL3Pol,
+                          self.test_step_DeletePtg,
+                          self.test_step_VerifyL3PInExternalSeg,
                           self.test_step_DeleteExternalSeg,
                           self.test_step_VerifyExternalSegDel,
-                          self.test_step_VerifyL3PolDel,
                           self.test_step_VerifyImplicitNeutronObjsDel
                          ]
         for step in testcase_steps:  ##TODO: Needs FIX
@@ -70,7 +70,7 @@ class  testcase_gbp_extsegnat_crud_cli_6(object):
                   raise TestFailed("%s == FAIL" %(test_name))
             except TestFailed as err:
               self._log.info('\n%s' %(err))
-        self._log.info("%s == PASS" %(test_name))
+        self._log.info("%s ::PASS" %(test_name))
         
     def write_neutron_conf(self):
         """
@@ -97,23 +97,26 @@ class  testcase_gbp_extsegnat_crud_cli_6(object):
             self.extseg_id = extseg[0]
             self.subnet = extseg[1]
     
-    def test_step_CreateL3PolWoExtSeg(self):
+    def test_step_CreatePtg(self):
         """
-        Create the L3Policy 
+        Create the PTG, implicit L3Policy created
         """
-        self._log.info("\nStep: Create the L3 Policy\n")
-        self.l3p_id = self.config.gbp_policy_cfg_all(1,'l3p',self.l3policy_name,ip_pool='20.20.20.0/24')
-        if self.l3p_id == 0:
-           self._log.info("\nCreate the L3 Policy failed\n")
+        self._log.info("\nStep: Create the PTG, implicit L3Policy gets created\n")
+        try:
+           self.l2p_id = self.config.gbp_policy_cfg_all(1,'group','test_ptg')[1]
+           self.l3p_id = self.verify.gbp_l2l3ntk_pol_ver_all(1,'l2p',self.l2p_id,ret='default')[0]
+        except Exception as e:
+           self._log.info("\nException Error: %s\n" %(e))
+           self._log.info("\nCreate of PTG failed\n")
            return 0
         
-    def test_step_UpdateL3PolWExtSeg(self):
+    def test_step_UpdateDefL3PolWExtSeg(self):
         """
-        Update the L3Policy to associate an External Segment
+        Update the Default L3Policy to associate an External Segment
         """
         self._log.info("\nStep: Update the L3Policy with the existing External Segment\n")
         if self.config.gbp_policy_cfg_all(2,'l3p',self.l3p_id,external_segment='%s=' %(self.extseg_id)) == 0:
-           self._log.info("\nUpdating the L3 Policy with External Seg failed\n")
+           self._log.info("\nUpdating the Default L3 Policy with External Seg failed\n")
            return 0
 
     def test_step_VerifyExternalSeg(self):
@@ -127,21 +130,30 @@ class  testcase_gbp_extsegnat_crud_cli_6(object):
 
     def test_step_VerifyL3Pol(self):
         """
-        Step to Verify the L3Policy
+        Step to Verify the Default L3Policy with External Segment
         """
-        self._log.info("\nStep: Verify L3Policy and its External Segment\n")
-        self.rtr_id = self.verify.gbp_l2l3ntk_pol_ver_all(1,'l3p',self.l3p_id,name=self.l3policy_name,ip_pool='20.20.20.0/24',external_segments=self.extseg_id,ret='default')
+        self._log.info("\nStep: Verify Default L3Policy and its External Segment\n")
+        self.rtr_id = self.verify.gbp_l2l3ntk_pol_ver_all(1,'l3p',self.l3p_id,external_segments=self.extseg_id,ret='default')
         if self.rtr_id == 0:
            self._log.info("\nVerify of L3Policy and its External Segment failed\n")
            return 0
 
-    def test_step_DeleteL3Pol(self):
+    def test_step_DeletePtg(self):
         """
-        Delete L3Policy
+        Delete PTG
         """
-        self._log.info("\nStep: Delete L3Policy\n")
-        if self.config.gbp_policy_cfg_all(0,'l3p',self.l3p_id) == 0:
-           self._log.info("\nDeletion of L3Policy failed\n")
+        self._log.info("\nStep: Delete PTG\n")
+        if self.config.gbp_policy_cfg_all(0,'group','test_ptg') == 0:
+           self._log.info("\nDeletion of PTG failed\n")
+           return 0
+
+    def test_step_VerifyL3PInExternalSeg(self):
+        """
+        Default L3Policy reference deleted from External Segment
+        """
+        self._log.info("\nStep: Verify Default L3Policy reference deleted from External Segment\n")
+        if self.verify.gbp_policy_verify_all(1,'extseg',self.extseg_id,l3_policies=self.l3p_id) != 0:
+           self._log.info("\nDeleted L3Policy still persists in External Segment\n")
            return 0
 
     def test_step_DeleteExternalSeg(self):
@@ -162,15 +174,6 @@ class  testcase_gbp_extsegnat_crud_cli_6(object):
            self._log.info("\nExternal Segment still persists in dbase after deletion\n")
            return 0
  
-    def test_step_VerifyL3PolDel(self):
-        """
-        L3Policy got deleted from Dbase
-        """
-        self._log.info("\nStep: Verify the Deletion of L3Policy\n")
-        if self.verify.gbp_l2l3ntk_pol_ver_all(1,'l3p',self.l3p_id) != 0:
-           self._log.info("\nL3Policy still persists in dbase after deletion\n")
-           return 0
-
     def test_step_VerifyImplicitNeutronObjsDel(self):
         """
         Verify that Implicit Neutron Subnet got deleted from Dbase
