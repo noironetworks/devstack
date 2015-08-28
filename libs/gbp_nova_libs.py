@@ -239,7 +239,7 @@ class Gbp_Nova(object):
            floating_ip = self.nova.floating_ips.find(instance_id=instance.id).ip.encode('ascii')
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            _log.info('Exception Type = %s, Exception Object = %s' %(exc_type,exc_obj))
+            _log.info('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
             return 0
         return floating_ip
 
@@ -258,7 +258,7 @@ class Gbp_Nova(object):
            vm_dict['hostid'] = instance.hostId.encode('ascii')
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            _log.info('Exception Type = %s, Exception Object = %s' %(exc_type,exc_obj))
+            _log.info('Exception Type = %s, Exception Object = %s' %(exc_type,exc_traceback))
             return 0
         return vm_dict
  

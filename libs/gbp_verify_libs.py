@@ -296,7 +296,8 @@ class Gbp_Verify(object):
         """
         verifyobj_dict={"action":"policy-action","classifier":"policy-classifier","rule":"policy-rule",
                       "ruleset":"policy-rule-set","group":"group","target":"policy-target",
-                      "l2p":"l2policy","l3p":"l3policy","nsp":"network-service-policy"}
+                      "l2p":"l2policy","l3p":"l3policy","nsp":"network-service-policy",
+                      "extseg":"external-segment","extpol":"external-policy","natpool":"nat-pool"}
         if verifyobj != '':
            if verifyobj not in verifyobj_dict:
               raise KeyError
