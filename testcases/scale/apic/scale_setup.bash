@@ -72,5 +72,3 @@ do
 
 	ip netns exec $ns_str /sbin/dhclient -v -H "example-agent$i" -q -cf "/etc/dhcp/${i}.conf" -lf "/var/lib/dhclient/dhclient--link${i}.lease" -pf "/var/run/dhclient-link${i}.pid" $link_str
 done
-
-pkill dhclient

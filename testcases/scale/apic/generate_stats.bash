@@ -1,7 +1,7 @@
 #!/bin/bash
 
-START=0
-END=$(($1))
+START=$(($1))
+END=$(($2))
 
 while true
 do
