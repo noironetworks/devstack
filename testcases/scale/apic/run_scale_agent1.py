@@ -37,15 +37,17 @@ def agent(id):
 	# start the agent under its own network namespace
 	#subprocess.Popen(["ip", "netns", "exec", "ns" + id_str, "agent_ovs", "-c", conf_file_name])
 	subprocess.Popen(["ip", "netns", "exec", "ns" + id_str, "agent_ovs", "-c", conf_file_name, "--log", log_file_name])
+
+	# each agent has 80 EPs
 	
-	for outer_iteration in range(0, 10):
+	for outer_iteration in range(0, 8):
 		for iteration in range(1, 11):
 
 			index = outer_iteration*10 + iteration
 			index_hex_str = format(index, '02x')
 
-			# EPG number is from 1 to 35
-			EPG_index = randrange(1, 36)
+			# EPG number is from 1 to 17 as leaf can only handle BD + EPG <= 2500
+			EPG_index = randrange(1, 18)
 
 			tenant_index = id % 10
 			tenant_index = tenant_index*10 + iteration
