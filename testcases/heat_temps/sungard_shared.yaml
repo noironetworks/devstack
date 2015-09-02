@@ -151,7 +151,7 @@ resources:
             ip_pool: { get_param: mgmt_nat_ip_pool }
             shared: True
 
-#### Setup L3/L2 Resources ####
+#### Setup L3/L2 Resources, L3Policy is SHARED ####
 
     l3_policy:
         type: OS::GroupBasedPolicy::L3Policy
@@ -163,7 +163,7 @@ resources:
             external_segments:
                  - external_segment_id: {get_resource: public_external_segment}
                    allocated_address: []
-            shared: False
+            shared: True
 
     web_l2_policy:
         type: OS::GroupBasedPolicy::L2Policy
