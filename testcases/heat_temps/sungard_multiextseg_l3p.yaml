@@ -56,7 +56,7 @@ parameters:
     type: string
 
   l3_policy_name:
-    default: 'DCL3P'
+    default: 'DCL3P1'
     description: Name of the L3 policy used by Web and App PTGs
     label: l3_policy_name
     type: string
@@ -153,7 +153,7 @@ resources:
 
 #### Setup L3/L2 Resources ####
 
-    l3_policy:
+    l3_policy_1:
         type: OS::GroupBasedPolicy::L3Policy
         depends_on: public_external_segment
         properties:
@@ -163,30 +163,62 @@ resources:
             external_segments:
                  - external_segment_id: {get_resource: public_external_segment}
                    allocated_address: []
+                 - external_segment_id: {get_resource: mgmt_external_segment}
+                   allocated_address: []
+            shared: False
+
+    l3_policy_2:
+        type: OS::GroupBasedPolicy::L3Policy
+        depends_on: public_external_segment
+        properties:
+            name: DCL3P2
+            ip_pool: '192.168.0.0/16'
+            subnet_prefix_length: 24
+            external_segments:
+                 - external_segment_id: {get_resource: public_external_segment}
+                   allocated_address: []
+                 - external_segment_id: {get_resource: mgmt_external_segment}
+                   allocated_address: []
+            shared: False
+
+    web_l2_policy_2:
+        type: OS::GroupBasedPolicy::L2Policy
+        depends_on: l3_policy_2
+        properties:
+            name: "WEBL2P2"
+            l3_policy_id: { get_resource: l3_policy_2 }
+            shared: False
+
+    app_l2_policy_2:
+        type: OS::GroupBasedPolicy::L2Policy
+        depends_on: l3_policy_2
+        properties:
+            name: "APPL2P2"
+            l3_policy_id: { get_resource: l3_policy_2 }
             shared: False
 
     web_l2_policy:
         type: OS::GroupBasedPolicy::L2Policy
-        depends_on: l3_policy
+        depends_on: l3_policy_1
         properties:
-            name: "WEBL2P"
-            l3_policy_id: { get_resource: l3_policy }
+            name: "WEBL2P1"
+            l3_policy_id: { get_resource: l3_policy_1 }
             shared: False
 
     app_l2_policy:
         type: OS::GroupBasedPolicy::L2Policy
-        depends_on: l3_policy
+        depends_on: l3_policy_1
         properties:
-            name: "APPL2P"
-            l3_policy_id: { get_resource: l3_policy }
+            name: "APPL2P1"
+            l3_policy_id: { get_resource: l3_policy_1 }
             shared: False
 
     backup_l2_policy:
         type: OS::GroupBasedPolicy::L2Policy
-        depends_on: l3_policy
+        depends_on: l3_policy_1
         properties:
             name: "BACKUPL2P"
-            l3_policy_id: { get_resource: l3_policy }
+            l3_policy_id: { get_resource: l3_policy_1 }
             shared: False
 
 #### Setup PTGs and NSP ####
