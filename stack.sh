@@ -1168,6 +1168,7 @@ install_gbpservice
 init_gbpservice
 install_gbpheat
 install_gbpui
+sudo service apache2 restart
 install_gbpapicapi
 install_gbpopflex
 
