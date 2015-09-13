@@ -128,7 +128,7 @@ class Apic(object):
     def post(self, path, data):
         return requests.post(self.url(path), data=data, cookies=self.cookies, verify=False)
 
-def create_add_filter(apic_ip,svc_epg,username='admin',password='noir0123',tenant='admin'):
+def create_add_filter(apic_ip,svc_epg,username='admin',password='noir0123',tenant='_noirolab_admin'):
         """
         svc_epg: Preferably pass a list of svc_epgs if more than one
         """
