@@ -10,6 +10,8 @@ class Gbp_pexp_traff(object):
       self.netns = netns
       self.src_ep = src_vm_ip
       self.dest_ep = dst_vm_ip
+      if not isinstance(self.dest_ep,list):
+         self.dest_ep = [self.dest_ep]
       self.pkt_cnt = 3
 
     def parse_hping(self,out,pkt_cnt):
@@ -51,7 +53,8 @@ class Gbp_pexp_traff(object):
       child.expect('#')
       print child.before
       results = {}
-      for protocol in protocols:
+      for dest_ep in self.dest_ep:
+       for protocol in protocols:
         if protocol=='icmp' or protocol=='all':
            child.sendline('hping3 %s --icmp -c %s --fast -q' %(self.dest_ep,self.pkt_cnt))
            child.expect('#')

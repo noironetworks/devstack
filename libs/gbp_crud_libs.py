@@ -436,19 +436,20 @@ class GBPCrud(object):
         """
         Update the Policy Target Group
         """
-	group_id =  self.verify_policy_target_group(name)
-	consumed_dict = {}
-	provided_dict = {}
-	if consumed_policy_rulesets:
+        try:
+	  group_id =  self.verify_policy_target_group(name)
+	  consumed_dict = {}
+	  provided_dict = {}
+	  if consumed_policy_rulesets:
 		for ruleset in consumed_policy_rulesets:
 			id = self.verify_policy_rule_set(ruleset)
 			consumed_dict[id] = "scope"
-	if provided_policy_rulesets:
+	  if provided_policy_rulesets:
 		for ruleset in provided_policy_rulesets:
 			id = self.verify_policy_rule_set(ruleset)
 			provided_dict[id] = "scope"
 		
-	body = {
+	  body = {
 		"policy_target_group" : {
 			                 "provided_policy_rule_sets" : provided_dict,
 			                 "consumed_policy_rule_sets" : consumed_dict,
@@ -456,7 +457,12 @@ class GBPCrud(object):
                                          "network_service_policy" : network_service_policy
 			}
 		}
-	self.client.update_policy_target_group(group_id, body)
+	  self.client.update_policy_target_group(group_id, body)
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Updating Policy Target Group = %s, failed" %(name))
+           return 0
+
 
     def delete_gbp_policy_target_group(self,name_uuid,property_type='name'):
          """

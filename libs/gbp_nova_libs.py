@@ -230,31 +230,34 @@ class Gbp_Nova(object):
             status_try +=1
         return 1
 
-    def get_floating_ip(self,vm_name):
+    def get_floating_ip(self,vmname):
         """
-        Returns the Floating IP associated for the vm_name
+        Returns the Floating IP associated for the vmname
         """
         instance = self.nova.servers.find(name=vmname)
         try:
-           floating_ip = self.nova.floating_ips.find(instance_id=instance.id).ip.encode('ascii')
+           floating_ips = []
+           floating_ip_class_list = self.nova.floating_ips.findall(instance_id=instance.id) # this returns a list of class FloatingIP for each floating ip of an instance
+           # The above list contains many attributes like fixed_ip,pool_id etc, we can use it to fetch those attribute if need be
+           for index in range(0,len(floating_ip_class_list)):
+               floating_ips.append(floating_ip_class_list[index].ip.encode('ascii'))
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             _log.info('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
             return 0
-        return floating_ip
+        return floating_ips
 
-    def get_any_vm_property(self,vm_name):
+    def get_any_vm_property(self,vmname):
         """
         Returns any VM property
-        Pass vm_name string & the property name string
+        Pass vmname string & the property name string
         """
         instance = self.nova.servers.find(name=vmname)
         vm_dict = {}
         try:
            vm_dict['name'] = instance.name.encode('ascii')
-           vm_dict['ip'] = instance.ip.encode('ascii')
            vm_dict['id'] = instance.id.encode('ascii')
-           vm_dict['networks'] = instance.networks
+           vm_dict['networks'] = instance.networks.values() #just built-in networks method returns a dict in a list. Dict's values is again a list of ip addresses
            vm_dict['hostid'] = instance.hostId.encode('ascii')
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()

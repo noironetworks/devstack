@@ -22,18 +22,24 @@ class Gbp_def_traff(object):
       Verify all traffic b/w End-points using PTG with NO Contract(Policy RuleSet) 
       """
     
-    def parse_hping(self,out,pkt_cnt):
+    def parse_hping(self,out,pkt_cnt,regular=''):
         cnt = pkt_cnt
         output = out
-        check = re.search('\\b%s\\b packets transmitted, \\b(\d+)\\b packets received' %(cnt),output,re.I)
+        if regular == '1': #In case of regular ping
+           check = re.search('\\b%s\\b packets transmitted, \\b(\d+)\\b received' %(cnt),output,re.I)
+        elif regular == 'nc': #In case of netcat
+           if output.find('succeeded') > -1:
+              return 1
+        else:
+            check = re.search('\\b%s\\b packets transmitted, \\b(\d+)\\b packets received' %(cnt),output,re.I)
         if check != None:
            if int(cnt) - int(check.group(1)) > 1:
               return 0
         
-    def test_icmp(self,src_vm_ip,target_ip,user='noiro',pwd='noiro',pkt_cnt=3):
+    def test_icmp(self,src_vm_ip,target_ip,user='noiro',pwd='noir0123',pkt_cnt=3):
         env.host_string = src_vm_ip
         env.user = user
-        env.pwd = pwd
+        env.password = pwd
         with settings(warn_only=True):
           result = run("sudo hping3 %s --icmp -c %s --fast -q" %(target_ip,pkt_cnt))
           if result.return_code == 0:
@@ -45,10 +51,10 @@ class Gbp_def_traff(object):
               print result
               return 0
 
-    def test_tcp(self,src_vm_ip,target_ip,port,user='noiro',pwd='noiro',pkt_cnt=3):
+    def test_tcp(self,src_vm_ip,target_ip,port,user='noiro',pwd='noir0123',pkt_cnt=3):
         env.host_string = src_vm_ip
         env.user = user
-        env.pwd = pwd
+        env.password = pwd
         print "Sending TCP SYN,SYN ACK,SYN-ACK-FIN to %s" %(target_ip)
         cmd_s = "sudo hping3 %s -S -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt)
         cmd_sa = "sudo hping3 %s -S -A -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt)
@@ -64,10 +70,10 @@ class Gbp_def_traff(object):
                     return 0
         return 1
     
-    def test_udp(self,src_vm_ip,target_ip,port,user='noiro',pwd='noiro',pkt_cnt=3):
+    def test_udp(self,src_vm_ip,target_ip,port,user='noiro',pwd='noir0123',pkt_cnt=3):
         env.host_string = src_vm_ip
         env.user = user
-        env.pwd = pwd
+        env.password = pwd
         print "Sending UDP to %s" %(target_ip)
         with settings(warn_only=True):
           result = run("sudo hping3 %s --udp -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt))
@@ -80,10 +86,10 @@ class Gbp_def_traff(object):
               print result
               return 0
 
-    def test_arp(self,src_vm_ip,target_ip,user='noiro',pwd='noiro'):
+    def test_arp(self,src_vm_ip,target_ip,user='noiro',pwd='noir0123'):
         env.host_string = src_vm_ip
         env.user = user
-        env.pwd = pwd
+        env.password = pwd
         cmd_del_arp = "arp -d %s" %(target_ip)
         cmd_ping = "ping %s -c 3" %(target_ip)
         cmd_get_arp = "arp -n %s" %(target_ip)
@@ -98,7 +104,7 @@ class Gbp_def_traff(object):
     def test_dns(self,src_vm_ip):
         env.host_string = src_vm_ip
         env.user = user
-        env.pwd = pwd
+        env.password = pwd
         with settings(warn_only=True):
            result = run("sudo nslookup google.com")
            if result.return_code != 0:
@@ -115,6 +121,41 @@ class Gbp_def_traff(object):
         return 1
     
     def test_mcast(self):
+        return 1
+
+    def test_regular_icmp(self,src_vm_ip,target_ip,user='noiro',pwd='noir0123',pkt_cnt=3):
+        env.host_string = src_vm_ip
+        env.user = user
+        env.password = pwd
+        with settings(warn_only=True):
+         if not isinstance(target_ip,list):
+             target_ip = [target_ip]
+         for target in target_ip:
+          result = run("ping %s -c %s -i 0.2" %(target,pkt_cnt))
+          if result.return_code == 0:
+             if self.parse_hping(result,pkt_cnt,regular=1) != 0:
+               return 1
+             else:
+               return 0
+          else:
+              print result
+              return 0
+
+    def test_regular_tcp(self,src_vm_ip,target_ip,port=22,user='noiro',pwd='noir0123',pkt_cnt=3):
+        env.host_string = src_vm_ip
+        env.user = user
+        env.password = pwd
+        with settings(warn_only=True):
+          if not isinstance(target_ip,list):
+             target_ip = [target_ip]
+          for target in target_ip:
+             result = run("nc -w 1 -v %s -z %s" %(target,port))
+             if result.return_code != 0:
+                 print result
+                 return 0
+             else:
+                 if self.parse_hping(result,pkt_cnt,regular='nc') == 0:
+                    return 0
         return 1
 
     def test_run(self,src_vm_ip,target_ip,protocols=['icmp','tcp','udp']):
