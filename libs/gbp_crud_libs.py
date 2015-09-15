@@ -298,7 +298,7 @@ class GBPCrud(object):
            _log.info("Deleting Policy Rule = %s, failed" %(name_uuid))
            return 0
 
-    def create_gbp_policy_ruleset(self,name,rule_list=[],property_type='name',**kwargs):
+    def create_gbp_policy_rule_set(self,name,rule_list=[],property_type='name',**kwargs):
         """
         Create a GBP Policy RuleSet
         rule_list: List of policy_rules,pass list of rule_names or rule_uuid strings
@@ -430,39 +430,50 @@ class GBPCrud(object):
         _log.info("Policy Target Group NOT Found")
         return 0
 
-    def update_gbp_policy_target_group(self, name, consumed_policy_rulesets=None, 
+
+    def update_gbp_policy_target_group(self, name_uuid,property_type='name',consumed_policy_rulesets=None,
                                        provided_policy_rulesets=None, shared=False,
                                        network_service_policy=None):
         """
         Update the Policy Target Group
+        Provide uniform property_type('name' or 'uuid') across objects
         """
         try:
-	  group_id =  self.verify_policy_target_group(name)
-	  consumed_dict = {}
-	  provided_dict = {}
-	  if consumed_policy_rulesets:
-		for ruleset in consumed_policy_rulesets:
-			id = self.verify_policy_rule_set(ruleset)
-			consumed_dict[id] = "scope"
-	  if provided_policy_rulesets:
-		for ruleset in provided_policy_rulesets:
-			id = self.verify_policy_rule_set(ruleset)
-			provided_dict[id] = "scope"
-		
-	  body = {
-		"policy_target_group" : {
-			                 "provided_policy_rule_sets" : provided_dict,
-			                 "consumed_policy_rule_sets" : consumed_dict,
+          consumed_dict = {}
+          provided_dict = {}
+          if property_type == 'name':
+             group_id =  self.verify_gbp_policy_target_group(name_uuid)
+             if consumed_policy_rulesets:
+                print 'JISHNU in Consumed name: rulesets are', consumed_policy_rulesets
+                for ruleset in consumed_policy_rulesets:
+                        id = self.verify_gbp_policy_rule_set(ruleset)
+                        consumed_dict[id] = "scope"
+             if provided_policy_rulesets:
+                print 'JISHNU in Provided name: rulesets are', provided_policy_rulesets
+                for ruleset in provided_policy_rulesets:
+                        id = self.verify_gbp_policy_rule_set(ruleset)
+                        provided_dict[id] = "scope"
+          else:
+              group_id = name_uuid
+              if consumed_policy_rulesets:
+                 for ruleset in consumed_policy_rulesets:
+                        consumed_dict[ruleset] = "scope"
+              if provided_policy_rulesets:
+                for ruleset in provided_policy_rulesets:
+                        provided_dict[ruleset] = "scope"
+          body = {
+                "policy_target_group" : {
+                                         "provided_policy_rule_sets" : provided_dict,
+                                         "consumed_policy_rule_sets" : consumed_dict,
                                          "shared" : shared,
-                                         "network_service_policy" : network_service_policy
-			}
-		}
-	  self.client.update_policy_target_group(group_id, body)
+                                         "network_service_policy_id" : network_service_policy
+                        }
+                }
+          self.client.update_policy_target_group(group_id, body)
         except Exception as e:
            _log.info("\nException Error: %s\n" %(e))
-           _log.info("Updating Policy Target Group = %s, failed" %(name))
+           _log.info("Updating Policy Target Group = %s, failed" %(name_uuid))
            return 0
-
 
     def delete_gbp_policy_target_group(self,name_uuid,property_type='name'):
          """
@@ -848,3 +859,48 @@ class GBPCrud(object):
            _log.info("Creating NAT NSP = %s, failed" %(uuid))
            return 0
         return nsp_nat_uuid   
+
+    def update_gbp_external_policy(self, name_uuid,property_type='name',consumed_policy_rulesets=None,provided_policy_rulesets=None, shared=False):
+        """
+        Update the External Policy
+        Provide uniform property_type('name' or 'uuid') across objects
+        """
+        try:
+          consumed_prs = []
+          provided_prs = []
+          if property_type == 'name':
+             policy_id =  self.verify_gbp_external_policy(name_uuid)
+             if consumed_policy_rulesets:
+                for ruleset in consumed_policy_rulesets:
+                        id = self.verify_gbp_policy_rule_set(ruleset)
+                        #consumed_dict[id] = "scope"
+                        consumed_prs.append(id)  
+             if provided_policy_rulesets:
+                for ruleset in provided_policy_rulesets:
+                        id = self.verify_gbp_policy_rule_set(ruleset)
+                        #provided_dict[id] = "scope"
+                        provided_prs.append(id)
+          else:
+              policy_id = name_uuid
+              print "JISHNU I AM HERE"
+              if consumed_policy_rulesets:
+                 for ruleset in consumed_policy_rulesets:
+                        print 'What I have consumed == ', ruleset
+                        #consumed_dict[ruleset] = "scope"
+                        consumed_prs.append(ruleset)
+              if provided_policy_rulesets:
+                for ruleset in provided_policy_rulesets:
+                        #provided_dict[ruleset] = "scope"
+                        provided_prs.append(ruleset)
+          body = {
+                "external_policy" : {
+                                     "provided_policy_rule_sets" : provided_prs,
+                                     "consumed_policy_rule_sets" : consumed_prs,
+                                     "shared" : shared
+                        }
+                }
+          self.client.update_external_policy(policy_id, body)
+        except Exception as e:
+           _log.info("\nException Error: %s\n" %(e))
+           _log.info("Updating External Policy = %s, failed" %(name_uuid))
+           return 0

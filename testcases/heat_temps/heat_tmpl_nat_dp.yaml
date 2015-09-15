@@ -154,6 +154,7 @@ resources:
             shared: True
 
 # Creating Policy RuleSet for ExtGw<->VMs, VM<->VM #
+
     demo_ruleset_icmp_tcp:
         type: OS::GroupBasedPolicy::PolicyRuleSet
         properties:
@@ -161,6 +162,22 @@ resources:
             policy_rules: [{ get_resource: shared_rule_icmp }, { get_resource: shared_rule_tcp }]
             child_policy_rule_sets: []
             shared: False
+
+    shared_ruleset_icmp:
+        type: OS::GroupBasedPolicy::PolicyRuleSet
+        properties:
+            name: shared_ruleset_icmp
+            policy_rules: [{ get_resource: shared_rule_icmp }]
+            child_policy_rule_sets: []
+            shared: True
+
+    shared_ruleset_tcp:
+        type: OS::GroupBasedPolicy::PolicyRuleSet
+        properties:
+            name: shared_ruleset_tcp
+            policy_rules: [{ get_resource: shared_rule_tcp }]
+            child_policy_rule_sets: []
+            shared: True
 
     shared_ruleset_icmp_tcp:
         type: OS::GroupBasedPolicy::PolicyRuleSet
@@ -170,6 +187,13 @@ resources:
             child_policy_rule_sets: []
             shared: True
 
+    shared_ruleset_norule:
+        type: OS::GroupBasedPolicy::PolicyRuleSet
+        properties:
+            name: shared_ruleset_norule
+            policy_rules: []
+            child_policy_rule_sets: []
+            shared: True
 
 #### Setup External Connectivity Resources ####
 
@@ -397,6 +421,15 @@ outputs:
 
     shared_ruleset_icmp_tcp_id:
         value: { get_resource: shared_ruleset_icmp_tcp }
+
+    shared_ruleset_icmp_id:
+        value: { get_resource: shared_ruleset_icmp }
+
+    shared_ruleset_tcp_id:
+        value: { get_resource: shared_ruleset_tcp }
+
+    shared_ruleset_norule_id:
+        value: { get_resource: shared_ruleset_norule }
 
     public_external_policy_id:
         value: { get_resource: public_external_policy }

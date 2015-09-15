@@ -12,7 +12,7 @@ from libs.gbp_heat_libs import Gbp_Heat
 from libs.gbp_nova_libs import Gbp_Nova
 from libs.gbp_utils import *
 
-class gbp_main_config(object):
+class nat_dp_main_config(object):
     """
     The intent of this class is to setup the complete GBP config 
     needed for running all DP testcases
@@ -20,7 +20,7 @@ class gbp_main_config(object):
     # Initialize logging
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
     _log = logging.getLogger( __name__ )
-    hdlr = logging.FileHandler('/tmp/test_gbp_dp_main_config.log')
+    hdlr = logging.FileHandler('/tmp/test_gbp_natdp_main_config.log')
     _log.setLevel(logging.INFO)
     _log.setLevel(logging.DEBUG)
 
@@ -35,6 +35,7 @@ class gbp_main_config(object):
       self.comp_node = conf['az_comp_node']
       self.ntk_node = conf['ntk_node']
       self.cntlr_ip = conf['controller_ip']
+      self.extgw = conf['ext_gw_rtr']
       self.apic_ip = conf['apic_ip']
       #self.setup_file = conf['main_setup_heat_temp']
       self.heat_temp_test = conf['main_setup_heat_temp']
@@ -48,8 +49,9 @@ class gbp_main_config(object):
     def setup(self):
       """
       Availability Zone creation
-      SSH Key creation
       Heat Stack Creates All Test Config
+      Generate dict comprising VM-name and FIPs
+      """
       """
       if self.gbpnova.quota_update()==0:
          self._log.info("\n ABORTING THE TESTSUITE RUN, Updating the Nova Quota's Failed")
@@ -80,7 +82,14 @@ class gbp_main_config(object):
                       'demo_srvr_bd','demo_clnt_bd'
                      ]
       create_add_filter(self.apic_ip,svc_epg_list)
-
+      """
+      ### <Generate the dict comprising VM-name and its FIPs > ###
+      targetvm_list = ['Web-Server','Web-Client-1','Web-Client-2','App-Server']
+      fipsOftargetVMs = {}
+      for vm in targetvm_list:
+        fipsOftargetVMs[vm] = self.gbpnova.get_any_vm_property(vm)['networks'][0][1:3]
+      print 'FIPs of Target VMs == %s' %(fipsOftargetVMs)
+      return fipsOftargetVMs
 
     def cleanup(self):
         ##Need to call for instance delete if there is an instance
