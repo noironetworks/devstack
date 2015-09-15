@@ -36,12 +36,22 @@ def traff_from_extgwrtr(extgwrtr_ip,fipsOftargetVMs,proto='all'):
     if proto == 'icmp':
        results_icmp = traff.test_regular_icmp(extgwrtr_ip,ping_fips)
        if isinstance(results_icmp,dict):
-          return results_icmp.keys()
+          return {'ICMP': results_icmp.keys()}
     if proto == 'tcp':
-       results_tcp = traff.test_regular_icmp(extgwrtr_ip,ping_fips)
+       results_tcp = traff.test_regular_tcp(extgwrtr_ip,ping_fips)
        if isinstance(results_tcp,dict):
-          return results_tcp.keys()
+          return {'TCP': results_tcp.keys()}
 
+class traff_full_mesh(object):
+
+      def __init__(self,ntk_node):
+      """
+      This Traffic Class defines testcases
+      in which we send traffic between all VMs
+      pertianing to NAT Testing
+      """
+      def traff_websrv_to_webclnt1(self):
+          
 def verify_traff(self,proto=['all']):
         """
         Verifies the expected traffic result per testcase
