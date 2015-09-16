@@ -31,17 +31,18 @@ print 'VM-to-IP-NS == %s' %(vm_to_ip_ns)
 def verify_traff(results,target_vm_ip,proto):
         """
         Verifies the expected traffic result per testcase
+        :: proto - 'all'/'icmp'/'tcp', all = both icmp & tcp
         """
         print 'Results from the Testcase == ', results
         failed ={}
         for key,val in results.iteritems():
             failed[key]={'icmp':'NA','tcp':'NA'}
-            if proto == 'icmp':
+            if proto == 'icmp' or proto == 'all':
                if val['icmp'] != 1:
                   failed[key]={'icmp': 'FAIL'}
                if val['tcp'] != 0:
                   failed[key]={'tcp':'FAIL'}
-            if proto == 'tcp':
+            if proto == 'tcp' or proto == 'all':
                if val['icmp'] != 0:
                   failed[key]={'icmp': 'FAIL'}
                if val['tcp'] != 1:
@@ -56,7 +57,7 @@ def verify_traff(results,target_vm_ip,proto):
         else:
             return 1
 
-def test_traff_from_vm_to_allvms(vm_name):
+def test_traff_from_vm_to_allvms(vm_name,proto='all'):
     """
     Test Traffic from Web-Server VM to rest of the other VMs' FIPs
     """
@@ -75,7 +76,7 @@ def test_traff_from_vm_to_allvms(vm_name):
     dhcp_ns_websrvr = vm_to_ip_ns[vm_name][1]
     websrvr_pvt_ip = vm_to_ip_ns[vm_name][0][0]
     gbppexptraff = Gbp_pexp_traff(ntk_node,dhcp_ns_websrvr,websrvr_pvt_ip,flattended_dest_vm_fips)
-    results=gbppexptraff.test_run(protocols=['icmp','tcp'],tcp_syn_only=1)
-    print 'RESULTS == \n', results
-    return verify_traff(results,dest_vm_fips,'icmp')
+    results=gbppexptraff.test_run(protocols=['icmp','tcp'],tcp_syn_only=1) #Run for all protocols irrespective of the contract type
+    #print 'RESULTS == \n', results
+    return verify_traff(results,dest_vm_fips,proto)
 

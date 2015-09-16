@@ -43,7 +43,11 @@ class DNAT_VMs_to_VMs(object):
         self.test_3_prs = {'f1a14d4e-3d0d-49d3-bd83-cba533bf25e0'}
         self.test_4_prs = {'7d339f7b-5d4c-4e8a-868e-ced13951bf04'}
         self.test_5_prs = {objs_uuid['shared_ruleset_icmp_tcp_id']}
-        self.vm_list = ['Web-Server','Web-Client-1','Web-Client-2','App-Server']
+        self.vm_list = ['App-Server','Web-Server','Web-Client-1','Web-Client-2']
+        self.vm_to_ptg_dict = {
+                               'App-Server': self.appsrvr_ptg, 'Web-Server': self.websrvr_ptg,\
+                               'Web-Client-1': self.webclnt_ptg, 'Web-Client-2': self.webclnt_ptg
+                              }
         self.dest_vm_fips = dest_vm_fips
         self.gbp_crud = GBPCrud(self.ostack_controller)
 
@@ -78,16 +82,19 @@ class DNAT_VMs_to_VMs(object):
         """
         Run traff test with NO CONTRACT between Web-Server & Tenant PTG
         """
-        failed = []
-        for vm in self.vm_list:
-            self._log.info("\nTestcase_DNAT_%s_RESTOFVMs: NO CONTRACT APPLIED and VERIFY TRAFFIC" %(vm.upper()))
-            run_traffic =  test_traff_from_vm_to_allvms('Web-Server')
-            if isinstance(run_traffic,tuple):
-               ("\nFollowing Traffic Test from %s Failed = %s" %(vm,run_traffic[1]))
-               failed.append('Testcase_DNAT_%s_RESTOFVMs' %(vm.upper()))
-           
-        if not isinstance(run_traffic,dict):
-           self._log.info("\nFollowing Traffic Test from External GW Router Allowed, hence Failed == %s" %(run_traffic))
+        failed = {}
+        for vm in ['Web-Server','App-Server']:
+            self._log.info("\nTestcase_DNAT_%s_to_RESTOFVMs: NO CONTRACT APPLIED and VERIFY TRAFFIC" %(vm))
+            run_traffic =  test_traff_from_vm_to_allvms(vm)
+            if not isinstance(run_traffic,tuple): #Negative check
+               failed[vm] = run_traffic[1]
+        for vm in ['Web-Client-1','Web-Client-2']:
+            self._log.info("\nTestcase_DNAT_%s_to_RESTOFVMs: NO CONTRACT APPLIED and VERIFY TRAFFIC" %(vm))
+            run_traffic =  test_traff_from_vm_to_allvms(vm)
+            if isinstance(run_traffic,tuple): 
+                failed[vm] = run_traffic[1]
+        if len(failed)>1:
+           self._log.info("\nFollowing Traffic Test with NO Contract Failed = %s" %(failed))
            return 0
         else:
               return 1
@@ -97,94 +104,123 @@ class DNAT_VMs_to_VMs(object):
         Update the in-use PTG with a PRS which has NO-Rule
         Send traff
         """
-        self._log.info("\nTestcase_DNAT_EXTGWRTR_TO_TENANT_VMs: APPLY CONTRACT BUT NO RULE and VERIFY TRAFFIC")
-        prs = self.test_2_prs
-        for ext_pol in [self.external_pol_1,self.external_pol_2]:
-            if self.gbp_crud.update_gbp_external_policy(ext_pol,property_type='uuid',consumed_policy_rulesets=prs) == 0:
-               return 0
-        for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
-            if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
-               return 0
-        run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips)
-        if not isinstance(run_traffic,dict):
-              self._log.info("\nFollowing Traffic Test from External GW Router Allowed, hence Failed == %s" %(run_traffic))
-              return 0
+        failed = {}
+        for vm in ['Web-Server','App-Server']:
+            self._log.info("\nTestcase_DNAT_%s_to_RESTOFVMs: APPLY CONTRACT NO RULE and VERIFY TRAFFIC" %(vm))
+            run_traffic =  test_traff_from_vm_to_allvms(vm)
+            if not isinstance(run_traffic,tuple): #Negative check
+               failed[vm] = run_traffic[1]
+        for vm in ['Web-Client-1','Web-Client-2']:
+            self._log.info("\nTestcase_DNAT_%s_to_RESTOFVMs: APPLY CONTRACT NO RULE and VERIFY TRAFFIC" %(vm))
+            run_traffic =  test_traff_from_vm_to_allvms(vm)
+            if isinstance(run_traffic,tuple):
+               failed[vm] = run_traffic[1]
+        if len(failed)>1:
+           self._log.info("\nFollowing Traffic Test Applyiing Contract with NO Rule Failed = %s" %(failed))
+           return 0
         else:
               return 1
+
  
     def test_3_traff_apply_prs_icmp(self):
         """
-        Apply Policy-RuleSet to the in-use PTG
+        Apply ICMP Policy-RuleSet to the in-use PTG
+        ICMP Policy-RuleSet Provided by PTG of VUT(VM under test)
+        Consumed by PTG of Other VMs
         Send traffic
         """
-        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: APPLY ICMP CONTRACT and VERIFY TRAFFIC")
+        failed={}
         prs = self.test_3_prs
-        for ext_pol in [self.external_pol_1,self.external_pol_2]:
-            if self.gbp_crud.update_gbp_external_policy(ext_pol,property_type='uuid',consumed_policy_rulesets=prs) == 0:
-               return 0 
-        for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
-          if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
+        for vm in self.vm_list:
+            self._log.info("\nTestcase_DNAT_%s_to_RESTOFVMs: APPLY ICMP CONTRACT and VERIFY TRAFFIC" %(vm))
+            for vm_name,ptg in self.vm_to_ptg_dict.iteritems():
+                if vm_name != vm:
+                   if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',consumed_policy_rulesets=prs) == 0:
+                      return 0 
+            if self.gbp_crud.update_gbp_policy_target_group(self.vm_to_ptg_dict[vm],property_type='uuid',provided_policy_rulesets=prs)==0:
              return 0
-        run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips,proto='icmp')
-        if isinstance(run_traffic,dict):
-              self._log.info("\nFollowing Traffic Test from External GW Router Failed == %s" %(run_traffic))
+            run_traffic =  test_traff_from_vm_to_allvms(vm)
+            if isinstance(run_traffic,tuple):
+                 failed[vm]=run_traffic[1]
+        if len(failed)> 0: 
+              self._log.info("\nFollowing Traffic Test Failed After Applying ICMP Contract == %s" %(failed))
               return 0
         else:
               return 1
+
 
     def test_4_traff_apply_prs_tcp(self):
         """
-        Apply Policy-RuleSet to the in-use PTG
+        Apply TCP Policy-RuleSet to the in-use PTG
+        TCP Policy-RuleSet Provided by PTG of VUT(VM under test)
+        Consumed by PTG of Other VMs
         Send traffic
         """
-        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: APPLY TCP CONTRACT and VERIFY TRAFFIC")
+        failed={}
         prs = self.test_4_prs
-        for ext_pol in [self.external_pol_1,self.external_pol_2]:
-            if self.gbp_crud.update_gbp_external_policy(ext_pol,property_type='uuid',consumed_policy_rulesets=prs) == 0:
-               return 0
-        for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
-          if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
+        for vm in self.vm_list:
+            self._log.info("\nTestcase_DNAT_%s_to_RESTOFVMs: APPLY TCP CONTRACT and VERIFY TRAFFIC" %(vm))
+            for vm_name,ptg in self.vm_to_ptg_dict.iteritems():
+                if vm_name != vm:
+                   if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',consumed_policy_rulesets=prs) == 0:
+                      return 0
+            if self.gbp_crud.update_gbp_policy_target_group(self.vm_to_ptg_dict[vm],property_type='uuid',provided_policy_rulesets=prs)==0:
              return 0
-        run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips,proto='tcp')
-        if isinstance(run_traffic,dict):
-              self._log.info("\nFollowing Traffic Test from External GW Router Failed == %s" %(run_traffic))
+            run_traffic =  test_traff_from_vm_to_allvms(vm)
+            if isinstance(run_traffic,tuple):
+                 failed[vm]=run_traffic[1]
+        if len(failed)> 0:
+              self._log.info("\nFollowing Traffic Test Failed After Applying TCP Contract == %s" %(failed))
               return 0
         else:
               return 1
 
+
     def test_5_traff_apply_prs_icmp_tcp(self):
         """
-        Apply Policy-RuleSet to the in-use PTG
+        Apply TCP-ICMP-combo Policy-RuleSet to the in-use PTG
+        TCP-ICMP-combo Policy-RuleSet Provided by PTG of VUT(VM under test)
+        Consumed by PTG of Other VMs
         Send traffic
         """
-        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: APPLY ICMP-TCP-COMBO CONTRACT and VERIFY TRAFFIC")
+        failed={}
         prs = self.test_5_prs
-        for ext_pol in [self.external_pol_1,self.external_pol_2]:
-            if self.gbp_crud.update_gbp_external_policy(ext_pol,property_type='uuid',consumed_policy_rulesets=prs) == 0:
-               return 0
-        for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
-          if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
+        for vm in self.vm_list:
+            self._log.info("\nTestcase_DNAT_%s_to_RESTOFVMs: APPLY TCP-ICMP-COMBO CONTRACT and VERIFY TRAFFIC" %(vm))
+            for vm_name,ptg in self.vm_to_ptg_dict.iteritems():
+                if vm_name != vm:
+                   if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',consumed_policy_rulesets=prs) == 0:
+                      return 0
+            if self.gbp_crud.update_gbp_policy_target_group(self.vm_to_ptg_dict[vm],property_type='uuid',provided_policy_rulesets=prs)==0:
              return 0
-        run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips)
-        if isinstance(run_traffic,dict):
-              self._log.info("\nFollowing Traffic Test from External GW Router Failed == %s" %(run_traffic))
+            run_traffic =  test_traff_from_vm_to_allvms(vm)
+            if isinstance(run_traffic,tuple):
+                 failed[vm]=run_traffic[1]
+        if len(failed)> 0:
+              self._log.info("\nFollowing Traffic Test Failed After Applying TCP-ICMP-COMBO Contract == %s" %(failed))
               return 0
         else:
               return 1
+
 
     def test_6_traff_rem_prs(self):
         """
         Remove the PRS/Contract from the PTG
         Test all traffic types
         """
-        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: REMOVING CONTRACT and VERIFY TRAFFIC")
-        for ext_pol in [self.external_pol_1,self.external_pol_2]:
-            if self.gbp_crud.update_gbp_external_policy(ext_pol,property_type='uuid',consumed_policy_rulesets=None) == 0:
-               return 0
-        for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
-          if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=None)==0:
-             return 0
-        run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips)
-        if isinstance(run_traffic,dict):
+        failed = {}
+        for vm in ['Web-Server','App-Server']:
+            self._log.info("\nTestcase_DNAT_%s_to_RESTOFVMs: CONTRACT REMOVED from ALL PTGs and VERIFY TRAFFIC" %(vm))
+            run_traffic =  test_traff_from_vm_to_allvms(vm)
+            if not isinstance(run_traffic,tuple): #Negative check
+               failed[vm] = run_traffic[1]
+        for vm in ['Web-Client-1','Web-Client-2']:
+            self._log.info("\nTestcase_DNAT_%s_to_RESTOFVMs: NO CONTRACT from ALL PTGs and VERIFY TRAFFIC" %(vm))
+            run_traffic =  test_traff_from_vm_to_allvms(vm)
+            if isinstance(run_traffic,tuple):
+                failed[vm] = run_traffic[1]
+        if len(failed)>1:
+           self._log.info("\nFollowing Traffic Test After Removing Contract from All PTGs, Failed = %s" %(failed))
+           return 0
+        else:
               return 1
-
