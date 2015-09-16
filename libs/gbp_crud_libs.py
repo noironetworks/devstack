@@ -444,12 +444,10 @@ class GBPCrud(object):
           if property_type == 'name':
              group_id =  self.verify_gbp_policy_target_group(name_uuid)
              if consumed_policy_rulesets:
-                print 'JISHNU in Consumed name: rulesets are', consumed_policy_rulesets
                 for ruleset in consumed_policy_rulesets:
                         id = self.verify_gbp_policy_rule_set(ruleset)
                         consumed_dict[id] = "scope"
              if provided_policy_rulesets:
-                print 'JISHNU in Provided name: rulesets are', provided_policy_rulesets
                 for ruleset in provided_policy_rulesets:
                         id = self.verify_gbp_policy_rule_set(ruleset)
                         provided_dict[id] = "scope"
@@ -866,32 +864,26 @@ class GBPCrud(object):
         Provide uniform property_type('name' or 'uuid') across objects
         """
         try:
-          consumed_prs = []
-          provided_prs = []
+          consumed_prs = {}
+          provided_prs = {}
           if property_type == 'name':
              policy_id =  self.verify_gbp_external_policy(name_uuid)
              if consumed_policy_rulesets:
                 for ruleset in consumed_policy_rulesets:
                         id = self.verify_gbp_policy_rule_set(ruleset)
-                        #consumed_dict[id] = "scope"
-                        consumed_prs.append(id)  
+                        consumed_prs[id] = "scope"
              if provided_policy_rulesets:
                 for ruleset in provided_policy_rulesets:
                         id = self.verify_gbp_policy_rule_set(ruleset)
-                        #provided_dict[id] = "scope"
-                        provided_prs.append(id)
+                        provided_prs[id] = "scope"
           else:
               policy_id = name_uuid
-              print "JISHNU I AM HERE"
               if consumed_policy_rulesets:
                  for ruleset in consumed_policy_rulesets:
-                        print 'What I have consumed == ', ruleset
-                        #consumed_dict[ruleset] = "scope"
-                        consumed_prs.append(ruleset)
+                        consumed_prs[ruleset] = "scope"
               if provided_policy_rulesets:
                 for ruleset in provided_policy_rulesets:
-                        #provided_dict[ruleset] = "scope"
-                        provided_prs.append(ruleset)
+                        provided_prs[ruleset] = "scope"
           body = {
                 "external_policy" : {
                                      "provided_policy_rule_sets" : provided_prs,

@@ -132,15 +132,16 @@ class Gbp_def_traff(object):
          if not isinstance(target_ip,list):
              target_ip = [target_ip]
          for target in target_ip:
-          result = run("ping %s -c %s -i 0.2 -W 1" %(target,pkt_cnt))
-          if result.return_code == 0:
+           result = run("ping %s -c %s -i 0.2 -W 1" %(target,pkt_cnt))
+           if result.return_code == 0:
              if self.parse_hping(result,pkt_cnt,regular=1) == 0:
                 ret_results[target]=0
+           else: 
+             ret_results[target]=0
          if len(ret_results) > 0:
-            return ret_results
+            return ret_results    
          else:
-            return 1
-          
+            return 1 
 
     def test_regular_tcp(self,src_vm_ip,target_ip,port=22,user='noiro',pwd='noir0123',pkt_cnt=3):
         env.host_string = src_vm_ip
@@ -155,9 +156,11 @@ class Gbp_def_traff(object):
              if result.return_code == 0:
                  if self.parse_hping(result,pkt_cnt,regular='nc') == 0:
                     ret_results[target]=0
-        if len(ret_results) > 0:
+             else:
+                    ret_results[target]=0
+          if len(ret_results) > 0:
             return ret_results
-        else:
+          else:
             return 1
 
     def test_run(self,src_vm_ip,target_ip,protocols=['icmp','tcp','udp']):

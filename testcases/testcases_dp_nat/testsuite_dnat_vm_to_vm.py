@@ -7,10 +7,10 @@ import datetime
 import string
 from libs.gbp_crud_libs import GBPCrud
 from libs.raise_exceptions import *
-from nat_utils import *
+from traff_from_allvms import *
 import uuid
 
-class DNAT_ExtGw_to_VMs(object):
+class DNAT_VMs_to_VMs(object):
 
     # Initialize logging
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
@@ -43,6 +43,7 @@ class DNAT_ExtGw_to_VMs(object):
         self.test_3_prs = {'f1a14d4e-3d0d-49d3-bd83-cba533bf25e0'}
         self.test_4_prs = {'7d339f7b-5d4c-4e8a-868e-ced13951bf04'}
         self.test_5_prs = {objs_uuid['shared_ruleset_icmp_tcp_id']}
+        self.vm_list = ['Web-Server','Web-Client-1','Web-Client-2','App-Server']
         self.dest_vm_fips = dest_vm_fips
         self.gbp_crud = GBPCrud(self.ostack_controller)
 
@@ -77,8 +78,14 @@ class DNAT_ExtGw_to_VMs(object):
         """
         Run traff test with NO CONTRACT between Web-Server & Tenant PTG
         """
-        self._log.info("\nTestcase_DNAT_EXTGWRTR_TO_TENANT_VMs: NO CONTRACT APPLIED and VERIFY TRAFFIC")
-        run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips)
+        failed = []
+        for vm in self.vm_list:
+            self._log.info("\nTestcase_DNAT_%s_RESTOFVMs: NO CONTRACT APPLIED and VERIFY TRAFFIC" %(vm.upper()))
+            run_traffic =  test_traff_from_vm_to_allvms('Web-Server')
+            if isinstance(run_traffic,tuple):
+               ("\nFollowing Traffic Test from %s Failed = %s" %(vm,run_traffic[1]))
+               failed.append('Testcase_DNAT_%s_RESTOFVMs' %(vm.upper()))
+           
         if not isinstance(run_traffic,dict):
            self._log.info("\nFollowing Traffic Test from External GW Router Allowed, hence Failed == %s" %(run_traffic))
            return 0

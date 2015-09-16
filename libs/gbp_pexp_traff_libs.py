@@ -24,7 +24,7 @@ class Gbp_pexp_traff(object):
         else:
             return 0
 
-    def test_run(self,protocols=['icmp','tcp','udp'],port=443):
+    def test_run(self,protocols=['icmp','tcp','udp'],port=443,tcp_syn_only=0):
       child = pexpect.spawn('ssh root@%s' %(self.net_node))
       child.expect('#')
       child.sendline('ifconfig eth2')
@@ -54,40 +54,54 @@ class Gbp_pexp_traff(object):
       print child.before
       results = {}
       for dest_ep in self.dest_ep:
+       results[dest_ep] = {'icmp':'NA', 'tcp':'NA', 'udp':'NA'} #Setting results for all proto = NA, assuming no traffic is not tested for the specific proto
        for protocol in protocols:
         if protocol=='icmp' or protocol=='all':
-           child.sendline('hping3 %s --icmp -c %s --fast -q' %(self.dest_ep,self.pkt_cnt))
+           child.sendline('hping3 %s --icmp -c %s --fast -q' %(dest_ep,self.pkt_cnt))
            child.expect('#')
            print "Sent ICMP packets"
            result=child.before         
            print result
            if self.parse_hping(result,self.pkt_cnt) !=0:
-              results['icmp']=1
+              results[dest_ep]['icmp']=1
            else:
-              results['icmp']=0
+              results[dest_ep]['icmp']=0
         if protocol=='tcp'or protocol=='all':
-           cmd_s = "sudo hping3 %s -S -p %s -c %s --fast -q" %(self.dest_ep,port,self.pkt_cnt)
-           cmd_sa = "sudo hping3 %s -S -A -p %s -c %s --fast -q" %(self.dest_ep,port,self.pkt_cnt)
-           cmd_saf = "sudo hping3 %s -S -A -F -p %s -c %s --fast -q" %(self.dest_ep,port,self.pkt_cnt)
-           for cmd in [cmd_s,cmd_sa,cmd_saf]:
+           cmd_s = "sudo hping3 %s -S -p %s -c %s --fast -q" %(dest_ep,port,self.pkt_cnt)
+           cmd_sa = "sudo hping3 %s -S -A -p %s -c %s --fast -q" %(dest_ep,port,self.pkt_cnt)
+           cmd_saf = "sudo hping3 %s -S -A -F -p %s -c %s --fast -q" %(dest_ep,port,self.pkt_cnt)
+           if tcp_syn_only == 0:
+            for cmd in [cmd_s,cmd_sa,cmd_saf]:
                child.sendline(cmd)
                child.expect('#')
-               print "Sent TCP SYN,SYN ACK,SYN-ACK-FIN to %s" %(self.dest_ep)
+               print "Sent TCP SYN,SYN ACK,SYN-ACK-FIN to %s" %(dest_ep)
                result=child.before
                print result
                if self.parse_hping(result,self.pkt_cnt) !=0:
-                  results['tcp']=1
+                  results[dest_ep]['tcp']=1
                else:
-                  results['tcp']=0
+                  results[dest_ep]['tcp']=0
+           else:
+               child.sendline(cmd_s)
+               child.expect('#')
+               print "Sent Only TCP SYN to %s" %(dest_ep)
+               result=child.before
+               print result
+               if self.parse_hping(result,self.pkt_cnt) !=0:
+                  results[dest_ep]['tcp']=1
+               else:
+                  results[dest_ep]['tcp']=0
         if protocol=='udp' or protocol=='all':
-           cmd = "hping3 %s --udp -p %s -c %s --fast -q" %(self.dest_ep,port,self.pkt_cnt)
+           cmd = "hping3 %s --udp -p %s -c %s --fast -q" %(dest_ep,port,self.pkt_cnt)
            child.sendline(cmd)
            child.expect('#')
            print 'Sent UDP packets'
            result=child.before
            print result
            if self.parse_hping(result,self.pkt_cnt) !=0:
-              results['udp']=1
+              results[dest_ep]['udp']=1
            else:
-              results['udp']=0
+              results[dest_ep]['udp']=0
       return results 
+
+

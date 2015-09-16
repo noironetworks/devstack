@@ -7,7 +7,7 @@ import datetime
 import string
 from libs.gbp_crud_libs import GBPCrud
 from libs.raise_exceptions import *
-from nat_utils import *
+from traff_from_extgw import *
 import uuid
 
 class DNAT_ExtGw_to_VMs(object):
