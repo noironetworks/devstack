@@ -92,19 +92,20 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
         vm7_subn = gbpcfg.get_vm_subnet('VM7')[1]
         dhcp_ns = gbpcfg.get_netns(self.ntk_node,vm7_subn)
         if self.vm_loc == 'diff_host_same_leaf' or self.vm_loc == 'diff_host_diff_leaf': 
-           vm9_ip = gbpcfg.get_vm_subnet('VM9',ret='ip')
-           print vm7_ip, vm7_subn, vm9_ip, dhcp_ns
-           gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm7_ip,vm9_ip)
+           dest_ip = gbpcfg.get_vm_subnet('VM9',ret='ip')
+           print vm7_ip, vm7_subn, dest_ip, dhcp_ns
+           gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm7_ip,dest_ip)
         if self.vm_loc == 'same_host':
-           vm8_ip = gbpcfg.get_vm_subnet('VM8',ret='ip')
-           print vm7_ip, vm7_subn, vm8_ip, dhcp_ns
-           gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm7_ip,vm8_ip)
+           dest_ip = gbpcfg.get_vm_subnet('VM8',ret='ip')
+           print vm7_ip, vm7_subn, dest_ip, dhcp_ns
+           gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm7_ip,dest_ip)
         results=gbppexptraff.test_run()
         print 'Results from the Testcase == ', results
-
+        if results == {}
+           return 0
         failed={}
         if proto[0] == 'all': # In 'all' proto is verified for PTGs with NO_PRS, PRS_NO_RULE, REM_PRS, hence below val ==1, then Fail, because pkts were not dropped
-           failed = {key: val for key,val in results.iteritems() if val == 1}
+           failed = {key: val for key,val in results[dest_ip].iteritems() if val == 1}
            if len(failed) > 0:
               print 'Following traffic_types %s = Failed' %(failed)
               return 0
@@ -113,8 +114,8 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
         else:
             implicit_allow = ['arp','dhcp','dns']
             allow_list = implicit_allow + proto
-            failed = {key: val for key,val in results.iteritems() if val == 0 and key in allow_list}
-            failed.update({key: val for key,val in results.iteritems() if val == 1 and key not in allow_list})
+            failed = {key: val for key,val in results[dest_ip].iteritems() if val == 0 and key in allow_list}
+            failed.update({key: val for key,val in results[dest_ip].iteritems() if val == 1 and key not in allow_list})
             if len(failed) > 0:
                print 'Following traffic_types %s = Failed' %(failed)
                return 0

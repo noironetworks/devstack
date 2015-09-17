@@ -29,13 +29,13 @@ for vm in vm_list:
 print 'VM-to-IP-NS == %s' %(vm_to_ip_ns)
 
 def verify_traff(results,target_vm_ip,proto):
-        """
-        Verifies the expected traffic result per testcase
-        :: proto - 'all'/'icmp'/'tcp', all = both icmp & tcp
-        """
-        print 'Results from the Testcase == ', results
-        failed ={}
-        for key,val in results.iteritems():
+    """
+    Verifies the expected traffic result per testcase
+    :: proto - 'all'/'icmp'/'tcp', all = both icmp & tcp
+    """
+    print 'Results from the Testcase == ', results
+    failed ={}
+    for key,val in results.iteritems():
             failed[key]={'icmp':'NA','tcp':'NA'}
             if proto == 'icmp' or proto == 'all':
                if val['icmp'] != 1:
@@ -47,19 +47,19 @@ def verify_traff(results,target_vm_ip,proto):
                   failed[key]={'icmp': 'FAIL'}
                if val['tcp'] != 1:
                   failed[key]={'tcp':'FAIL'}    
-        if len(failed) > 1:
+    if len(failed) > 1:
            for key in failed.keys():
                for k,v in target_vm_ip.iteritems(): #target_vm_ip is expected to be a dict
                    if key in v:
                       failed[k]=failed.pop(key) #Replacing the FIP by its VM Name
            #print failed
            return 0,failed
-        else:
+    else:
             return 1
 
 def test_traff_from_vm_to_allvms(vm_name,proto='all'):
     """
-    Test Traffic from Web-Server VM to rest of the other VMs' FIPs
+    Test Full Mesh Traffic from bw VMs' FIPs
     """
     global vm_to_ip_ns
     global vm_list
@@ -73,10 +73,19 @@ def test_traff_from_vm_to_allvms(vm_name,proto='all'):
     print dest_vm_fips
     flattended_dest_vm_fips = [fip for x in dest_vm_fips.values() for fip in x]
     print flattended_dest_vm_fips
-    dhcp_ns_websrvr = vm_to_ip_ns[vm_name][1]
-    websrvr_pvt_ip = vm_to_ip_ns[vm_name][0][0]
-    gbppexptraff = Gbp_pexp_traff(ntk_node,dhcp_ns_websrvr,websrvr_pvt_ip,flattended_dest_vm_fips)
+    dhcp_ns_vm = vm_to_ip_ns[vm_name][1]
+    vm_pvt_ip = vm_to_ip_ns[vm_name][0][0]
+    gbppexptraff = Gbp_pexp_traff(ntk_node,dhcp_ns_vm,vm_pvt_ip,flattended_dest_vm_fips)
     results=gbppexptraff.test_run(protocols=['icmp','tcp'],tcp_syn_only=1) #Run for all protocols irrespective of the contract type
     #print 'RESULTS == \n', results
     return verify_traff(results,dest_vm_fips,proto)
 
+def test_traff_anyvm_to_extgw(vm_name,extgw,proto=all)
+    """
+    Test Traffic from each VM to ExtGW
+    """
+    dhcp_ns_vm = vm_to_ip_ns[vm_name][1]
+    vm_pvt_ip = vm_to_ip_ns[vm_name][0][0]
+    gbppexptraff = Gbp_pexp_traff(ntk_node,dhcp_ns_vm,vm_pvt_ip,extgw)
+    results=gbppexptraff.test_run(protocols=['icmp','tcp'],tcp_syn_only=1) #Run for all protocols irrespective of the contract type
+    return verify_traff(results,extgw,proto)

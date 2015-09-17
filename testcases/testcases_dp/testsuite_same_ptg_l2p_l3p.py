@@ -90,17 +90,19 @@ class test_same_ptg_same_l2p_same_l3p(object):
         vm1_subn = gbpcfg.get_vm_subnet('VM1')[1]
         dhcp_ns = gbpcfg.get_netns(self.ntk_node,vm1_subn)
         if self.vm_loc == 'diff_host_same_leaf' or self.vm_loc == 'diff_host_diff_leaf': 
-           vm3_ip = gbpcfg.get_vm_subnet('VM3',ret='ip')
-           print vm1_ip, vm1_subn, vm3_ip, dhcp_ns
-           gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm1_ip,vm3_ip)
+           dest_ip = gbpcfg.get_vm_subnet('VM3',ret='ip')
+           print vm1_ip, vm1_subn, dest_ip, dhcp_ns
+           gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm1_ip,dest_ip)
         if self.vm_loc == 'same_host':
-           vm2_ip = gbpcfg.get_vm_subnet('VM2',ret='ip')
-           print vm1_ip, vm1_subn, vm2_ip, dhcp_ns
-           gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm1_ip,vm2_ip)
+           dest_ip = gbpcfg.get_vm_subnet('VM2',ret='ip')
+           print vm1_ip, vm1_subn, dest_ip, dhcp_ns
+           gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm1_ip,dest_ip)
         results=gbppexptraff.test_run()
         print 'Results from the Testcase == ', results 
+        if results == {}
+           return 0
         failed={}
-        failed = {key: val for key,val in results.iteritems() if val == 0}
+        failed = {key: val for key,val in results[dest_ip].iteritems() if val == 0}
         if len(failed) > 0:
             print 'Following traffic_types %s = FAILED' %(failed)
             return failed

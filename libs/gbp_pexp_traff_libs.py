@@ -39,8 +39,8 @@ class Gbp_pexp_traff(object):
          noicmp=0       
          print 'I am in No PIng'
       if noicmp==0 :
-         results={'arp':0,'dns':0,'dhcp':0,'icmp':0,'tcp':0,'udp':0}
-         return results
+         print "Cannot run any traffic test since Source VM is Unreachable"
+         return {}
       child.sendline('ip netns exec %s ssh noiro@%s' %(self.netns,self.src_ep))
       child.expect('password:')
       child.sendline('noir0123')
