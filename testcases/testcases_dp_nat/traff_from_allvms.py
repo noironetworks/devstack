@@ -15,9 +15,9 @@ from libs.raise_exceptions import *
 
 
 gbpcfg = Gbp_Config()
-gbpnova = Gbp_Nova('172.28.184.45')
-ntk_node = '172.28.184.46'
-vm_list = ['Web-Server','Web-Client-1','Web-Client-2','App-Server']
+gbpnova = Gbp_Nova('172.28.184.45') ## JISHNU
+ntk_node = '172.28.184.46' ## JISHNU
+vm_list = ['Web-Server','Web-Client-1','Web-Client-2','App-Server'] ##JISHNU
 vm_to_ip_ns = {}
 for vm in vm_list:
     vm_to_ip_list = gbpnova.get_any_vm_property(vm)['networks'][0]
@@ -65,6 +65,7 @@ def test_traff_from_vm_to_allvms(vm_name,proto='all'):
     global vm_list
     global ntk_node
     dest_vm_fips = {}
+    vm_list = ['Web-Server','Web-Client-1','Web-Client-2','App-Server'] ##JISHNU: Getting popped out on remove, since only this func gets called repeatedly and not the class
     dest_vms = vm_list
     dest_vms.remove(vm_name)
 
