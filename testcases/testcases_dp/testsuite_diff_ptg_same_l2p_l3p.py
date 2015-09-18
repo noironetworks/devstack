@@ -101,7 +101,7 @@ class test_diff_ptg_same_l2p_l3p(object):
            gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm4_ip,dest_ip)
         results=gbppexptraff.test_run()
         print 'Results from the Testcase == ', results
-        if results == {}
+        if results == {}:
            return 0
         failed={}
         if proto[0] == 'all': # In 'all' proto is verified for PTGs with NO_PRS, PRS_NO_RULE, REM_PRS, hence below val ==1, then Fail, because pkts were not dropped

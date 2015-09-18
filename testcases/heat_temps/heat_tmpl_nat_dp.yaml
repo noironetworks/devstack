@@ -283,7 +283,7 @@ resources:
         type: OS::GroupBasedPolicy::L2Policy
         depends_on: l3_policy_1
         properties:
-            name: "WEBL2P1"
+            name: "WEBL2P1" #Have been used statically inside natdpsetup.py
             l3_policy_id: { get_resource: l3_policy_1 }
             shared: False
 
@@ -291,7 +291,7 @@ resources:
         type: OS::GroupBasedPolicy::L2Policy
         depends_on: l3_policy_1
         properties:
-            name: "WEBL2P2"
+            name: "WEBL2P2" #Have been used statically inside natdpsetup.py
             l3_policy_id: { get_resource: l3_policy_1 }
             shared: False
 
@@ -299,7 +299,7 @@ resources:
         type: OS::GroupBasedPolicy::L2Policy
         depends_on: l3_policy_2
         properties:
-            name: "APPL2P1"
+            name: "APPL2P1" #Have been used statically inside natdpsetup.py
             l3_policy_id: { get_resource: l3_policy_2 }
             shared: False
 

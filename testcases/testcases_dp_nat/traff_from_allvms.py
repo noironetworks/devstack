@@ -80,7 +80,7 @@ def test_traff_from_vm_to_allvms(vm_name,proto='all'):
     #print 'RESULTS == \n', results
     return verify_traff(results,dest_vm_fips,proto)
 
-def test_traff_anyvm_to_extgw(vm_name,extgw,proto=all)
+def test_traff_anyvm_to_extgw(vm_name,extgw,proto=all):
     """
     Test Traffic from each VM to ExtGW
     """

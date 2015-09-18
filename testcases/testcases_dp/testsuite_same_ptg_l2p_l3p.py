@@ -99,7 +99,7 @@ class test_same_ptg_same_l2p_same_l3p(object):
            gbppexptraff = Gbp_pexp_traff(self.ntk_node,dhcp_ns,vm1_ip,dest_ip)
         results=gbppexptraff.test_run()
         print 'Results from the Testcase == ', results 
-        if results == {}
+        if results == {}:
            return 0
         failed={}
         failed = {key: val for key,val in results[dest_ip].iteritems() if val == 0}

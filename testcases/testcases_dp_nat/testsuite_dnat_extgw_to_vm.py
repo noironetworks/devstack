@@ -36,12 +36,9 @@ class DNAT_ExtGw_to_VMs(object):
         self.websrvr_ptg = objs_uuid['web_srvr_ptg_id']
         self.webclnt_ptg = objs_uuid['web_clnt_ptg_id']
         self.appsrvr_ptg = objs_uuid['app_ptg_id']
-        #self.test_2_prs = objs_uuid['shared_ruleset_norule_id']
-        #self.test_3_prs = objs_uuid['shared_ruleset_icmp_id']
-        #self.test_4_prs = objs_uuid['shared_ruleset_tcp_id']
-        self.test_2_prs = {'cc62c731-cdae-411c-b7b7-fbd99a47ea37'}
-        self.test_3_prs = {'f1a14d4e-3d0d-49d3-bd83-cba533bf25e0'}
-        self.test_4_prs = {'7d339f7b-5d4c-4e8a-868e-ced13951bf04'}
+        self.test_2_prs = {objs_uuid['shared_ruleset_norule_id']}
+        self.test_3_prs = {objs_uuid['shared_ruleset_icmp_id']}
+        self.test_4_prs = {objs_uuid['shared_ruleset_tcp_id']}
         self.test_5_prs = {objs_uuid['shared_ruleset_icmp_tcp_id']}
         self.dest_vm_fips = dest_vm_fips
         self.gbp_crud = GBPCrud(self.ostack_controller)

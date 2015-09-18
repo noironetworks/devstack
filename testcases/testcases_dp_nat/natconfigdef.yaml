@@ -14,6 +14,8 @@ controller_ip: '172.28.184.45'
 ntk_node: '172.28.184.46'
 az_comp_node: 'f3-compute-1.noiro.lab'
 ext_gw_rtr: '172.28.184.48'
+fip1_of_extgw: '1.103.1.1'
+fip2_of_extgw: '1.103.2.1'
 #vm_image: '"trusty-multi-if"'
 vm_image: 'ubuntu_multi_nics'
 

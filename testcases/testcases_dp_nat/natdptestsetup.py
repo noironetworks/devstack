@@ -37,10 +37,10 @@ class nat_dp_main_config(object):
       self.cntlr_ip = conf['controller_ip']
       self.extgw = conf['ext_gw_rtr']
       self.apic_ip = conf['apic_ip']
-      #self.setup_file = conf['main_setup_heat_temp']
       self.heat_temp_test = conf['main_setup_heat_temp']
       self.num_hosts = conf['num_comp_nodes']
       self.heat_stack_name = conf['heat_stack_name']
+      self.ips_of_extgw = [conf['fip1_of_extgw'],conf['fip2_of_extgw'],self.extgw]
       self.gbpcfg = Gbp_Config()
       self.gbpverify = Gbp_Verify()
       self.gbpnova = Gbp_Nova(self.cntlr_ip)
@@ -52,7 +52,7 @@ class nat_dp_main_config(object):
       Heat Stack Creates All Test Config
       Generate dict comprising VM-name and FIPs
       """
-      """
+      """ ## JISHNU 
       if self.gbpnova.quota_update()==0:
          self._log.info("\n ABORTING THE TESTSUITE RUN, Updating the Nova Quota's Failed")
          sys.exit(1)
@@ -76,10 +76,9 @@ class nat_dp_main_config(object):
       sleep(5) # Sleep 5s assuming that all objects areated in APIC
       self._log.info("\n ADDING SSH-Filter to Svc_epg created for every dhcp_agent")
       svc_epg_list = [
-                      'demo_same_ptg_l2p_l3p_bd',\
-                      'demo_diff_ptg_same_l2p_l3p_bd',\
-                      'demo_diff_ptg_l2p_same_l3p_bd',\
-                      'demo_srvr_bd','demo_clnt_bd'
+                      'APPL2P1',\
+                      'WEBL2P1',\
+                      'WEBL2P2'
                      ]
       create_add_filter(self.apic_ip,svc_epg_list)
       """

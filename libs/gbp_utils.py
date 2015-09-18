@@ -137,7 +137,7 @@ def create_add_filter(apic_ip,svc_epg,username='admin',password='noir0123',tenan
         #Create the noiro-ssh filter with ssh & rev-ssh subjects
 
         path = '/api/node/mo/uni/tn-%s/flt-noiro-ssh.json' %(tenant)
-        data = '{"vzFilter":{"attributes":{"dn":"uni/tn-%s/flt-noiro-ssh","name":"noiro-ssh","rn":"flt-noiro-ssh","status":"created"},"children":[{"vzEntry":{"attributes":{"dn":"uni/tn-admin/flt-noiro-ssh/e-ssh","name":"ssh","etherT":"ip","prot":"tcp","sFromPort":"22","sToPort":"22","rn":"e-ssh","status":"created"},"children":[]}},{"vzEntry":{"attributes":{"dn":"uni/tn-admin/flt-noiro-ssh/e-ssh-rev","name":"ssh-rev","etherT":"ip","prot":"tcp","dFromPort":"22","dToPort":"22","rn":"e-ssh-rev","status":"created"},"children":[]}}]}}' %(tenant)
+        data = '{"vzFilter":{"attributes":{"dn":"uni/tn-%s/flt-noiro-ssh","name":"noiro-ssh","rn":"flt-noiro-ssh","status":"created"},"children":[{"vzEntry":{"attributes":{"dn":"uni/tn-%s/flt-noiro-ssh/e-ssh","name":"ssh","etherT":"ip","prot":"tcp","sFromPort":"22","sToPort":"22","rn":"e-ssh","status":"created"},"children":[]}},{"vzEntry":{"attributes":{"dn":"uni/tn-%s/flt-noiro-ssh/e-ssh-rev","name":"ssh-rev","etherT":"ip","prot":"tcp","dFromPort":"22","dToPort":"22","rn":"e-ssh-rev","status":"created"},"children":[]}}]}}' %(tenant,tenant,tenant)
         req = apic.post(path, data)
         print req.text
 
