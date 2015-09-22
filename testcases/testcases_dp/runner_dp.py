@@ -20,7 +20,7 @@ def main():
     cfg_file = sys.argv[1]
     print "Setting up global config for all DP Testing"
     testbed_cfg = gbp_main_config(cfg_file)
-    #testbed_cfg.setup()
+    testbed_cfg.setup()
     
     # Fetch gbp objects via heat output
     gbpverify = Gbp_Verify()
@@ -41,8 +41,8 @@ def main():
        #now run the loop of test-combos
        for bdtype in ['vxlan']:
         for ip in ['ipv4']:
-         for vpc in ['vpc_vpc']:
-           for location in ['same_host','diff_host_diff_leaf']: 
+         for vpc in ['vpc']:
+           for location in ['diff_host_diff_leaf']: 
                    #Run the testcases specific to the initialized testsuite
                    log_string = "%s_%s_%s_%s" %(bdtype,ip,vpc,location)
                    testsuite.test_runner(log_string,location)

@@ -7,7 +7,7 @@ import datetime
 import string
 from libs.gbp_crud_libs import GBPCrud
 from libs.raise_exceptions import *
-from traff_from_extgw import *
+from traff_from_allvms import *
 import uuid
 
 class SNAT_VMs_to_ExtGw(object):
@@ -40,10 +40,9 @@ class SNAT_VMs_to_ExtGw(object):
         self.test_3_prs = {objs_uuid['shared_ruleset_icmp_id']}
         self.test_4_prs = {objs_uuid['shared_ruleset_tcp_id']}
         self.test_5_prs = {objs_uuid['shared_ruleset_icmp_tcp_id']}
-        self.dest_vm_fips = dest_vm_fips
         self.vm_list = ['App-Server','Web-Server','Web-Client-1','Web-Client-2']
         self.gbp_crud = GBPCrud(self.ostack_controller)
-        self.extgwips = ['1.103.1.1','1.103.2.1',self.extgwrtr]
+        self.extgwips = ['1.103.1.1','1.103.2.1',self.extgwrtr] ## JISHNU: TBD .. must be read from conf file
 
     def test_runner(self,vpc=0):
         """

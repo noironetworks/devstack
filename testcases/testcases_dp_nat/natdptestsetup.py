@@ -57,7 +57,6 @@ class nat_dp_main_config(object):
                   that setup was run before and the VMs exist
       """
       if getfips == 0:
-       """
        if self.gbpnova.quota_update()==0:
          self._log.info("\n ABORTING THE TESTSUITE RUN, Updating the Nova Quota's Failed")
          sys.exit(1)
@@ -71,7 +70,6 @@ class nat_dp_main_config(object):
             self._log.info("\n ABORTING THE TESTSUITE RUN, availability zone creation Failed")
             self.gbpnova.avail_zone('cli','delete',self.agg_id) #Cleanup Agg_ID
             sys.exit(1)
-       """
        if self.gbpheat.cfg_all_cli(1,self.heat_stack_name,heat_temp=self.heat_temp_test) == 0:
          self._log.info("\n ABORTING THE TESTSUITE RUN, HEAT STACK CREATE of %s Failed" %(self.heat_stack_name))
          #self.gbpheat.cfg_all_cli(0,self.heat_stack_name) ## Stack delete will cause cleanup

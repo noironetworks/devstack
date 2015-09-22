@@ -11,6 +11,10 @@ import itertools
 from prettytable import PrettyTable
 from Crypto.PublicKey import RSA
 from raise_exceptions import *
+from fabric.api import cd,run,env, hide, get, settings
+from fabric.contrib import files
+from time import sleep
+
 
 def sshClient(hostname, user, passwd,scp=0,file_name=''):
     sshclient = paramiko.SSHClient()
@@ -149,3 +153,20 @@ def create_add_filter(apic_ip,svc_epg,username='admin',password='noir0123',tenan
             data = '{"vzRsSubjFiltAtt":{"attributes":{"tnVzFilterName":"noiro-ssh","status":"created"},"children":[]}}'
             req = apic.post(path, data)
             print req.text
+
+def action_service(host_ip,service_name,action='restart',user='root',pwd='noir0123'):
+        """
+        Action = Stop,Start,Restart on Any Service
+        """
+        env.host_string = host_ip
+        env.user = user
+        env.pwd = pwd
+        with settings(warn_only=True):
+                #restart = run("systemctl %s %s.service" %(action,service_name))  JISHNU TBD
+                restart = run("systemctl restart agent-ovs.service" )
+                sleep(5)
+                if restart.succeeded:
+                   if run("systemctl status agent-ovs.service" ).find("active (running)") < 0:
+                      print 'ERROR: OpflexAgent is NOT ACTIVE or Running on Restart'
+                      return 0
+        return 1   

@@ -8,6 +8,7 @@ import string
 from libs.gbp_crud_libs import GBPCrud
 from libs.raise_exceptions import *
 from traff_from_extgw import *
+from libs.gbp_utils import *
 import uuid
 
 class DNAT_ExtGw_to_VMs(object):
@@ -115,6 +116,8 @@ class DNAT_ExtGw_to_VMs(object):
         for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
           if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
              return 0
+        action_service('172.28.184.46','agent-ovs') ## TBD JISHNU: NEEED TO BE REMOVED 
+        action_service('172.28.184.47','agent-ovs')
         run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips,proto='icmp')
         if isinstance(run_traffic,dict):
               self._log.info("\nFollowing Traffic Test from External GW Router Failed == %s" %(run_traffic))
@@ -135,6 +138,8 @@ class DNAT_ExtGw_to_VMs(object):
         for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
           if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
              return 0
+        action_service('172.28.184.46','agent-ovs')
+        action_service('172.28.184.47','agent-ovs')
         run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips,proto='tcp')
         if isinstance(run_traffic,dict):
               self._log.info("\nFollowing Traffic Test from External GW Router Failed == %s" %(run_traffic))
@@ -155,6 +160,8 @@ class DNAT_ExtGw_to_VMs(object):
         for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
           if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
              return 0
+        action_service('172.28.184.46','agent-ovs')
+        action_service('172.28.184.47','agent-ovs')
         run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips)
         if isinstance(run_traffic,dict):
               self._log.info("\nFollowing Traffic Test from External GW Router Failed == %s" %(run_traffic))
@@ -174,6 +181,8 @@ class DNAT_ExtGw_to_VMs(object):
         for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
           if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=None)==0:
              return 0
+        action_service('172.28.184.46','agent-ovs')
+        action_service('172.28.184.47','agent-ovs')
         run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips)
         if isinstance(run_traffic,dict):
               return 1
