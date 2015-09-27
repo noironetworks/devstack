@@ -1168,6 +1168,8 @@ install_gbpservice
 init_gbpservice
 install_gbpheat
 install_gbpui
+install_gbpapicapi
+install_gbpopflex
 
 # Extras Configuration
 # ====================

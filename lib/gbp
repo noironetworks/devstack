@@ -16,6 +16,8 @@
 
 GBPSERVICE_DIR=$DEST/gbpservice
 GBPCLIENT_DIR=$DEST/python-gbpclient
+GBPAPICAPI_DIR=$DEST/apicapi
+GBPOPFLEX_DIR=$DEST/python-opflex-agent
 GBPHEAT_DIR=$DEST/gbpautomation
 GBPUI_DIR=$DEST/gbpui
 NEUTRON_CONF_DIR=/etc/neutron
@@ -59,6 +61,18 @@ function install_gbpui {
     git_clone $GBPUI_REPO $GBPUI_DIR $GBPUI_BRANCH
     setup_develop $GBPUI_DIR
     ln -sf $GBPUI_DIR/gbpui/_*project*.py $HORIZON_DIR/openstack_dashboard/enabled
+}
+
+# install_apicapi() - Collect source and prepare
+function install_gbpapicapi {
+    git_clone $GBPAPICAPI_REPO $GBPAPICAPI_DIR $GBPAPICAPI_BRANCH
+    pip_install -e $GBPAPICAPI_DIR
+}
+
+# install_opflex() - Collect source and prepare
+function install_gbpopflex {
+    git_clone $GBPOPFLEX_REPO $GBPOPFLEX_DIR $GBPOPFLEX_BRANCH
+    pip_install -e $GBPOPFLEX_DIR
 }
 
 
