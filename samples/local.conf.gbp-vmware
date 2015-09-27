@@ -21,6 +21,10 @@ GBPHEAT_REPO=${GIT_BASE}/stackforge/group-based-policy-automation.git
 GBPHEAT_BRANCH=stable/juno
 GBPCLIENT_REPO=${GIT_BASE}/stackforge/python-group-based-policy-client.git
 GBPCLIENT_BRANCH=stable/juno
+GBPAPICAPI_REPO=${GIT_BASE}/noironetworks/apicapi.git
+GBPAPICAPI_BRANCH=master
+GBPOPFLEX_REPO=${GIT_BASE}/noironetworks/python-opflex-agent.git
+GBPOPFLEX_BRANCH=noiro
 
 # Pick up fix for VMware vCenter driver for nova
 NOVA_REPO=$GIT_BASE/noironetworks/nova.git
