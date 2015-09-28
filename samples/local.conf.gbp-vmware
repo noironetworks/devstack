@@ -58,6 +58,7 @@ SKIP_EXERCISES=volumes,trove,swift,sahara,euca,bundle,boot_from_volume,aggregate
 compute_driver=vmwareapi.VMwareVCDriver
 
 [vmware]
+# vCenter IP, username, password, and cluster
 host_ip=172.31.217.220
 host_username=root
 host_password=vmware
@@ -96,24 +97,29 @@ quota_router = -1
 quota_floatingip = -1
 
 [ml2_cisco_apic]
-apic_clear_node_profiles=True
-scope_names=False
-enable_arp_flooding=False
-apic_use_ssl=True
-apic_name_mapping=use_name
-use_vmm=True
-#use_vmm=False
-
-# OpenStack or VMware
-apic_vmm_type=vmware
-apic_domain_name=VMM-Dom
-
-apic_app_profile_name=noiro
-enable_aci_routing=True
+# APIC IP, username, login, etc.
 apic_hosts=172.31.217.221
 apic_username=admin
-vni_ranges=11000:11100
 apic_password=ins3965!
+apic_app_profile_name=noiro
+
+# Additional APIC configuration options
+use_vmm=True
+apic_use_ssl=True
+scope_names=False
+apic_name_mapping=use_name
+apic_clear_node_profiles=True
+enable_arp_flooding=False
+enable_aci_routing=True
+vni_ranges=11000:11100
+
+# Hypervisor type. Use OpenStack for KVM,
+# or VMware for vCenter/ESX
+apic_vmm_type=vmware
+
+# DVS to create in vCenter
+apic_domain_name=VMM-Dom
+
 
 [[post-config|/etc/neutron/plugins/ml2/ml2_conf.ini]]
 [ml2]
