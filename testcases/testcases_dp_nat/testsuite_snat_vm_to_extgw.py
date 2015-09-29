@@ -9,6 +9,7 @@ from libs.gbp_crud_libs import GBPCrud
 from libs.raise_exceptions import *
 from traff_from_allvms import *
 import uuid
+from libs.gbp_utils import *
 
 class SNAT_VMs_to_ExtGw(object):
 
@@ -42,7 +43,7 @@ class SNAT_VMs_to_ExtGw(object):
         self.test_5_prs = {objs_uuid['shared_ruleset_icmp_tcp_id']}
         self.vm_list = ['App-Server','Web-Server','Web-Client-1','Web-Client-2']
         self.gbp_crud = GBPCrud(self.ostack_controller)
-        self.extgwips = ['1.103.1.1','1.103.2.1',self.extgwrtr] ## JISHNU: TBD .. must be read from conf file
+        self.extgwips = ['1.102.1.1','1.102.2.1',self.extgwrtr]  ## JISHNU: THIS HAS TO BE CHANGED TOO
 
     def test_runner(self,vpc=0):
         """
@@ -126,6 +127,8 @@ class SNAT_VMs_to_ExtGw(object):
         for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
           if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
              return 0
+        action_service('172.28.184.36','agent-ovs')
+        action_service('172.28.184.37','agent-ovs')
         for srcvm in self.vm_list:
             self._log.info("\nTestcase_SNAT_%s_TO_EXTGW: APPLY ICMP CONTRACT and VERIFY TRAFFIC" %(srcvm))
             run_traffic = test_traff_anyvm_to_extgw(srcvm,self.extgwips,proto='icmp') 
@@ -151,6 +154,8 @@ class SNAT_VMs_to_ExtGw(object):
         for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
           if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
              return 0
+        action_service('172.28.184.36','agent-ovs')
+        action_service('172.28.184.37','agent-ovs')
         for srcvm in self.vm_list:
             self._log.info("\nTestcase_SNAT_%s_TO_EXTGW: APPLY TCP CONTRACT and VERIFY TRAFFIC" %(srcvm))
             run_traffic = test_traff_anyvm_to_extgw(srcvm,self.extgwips,proto='tcp')
@@ -177,6 +182,8 @@ class SNAT_VMs_to_ExtGw(object):
         for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
           if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
              return 0
+        action_service('172.28.184.36','agent-ovs')
+        action_service('172.28.184.37','agent-ovs')
         for srcvm in self.vm_list:
             self._log.info("\nTestcase_SNAT_%s_TO_EXTGW: APPLY ICMP-TCP-Combo CONTRACT and VERIFY TRAFFIC" %(srcvm))
             run_traffic = test_traff_anyvm_to_extgw(srcvm,self.extgwips,proto='tcp')

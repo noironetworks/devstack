@@ -9,13 +9,13 @@ key_name: 'gbpkey' #Ensure that it is same as mentioned in heat template
 
 # User editable config params
 num_comp_nodes: 2
-apic_ip: '172.28.184.40'
-controller_ip: '172.28.184.45'
-ntk_node: '172.28.184.46'
-az_comp_node: 'f3-compute-1.noiro.lab'
-ext_gw_rtr: '172.28.184.48'
-fip1_of_extgw: '1.103.1.1'
-fip2_of_extgw: '1.103.2.1'
+apic_ip: '172.28.184.30'
+controller_ip: '172.28.184.35'
+ntk_node: '172.28.184.36'
+az_comp_node: 'f2-compute-1.noiro.lab'
+ext_gw_rtr: '172.28.184.38'
+fip1_of_extgw: '1.102.1.1'
+fip2_of_extgw: '1.102.2.1'
 #vm_image: '"trusty-multi-if"'
 vm_image: 'ubuntu_multi_nics'
 

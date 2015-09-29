@@ -15,8 +15,8 @@ from libs.raise_exceptions import *
 
 
 gbpcfg = Gbp_Config()
-gbpnova = Gbp_Nova('172.28.184.45') ## JISHNU
-ntk_node = '172.28.184.46' ## JISHNU
+gbpnova = Gbp_Nova('172.28.184.35') ## JISHNU
+ntk_node = '172.28.184.36' ## JISHNU
 vm_list = ['Web-Server','Web-Client-1','Web-Client-2','App-Server'] ##JISHNU
 vm_to_ip_ns = {}
 for vm in vm_list:
@@ -36,23 +36,28 @@ def verify_traff(results,target_vm_ip,proto):
     print 'Results from the Testcase == ', results
     failed ={}
     for key,val in results.iteritems():
-            failed[key]={'icmp':'NA','tcp':'NA'}
-            if proto == 'icmp' or proto == 'all':
+            #failed[key]={'icmp':'NA','tcp':'NA'}
+            if proto == 'icmp':
                if val['icmp'] != 1:
                   failed[key]={'icmp': 'FAIL'}
                if val['tcp'] != 0:
                   failed[key]={'tcp':'FAIL'}
-            if proto == 'tcp' or proto == 'all':
+            if proto == 'tcp':
                if val['icmp'] != 0:
                   failed[key]={'icmp': 'FAIL'}
                if val['tcp'] != 1:
                   failed[key]={'tcp':'FAIL'}    
+            if proto == 'all':
+               if val['icmp'] != 1:
+                  failed[key]={'icmp': 'FAIL'}
+               if val['tcp'] != 1:
+                  failed[key]={'tcp':'FAIL'}
     if len(failed) > 1:
            for key in failed.keys():
                for k,v in target_vm_ip.iteritems(): #target_vm_ip is expected to be a dict
                    if key in v:
                       failed[k]=failed.pop(key) #Replacing the FIP by its VM Name
-           #print failed
+           print failed
            return 0,failed
     else:
             return 1

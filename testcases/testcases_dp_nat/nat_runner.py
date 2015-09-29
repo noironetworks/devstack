@@ -22,6 +22,7 @@ def main():
     objs_uuid['ipsofextgw'] = testbed_cfg.ips_of_extgw
     print 'OBJS_UUID == \n', objs_uuid
     print "Waiting for IP/MAC learning by Fabric via both VMM & Datapath before we start the test"
+
     #from testcases.testcases_dp_nat.testsuite_dnat_extgw_to_vm import DNAT_ExtGw_to_VMs
     #test_dnat_extgw_to_vm = DNAT_ExtGw_to_VMs(objs_uuid,targetVmFips)
     #test_dnat_extgw_to_vm.test_runner()

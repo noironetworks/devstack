@@ -8,7 +8,6 @@ import string
 from libs.gbp_crud_libs import GBPCrud
 from libs.raise_exceptions import *
 from traff_from_extgw import *
-from libs.gbp_utils import *
 import uuid
 
 class DNAT_ExtGw_to_VMs(object):
@@ -108,7 +107,7 @@ class DNAT_ExtGw_to_VMs(object):
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
-        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: APPLY ICMP CONTRACT and VERIFY TRAFFIC")
+        self._log.info("\nTestcase_DNAT_EXTGWRTR_TO_TENANT_VMs: APPLY ICMP CONTRACT and VERIFY TRAFFIC")
         prs = self.test_3_prs
         for ext_pol in [self.external_pol_1,self.external_pol_2]:
             if self.gbp_crud.update_gbp_external_policy(ext_pol,property_type='uuid',consumed_policy_rulesets=prs) == 0:
@@ -116,8 +115,6 @@ class DNAT_ExtGw_to_VMs(object):
         for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
           if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
              return 0
-        action_service('172.28.184.46','agent-ovs') ## TBD JISHNU: NEEED TO BE REMOVED 
-        action_service('172.28.184.47','agent-ovs')
         run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips,proto='icmp')
         if isinstance(run_traffic,dict):
               self._log.info("\nFollowing Traffic Test from External GW Router Failed == %s" %(run_traffic))
@@ -130,7 +127,7 @@ class DNAT_ExtGw_to_VMs(object):
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
-        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: APPLY TCP CONTRACT and VERIFY TRAFFIC")
+        self._log.info("\nTestcase_DNAT_EXTGWRTR_TO_TENANT_VMs: APPLY TCP CONTRACT and VERIFY TRAFFIC")
         prs = self.test_4_prs
         for ext_pol in [self.external_pol_1,self.external_pol_2]:
             if self.gbp_crud.update_gbp_external_policy(ext_pol,property_type='uuid',consumed_policy_rulesets=prs) == 0:
@@ -138,8 +135,6 @@ class DNAT_ExtGw_to_VMs(object):
         for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
           if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
              return 0
-        action_service('172.28.184.46','agent-ovs')
-        action_service('172.28.184.47','agent-ovs')
         run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips,proto='tcp')
         if isinstance(run_traffic,dict):
               self._log.info("\nFollowing Traffic Test from External GW Router Failed == %s" %(run_traffic))
@@ -152,7 +147,7 @@ class DNAT_ExtGw_to_VMs(object):
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
-        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: APPLY ICMP-TCP-COMBO CONTRACT and VERIFY TRAFFIC")
+        self._log.info("\nTestcase_DNAT_EXTGWRTR_TO_TENANT_VMs: APPLY ICMP-TCP-COMBO CONTRACT and VERIFY TRAFFIC")
         prs = self.test_5_prs
         for ext_pol in [self.external_pol_1,self.external_pol_2]:
             if self.gbp_crud.update_gbp_external_policy(ext_pol,property_type='uuid',consumed_policy_rulesets=prs) == 0:
@@ -160,8 +155,6 @@ class DNAT_ExtGw_to_VMs(object):
         for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
           if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=prs)==0:
              return 0
-        action_service('172.28.184.46','agent-ovs')
-        action_service('172.28.184.47','agent-ovs')
         run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips)
         if isinstance(run_traffic,dict):
               self._log.info("\nFollowing Traffic Test from External GW Router Failed == %s" %(run_traffic))
@@ -174,15 +167,13 @@ class DNAT_ExtGw_to_VMs(object):
         Remove the PRS/Contract from the PTG
         Test all traffic types
         """
-        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: REMOVING CONTRACT and VERIFY TRAFFIC")
+        self._log.info("\nTestcase_DNAT_EXTGWRTR_TO_TENANT_VMs: REMOVING CONTRACT and VERIFY TRAFFIC")
         for ext_pol in [self.external_pol_1,self.external_pol_2]:
             if self.gbp_crud.update_gbp_external_policy(ext_pol,property_type='uuid',consumed_policy_rulesets=None) == 0:
                return 0
         for ptg in [self.websrvr_ptg,self.webclnt_ptg,self.appsrvr_ptg]:
           if self.gbp_crud.update_gbp_policy_target_group(ptg,property_type='uuid',provided_policy_rulesets=None)==0:
              return 0
-        action_service('172.28.184.46','agent-ovs')
-        action_service('172.28.184.47','agent-ovs')
         run_traffic = traff_from_extgwrtr(self.extgwrtr,self.dest_vm_fips)
         if isinstance(run_traffic,dict):
               return 1
