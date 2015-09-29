@@ -17,6 +17,7 @@ class wrapper(object):
        """
        Read Config from Config File
        """
+       """
        self.all_class_init_params = {
                                      'cntlr_ip' : config_file['controller_ip'],
                                      'nova_agg' : config_file['nova_agg_name'],
@@ -39,7 +40,7 @@ class wrapper(object):
                                      'leaf1_spine_conn' : config_file['leaf1_to_spine_conn'],
                                      'leaf2_spine_conn' : config_file['leaf2_to_spine_conn']
                                     }
-
+       """
 
     def run(self):
        #Reason: Any new testcase added to the directory will be automatically run

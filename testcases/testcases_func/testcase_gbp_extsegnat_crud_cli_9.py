@@ -14,17 +14,17 @@ from commands import *
 
 def main():
     #Run the Testcase: # when suite_runner is ready ensure to delete main & __name__ at EOF
-    test = testcase_gbp_extsegnat_crud_cli_8()
+    test = testcase_gbp_extsegnat_crud_cli_9()
     test.test_runner()
     sys.exit(1)
 
-class  testcase_gbp_extsegnat_crud_cli_8(object):
+class  testcase_gbp_extsegnat_crud_cli_9(object):
     """
     This is a GBP NAT CRUD TestCase
     """
     # Initialize logging
     _log = logging.getLogger()
-    hdlr = logging.FileHandler('/tmp/testcase_gbp_extsegnat_crud_cli_8.log')
+    hdlr = logging.FileHandler('/tmp/testcase_gbp_extsegnat_crud_cli_9.log')
     #formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     formatter = logging.Formatter('%(asctime)s %(message)s')
     hdlr.setFormatter(formatter)
@@ -48,15 +48,17 @@ class  testcase_gbp_extsegnat_crud_cli_8(object):
         """
         Method to run the Testcase in Ordered Steps
         """
-        test_name = 'TESTCASE_GBP_EXTERNAL_SEGMENT_CRUD_8'
+        test_name = 'TESTCASE_GBP_EXTERNAL_SEGMENT_CRUD_9'
         #self.write_neutron_conf()
-        self._log.info("\nSteps of the TESTCASE_GBP_EXTERNAL_SEGMENT_CRUD_8 to be executed\n")
+        self._log.info("\nSteps of the TESTCASE_GBP_EXTERNAL_SEGMENT_NAT_CRUD_9 to be executed\n")
         testcase_steps = [self.test_step_CreateExternalSeg,
+                          self.test_step_CreateNatPool,
                           self.test_step_CreateMultiL3PolWExtSeg,
                           self.test_step_VerifyExternalSeg,
                           self.test_step_VerifyAllL3Pol,
                           self.test_step_DeleteAllL3Pol,
                           self.test_step_VerifyL3PRemInExternalSeg,
+                          self.test_step_DeleteNatPool,
                           self.test_step_DeleteExternalSeg,
                           self.test_step_VerifyExternalSegDel,
                           self.test_step_VerifyAllL3PolDel,
@@ -96,6 +98,15 @@ class  testcase_gbp_extsegnat_crud_cli_8(object):
             self.extseg_id = extseg[0]
             self.subnet = extseg[1]
     
+    def test_step_CreateNatPool(self):
+        """
+        Create a NAT Pool associated to the Ext Seg
+        """
+        self._log.info("\nStep: Create NAT Pool assiciating to the External Segment\n")
+        if self.config.gbp_policy_cfg_all(1,'natpool','test-nat',ip_pool='100.100.0.0/16',external_segment=self.extseg_id) != 1:
+           self._log.info("\n NAT Pool Creation failed\n") 
+           return 0
+
     def test_step_CreateMultiL3PolWExtSeg(self):
         """
         Create Multiple L3Policy with External Segment
@@ -153,6 +164,15 @@ class  testcase_gbp_extsegnat_crud_cli_8(object):
         self._log.info("\nStep: Verify the references of L3Policies got removed from External Segment\n")
         if self.verify.gbp_obj_ver_attr_all_values('extseg',self.extseg_id,'l3_policies',self.l3p_list) != 0:
            self._log.info("\nReferences of L3Policies still persists in External Segment even after their deletion\n")
+           return 0
+
+    def test_step_DeleteNatPool(self):
+        """
+        Delete NAT Pool
+        """
+        self._log.info("\nStep: Delete NAT Pool\n")
+        if self.config.gbp_policy_cfg_all(0,'natpool','test-nat') == 0:
+           self._log.info("\nDeletion of NAT Pool failed\n")
            return 0
 
     def test_step_DeleteExternalSeg(self):

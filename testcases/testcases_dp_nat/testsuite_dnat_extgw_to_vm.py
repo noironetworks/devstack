@@ -28,7 +28,7 @@ class DNAT_ExtGw_to_VMs(object):
         In this class we send Traffic b/w ExtGWRtr and end-points Web-Server(compnode-1)
         And App-Server(compnode-2)
         """
-        ## TBD JISHNU: WHAT all variables/classes to be instialized
+        ## TBD JISHNU: WHAT all variables/classes to be initialized
         self.extgwrtr = objs_uuid['external_gw']
         self.ostack_controller = objs_uuid['ostack_controller']
         self.external_pol_1 = objs_uuid['public_external_policy_id']
