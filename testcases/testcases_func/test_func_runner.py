@@ -1,23 +1,28 @@
 #!/usr/bin/env python
-import os,sys,optparse,platform
+import os
+import sys
+import optparse
+import platform
 import glob
 import importlib
 import yaml
 from commands import *
 
+
 def main():
-    f = open(sys.argv[1],'rt')
+    f = open(sys.argv[1], 'rt')
     test_conf = yaml.load(f)
     test_runner = wrapper(test_conf)
     test_runner.run()
 
+
 class wrapper(object):
-   
-    def __init__(self,config_file):
-       """
-       Read Config from Config File
-       """
-       """
+
+    def __init__(self, config_file):
+        """
+        Read Config from Config File
+        """
+        """
        self.all_class_init_params = {
                                      'cntlr_ip' : config_file['controller_ip'],
                                      'nova_agg' : config_file['nova_agg_name'],
@@ -43,14 +48,14 @@ class wrapper(object):
        """
 
     def run(self):
-       #Reason: Any new testcase added to the directory will be automatically run
-       #provided i's name string starts with testcase_gbp_aci_intg
-       for class_name in [filename.strip('.py') for filename in glob.glob('testcase_gbp_aci_intg*.py')]:
-           imp_class = importlib.import_module(class_name)
-           class_obj = getattr(imp_class,class_name)
-           if callable(class_obj):
-              cls = class_obj(self.all_class_init_params)
-              cls.test_runner()
+        # Reason: Any new testcase added to the directory will be automatically run
+        # provided i's name string starts with testcase_gbp_aci_intg
+        for class_name in [filename.strip('.py') for filename in glob.glob('testcase_gbp_aci_intg*.py')]:
+            imp_class = importlib.import_module(class_name)
+            class_obj = getattr(imp_class, class_name)
+            if callable(class_obj):
+                cls = class_obj(self.all_class_init_params)
+                cls.test_runner()
 
 if __name__ == '__main__':
-   main()
+    main()
