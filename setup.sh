@@ -3,6 +3,7 @@
 # Install Pexpect & Fabric needed for running GBP Automated TestSuite
 pip install pexpect
 pip install fabric
+pip install mailer
 
 # Add to PYTHONPATH
 export PYTHONPATH="${PYTHONPATH}:/root/gbpauto"

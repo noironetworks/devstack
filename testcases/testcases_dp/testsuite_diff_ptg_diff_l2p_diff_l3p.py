@@ -11,6 +11,7 @@ from libs.gbp_fab_traff_libs import Gbp_def_traff
 from libs.gbp_pexp_traff_libs import Gbp_pexp_traff
 from libs.raise_exceptions import *
 from testsuites_setup_cleanup import super_hdr
+from libs.gbp_utils import *
 
 class test_diff_ptg_diff_l2p_diff_l3p(object):
     """
@@ -65,19 +66,24 @@ class test_diff_ptg_diff_l2p_diff_l3p(object):
                     self.test_9_traff_apply_prs_all_proto,
                     self.test_10_traff_rem_prs
                     ]
-                 
+        test_results = {}         
         for test in test_list:
             try:
                if test()!=1:
-                  raise TestFailed("%s_%s_%s == FAILED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
+                  test_results[test] = 'FAIL'
+                  raise TestFailed("%s_%s_%s == FAIL" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
                else:
                   if 'test_1' in test.__name__ or 'test_2' in test.__name__:
-                     self._log.info("%s_%s_%s 10 subtestcases == PASSED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
+                     test_results[test] = 'PASS'
+                     self._log.info("%s_%s_%s 10 subtestcases == PASS" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
                   else:
-                     self._log.info("%s_%s_%s == PASSED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
+                     test_results[test] = 'PASS'
+                     self._log.info("%s_%s_%s == PASS" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
             except TestFailed as err:
                print err
-
+        # Send test results to generate test report
+        suite_name = "%s_%s" %(self.__class__.__name__,log_string)
+        gen_test_report(test_results,suite_name.upper(),'a')
 
     def verify_traff(self):
         """

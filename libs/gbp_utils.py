@@ -8,6 +8,7 @@ import sys
 import json
 import requests
 import itertools
+import HTML
 from prettytable import PrettyTable
 from Crypto.PublicKey import RSA
 from raise_exceptions import *
@@ -91,7 +92,37 @@ def gen_tc_header():
     for i in range(len(final_headers)):
         table.add_row(["TESTCASE_DP_%s" %(i+1),"TBA","%s" %(final_headers[i])])
     print table
-#tc_gen= gen_tc_header()
+
+def gen_test_report(test_results,suite,w_or_a):
+    """
+    The function generates HTML Test Report
+    ::test_results: This should be a dict
+                    comprising TC_name and Result
+    ::suite: TestSuite Name, will be used as Header
+    ::w_or_a: 'w'(write new file) or 'a'(append)
+    The function needs the installation of custom HTML lib
+    http://www.decalage.info/python/html
+    """
+    # Open an HTML file to show the output in a browser
+    HTMLFILE='/root/noiro_test_report.html'
+    f = open(HTMLFILE, '%s' %(w_or_a))
+    result_colors = {
+              'PASS': 'green',
+              'FAIL': 'red'
+               }
+
+    table = HTML.Table(header_row = ['%s' %(suite), 'Result'])
+    for test_id in sorted(test_results):
+        # create the colored cell:
+        color = result_colors[test_results[test_id]]
+        colored_result = HTML.TableCell(test_results[test_id], bgcolor=color)
+        # append the row with two cells:
+        table.rows.append([test_id, colored_result])
+    htmlcode = str(table)
+    #print htmlcode
+    f.write(htmlcode)
+    f.write('<p>')
+    f.close()
 
 def gen_ssh_key(keyname): #TODO
     key = RSA.generate(2048)

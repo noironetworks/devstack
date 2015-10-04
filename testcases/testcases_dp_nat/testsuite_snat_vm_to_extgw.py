@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
 import logging
@@ -31,7 +31,6 @@ class SNAT_VMs_to_ExtGw(object):
         In this class we send Traffic b/w ExtGWRtr and end-points Web-Server(compnode-1)
         And App-Server(compnode-2)
         """
-        # TBD JISHNU: WHAT all variables/classes to be instialized
         self.extgwrtr = objs_uuid['external_gw']
         self.ostack_controller = objs_uuid['ostack_controller']
         self.ntk_node = objs_uuid['ntk_node']
@@ -65,18 +64,22 @@ class SNAT_VMs_to_ExtGw(object):
             self.test_5_traff_apply_prs_icmp_tcp,
             self.test_6_traff_rem_prs
         ]
-
+        test_results = {}
         for test in test_list:
             try:
                 if test() != 1:
                     #raise TestFailed("%s_%s == FAILED" %(self.__class__.__name__.upper(),string.upper(test.__name__.lstrip('self.'))))
-                    self._log.info("\n%s_%s == FAILED" % (
+                    test_results[test] = 'FAIL'
+                    self._log.info("\n%s_%s == FAIL" % (
                         self.__class__.__name__.upper(), string.upper(test.__name__.lstrip('self.'))))
                 else:
-                    self._log.info("\n%s_%s == PASSED" % (
+                    test_results[test] = 'PASS'
+                    self._log.info("\n%s_%s == PASS" % (
                         self.__class__.__name__.upper(), string.upper(test.__name__.lstrip('self.'))))
             except TestFailed as err:
                 print err
+        # Send test results to generate test report
+        gen_test_report(test_results,'SNAT_TESTCASES','a')
         if vpc == 1:
             return 1  # TBD: JISHNU, waiting on fix proxy for getrootpasswd
         return 1

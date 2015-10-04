@@ -11,6 +11,8 @@ from libs.gbp_fab_traff_libs import Gbp_def_traff
 from libs.gbp_pexp_traff_libs import Gbp_pexp_traff
 from libs.raise_exceptions import *
 from testsuites_setup_cleanup import super_hdr
+from libs.gbp_utils import *
+
 
 class test_diff_ptg_same_l2p_l3p(object):
     """
@@ -43,11 +45,9 @@ class test_diff_ptg_same_l2p_l3p(object):
       self.test_2_prs = objs_uuid['demo_ruleset_norule_id'] 
       self.test_3_prs = objs_uuid['demo_ruleset_icmp_id']
       self.test_4_prs = objs_uuid['demo_ruleset_tcp_id']
-      self.test_5_prs = objs_uuid['demo_ruleset_udp_id']
-      self.test_6_prs = objs_uuid['demo_ruleset_icmp_tcp_id']
-      self.test_7_prs = objs_uuid['demo_ruleset_icmp_udp_id']
-      self.test_8_prs = objs_uuid['demo_ruleset_tcp_udp_id']
-      self.test_9_prs = objs_uuid['demo_ruleset_all_id']
+      self.test_5_prs = objs_uuid['demo_ruleset_icmp_tcp_id']
+      self.test_6_prs = objs_uuid['demo_ruleset_icmp_udp_id']
+      self.test_7_prs = objs_uuid['demo_ruleset_all_id']
 
 
     def test_runner(self,log_string,location):
@@ -60,26 +60,29 @@ class test_diff_ptg_same_l2p_l3p(object):
                     self.test_2_traff_app_prs_no_rule,
                     self.test_3_traff_apply_prs_icmp,
                     self.test_4_traff_apply_prs_tcp,
-                    self.test_5_traff_apply_prs_udp,
-                    self.test_6_traff_apply_prs_icmp_tcp,
-                    self.test_7_traff_apply_prs_icmp_udp,
-                    self.test_8_traff_apply_prs_tcp_udp,
-                    self.test_9_traff_apply_prs_all_proto,
-                    self.test_10_traff_rem_prs
+                    self.test_5_traff_apply_prs_icmp_tcp,
+                    self.test_6_traff_apply_prs_icmp_udp,
+                    self.test_7_traff_apply_prs_all_proto,
+                    self.test_8_traff_rem_prs
                     ]
-                 
+        test_results = {}         
         for test in test_list:
             try:
                if test()!=1:
-                  raise TestFailed("%s_%s_%s == FAILED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
+                  test_results[test] = 'FAIL'
+                  raise TestFailed("%s_%s_%s == FAIL" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
                else:
                   if 'test_1' in test.__name__ or 'test_2' in test.__name__:
-                     self._log.info("%s_%s_%s 10 subtestcases == PASSED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
+                     test_results[test] = 'PASS'
+                     self._log.info("%s_%s_%s 10 subtestcases == PASS" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
                   else:
-                     self._log.info("%s_%s_%s == PASSED" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
+                     test_results[test] = 'PASS'
+                     self._log.info("%s_%s_%s == PASS" %(self.__class__.__name__.upper(),log_string.upper(),string.upper(test.__name__.lstrip('self.'))))
             except TestFailed as err:
                print err
-
+        # Send test results to generate test report
+        suite_name = "%s_%s" %(self.__class__.__name__,log_string)
+        gen_test_report(test_results,suite_name.upper(),'a')
 
     def verify_traff(self,proto=['all']):
         """
@@ -171,72 +174,46 @@ class test_diff_ptg_same_l2p_l3p(object):
            print 'Updating PTG = Failed'
            return 0
 
-    def test_5_traff_apply_prs_udp(self):
-        """
-        Apply Policy-RuleSet to the in-use PTG
-        Send traffic
-        """
-        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: Apply UDP CONTRACT and Verify Traffic\n")
-        prs = self.test_5_prs
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
-           and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
-           return self.verify_traff(proto=['udp'])
-        else:
-           return 0
-
-    def test_6_traff_apply_prs_icmp_tcp(self):
+    def test_5_traff_apply_prs_icmp_tcp(self):
         """
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
         self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: Apply ICMP-TCP combo CONTRACT and Verify Traffic\n")
-        prs = self.test_6_prs
+        prs = self.test_5_prs
         if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
            return self.verify_traff(proto=['icmp','tcp'])
         else:
            return 0
 
-    def test_7_traff_apply_prs_icmp_udp(self):
+    def test_6_traff_apply_prs_icmp_udp(self):
         """
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
         self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: Apply ICMP-UDP combo CONTRACT and Verify Traffic\n")
-        prs = self.test_7_prs
+        prs = self.test_6_prs
         if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
            return self.verify_traff(proto=['icmp','udp'])
         else:
            return 0
 
-    def test_8_traff_apply_prs_tcp_udp(self):
-        """
-        Apply Policy-RuleSet to the in-use PTG
-        Send traffic
-        """
-        self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: Apply TCP-UDP combo CONTRACT and Verify Traffic\n")
-        prs = self.test_8_prs
-        if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
-           and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
-           return self.verify_traff(proto=['udp','tcp'])
-        else:
-           return 0
-
-    def test_9_traff_apply_prs_all_proto(self):
+    def test_7_traff_apply_prs_all_proto(self):
         """
         Apply Policy-RuleSet to the in-use PTG
         Send traffic
         """
         self._log.info("\nTestcase_DIFF_PTG_SAME_L2P_L3P: Apply ICMP-TCP-UDP combo CONTRACT and Verify Traffic\n")
-        prs = self.test_9_prs
+        prs = self.test_7_prs
         if self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_1,provided_policy_rule_sets="%s=scope" %(prs))\
            and self.gbpcfg.gbp_policy_cfg_all(2,'group',self.ptg_2,consumed_policy_rule_sets="%s=scope" %(prs)) !=0:
            return self.verify_traff(proto=['icmp','tcp','udp'])
         else:
            return 0
 
-    def test_10_traff_rem_prs(self):
+    def test_8_traff_rem_prs(self):
         """
         Remove the PRS/Contract from the PTG
         Test all traffic types
