@@ -79,7 +79,7 @@ class SNAT_VMs_to_ExtGw(object):
             except TestFailed as err:
                 print err
         # Send test results to generate test report
-        gen_test_report(test_results,'SNAT_TESTCASES','a')
+        gen_test_report(test_results, 'SNAT_TESTCASES', 'a')
         if vpc == 1:
             return 1  # TBD: JISHNU, waiting on fix proxy for getrootpasswd
         return 1
@@ -92,7 +92,8 @@ class SNAT_VMs_to_ExtGw(object):
         for srcvm in self.vm_list:
             self._log.info(
                 "\nTestcase_SNAT_%s_TO_EXTGW: NO CONTRACT APPLIED and VERIFY TRAFFIC" % (srcvm))
-            run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(srcvm, self.extgwips)
+            run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
+                srcvm, self.extgwips)
             if not isinstance(run_traffic, tuple):  # Negative check
                 failed.append(vm)
         if len(failed) > 1:
@@ -120,9 +121,10 @@ class SNAT_VMs_to_ExtGw(object):
         for srcvm in self.vm_list:
             self._log.info(
                 "\nTestcase_SNAT_%s_TO_EXTGW: APPLY CONTRACT BUT NO RULE and VERIFY TRAFFIC" % (srcvm))
-            run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(srcvm, self.extgwips)
+            run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
+                srcvm, self.extgwips)
             if not isinstance(run_traffic, tuple):  # Negative check
-                   failed.append(vm)
+                failed.append(vm)
         if len(failed) > 1:
             self._log.info(
                 "\nFollowing Traffic Test with NO Contract, Failed = %s" % (failed))
@@ -232,7 +234,8 @@ class SNAT_VMs_to_ExtGw(object):
         for srcvm in self.vm_list:
             self._log.info(
                 "\nTestcase_SNAT_%s_TO_EXTGW: CONTRACT REMOVED and VERIFY TRAFFIC" % (srcvm))
-            run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(srcvm, self.extgwips)
+            run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
+                srcvm, self.extgwips)
             if not isinstance(run_traffic, tuple):  # Negative check
                 failed[vm] = run_traffic[1]
         if len(failed) > 1:

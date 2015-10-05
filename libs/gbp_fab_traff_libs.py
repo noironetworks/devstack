@@ -123,7 +123,7 @@ class Gbp_def_traff(object):
     def test_mcast(self):
         return 1
 
-    def test_regular_icmp(self,src_vm_ip,target_ip,user='noiro',pwd='noir0123',pkt_cnt=3):
+    def test_regular_icmp(self,src_vm_ip,target_ip,user='noiro',pwd='noir0123',pkt_cnt=3,pkt_size='1000'):
         env.host_string = src_vm_ip
         env.user = user
         env.password = pwd
@@ -132,7 +132,7 @@ class Gbp_def_traff(object):
          if not isinstance(target_ip,list):
              target_ip = [target_ip]
          for target in target_ip:
-           result = run("ping %s -c %s -i 0.2 -W 1" %(target,pkt_cnt))
+           result = run("ping %s -c %s -i 0.2 -W 1 -s %s" %(target,pkt_cnt,pkt_size))
            if result.return_code == 0:
              if self.parse_hping(result,pkt_cnt,regular=1) == 0:
                 ret_results[target]=0

@@ -6,6 +6,9 @@ import re
 class Gbp_pexp_traff(object):
    
     def __init__(self,net_node_ip,netns,src_vm_ip,dst_vm_ip):
+      """
+      ::pkt_size, if set to JUMBO we will send out 9000
+      """
       self.net_node = net_node_ip
       self.netns = netns
       self.src_ep = src_vm_ip
@@ -24,7 +27,7 @@ class Gbp_pexp_traff(object):
         else:
             return 0
 
-    def test_run(self,protocols=['icmp','tcp','udp'],port=443,tcp_syn_only=0):
+    def test_run(self,protocols=['icmp','tcp','udp'],port=443,tcp_syn_only=0,jumbo=0):
       child = pexpect.spawn('ssh root@%s' %(self.net_node))
       child.expect('#')
       child.sendline('ifconfig eth2')
@@ -53,11 +56,15 @@ class Gbp_pexp_traff(object):
       child.expect('#')
       print child.before
       results = {}
+      if jumbo == 1:
+         self.pkt_size = 9000
+      else:
+         self.pkt_size = 1000
       for dest_ep in self.dest_ep:
        results[dest_ep] = {'icmp':'NA', 'tcp':'NA', 'udp':'NA'} #Setting results for all proto = NA, assuming no traffic is not tested for the specific proto
        for protocol in protocols:
         if protocol=='icmp' or protocol=='all':
-           child.sendline('hping3 %s --icmp -c %s --fast -q' %(dest_ep,self.pkt_cnt))
+           child.sendline('hping3 %s --icmp -c %s --fast -q -d %s' %(dest_ep,self.pkt_cnt,self.pkt_size)) #
            child.expect('#')
            print "Sent ICMP packets"
            result=child.before         

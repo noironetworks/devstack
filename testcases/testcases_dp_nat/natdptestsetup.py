@@ -50,7 +50,7 @@ class nat_dp_main_config(object):
         self.gbpnova = Gbp_Nova(self.cntlr_ip)
         self.gbpheat = Gbp_Heat(self.cntlr_ip)
 
-    def setup(self,nat_type,do_config=0):
+    def setup(self, nat_type, do_config=0):
         """
         Availability Zone creation
         Heat Stack Creates All Test Config
@@ -59,11 +59,19 @@ class nat_dp_main_config(object):
                     without having to run the whole setup, assuming
                     that setup was run before and the VMs exist
         """
+        # Enabling Route Reflector
+        self._log.info("\n Set the APIC Route Reflector")
+        cmd = 'apic-route-reflector --ssl SSL %s admin noir0123' % (
+            self.apic_ip)
+        getoutput(cmd)
+
         if nat_type == 'dnat':
-           self.heat_temp_test = self.dnat_heat_temp
+            self.heat_temp_test = self.dnat_heat_temp
         else:
-           self.heat_temp_test = self.snat_heat_temp
+            self.heat_temp_test = self.snat_heat_temp
         if do_config == 0:
+            self._log.info(
+                "\n Updating/Creating Nova Quota, Availability Zone")
             if self.gbpnova.quota_update() == 0:
                 self._log.info(
                     "\n ABORTING THE TESTSUITE RUN, Updating the Nova Quota's Failed")
@@ -82,7 +90,8 @@ class nat_dp_main_config(object):
                     self.gbpnova.avail_zone(
                         'cli', 'delete', self.agg_id)  # Cleanup Agg_ID
                     sys.exit(1)
-
+            self._log.info(
+                "\n Invoking Heat-Temp for Config creation of %s" % (nat_type.upper()))
             if self.gbpheat.cfg_all_cli(1, self.heat_stack_name, heat_temp=self.heat_temp_test) == 0:
                 self._log.info("\n ABORTING THE TESTSUITE RUN, HEAT STACK CREATE of %s Failed" % (
                     self.heat_stack_name))
