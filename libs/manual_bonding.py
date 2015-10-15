@@ -150,7 +150,6 @@ class Bonding(object):
                      'USER_CTL=no\n',
                      'PERSISTENT_DHCLIENT=1\n',
                      'DHCPRELEASE=1\n'
-                     'HWADDR=%s\n' %(vif_mac),
                      'TYPE=Ethernet\n'
                      'BOOTPROTO=dhcp\n',
                      'VLAN=yes\n',
@@ -173,6 +172,7 @@ class Bonding(object):
         rtcfg_file.close()
         files.upload_template("route-%s" %(vif_name),"/etc/sysconfig/network-scripts/")
         ### Adding the dhclient config for the Virtual Interface
+        """
         dhclient_cfg_lines = [
                               'send dhcp-client-identifier %s;\n' %(vif_mac),
                               'request subnet-mask, domain-name, domain-name-servers, host-name;\n',
@@ -190,6 +190,11 @@ class Bonding(object):
         dhclient_file.writelines(dhclient_cfg_lines)
         dhclient_file.close()
         files.upload_template("dhclient-%s.conf" %(vif_name),"/etc/dhcp/")
+        """
+        with settings(warn_only=True):
+             run("cp /etc/dhcp/dhclient-opflex1.4093.conf /etc/dhcp/dhclient-bond0.4093.conf")
+             cmd = "sed -i 's/send dhcp-client-identifier .*/send dhcp-client-identifier %s/' /etc/dhcp/dhclient-bond0.4093.conf" %(vif_mac)
+             run(cmd)
 
     def modify_opflex_conf(self):
         """

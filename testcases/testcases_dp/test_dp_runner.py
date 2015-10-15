@@ -44,6 +44,7 @@ def main():
         testsuite = val[1](objs_uuid)
 
         # now run the loop of test-combos
+        """
         for bdtype in ['vxlan', 'vlan']:
             for ip in ['ipv4', 'ipv6']:
                 for vpc in ['novpc', 'vpc_novpc', 'vpc_vpc']:
@@ -53,6 +54,17 @@ def main():
                         log_string = "%s_%s_%s_%s" % (
                             bdtype, ip, vpc, location)
                         testsuite.test_runner(log_string, location)
+        """
+        for bdtype in ['vxlan']:
+            for ip in ['ipv4']:
+                for vpc in ['novpc']:
+                    for location in ['same_host', 'diff_host_diff_leaf']:
+                        # Run the testcases specific to the initialized
+                        # testsuite
+                        log_string = "%s_%s_%s_%s" % (
+                            bdtype, ip, vpc, location)
+                        testsuite.test_runner(log_string, location)
+
         # Testsuite specific cleanup
         # header.cleanup()
     testbed_cfg.cleanup()

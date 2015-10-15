@@ -212,7 +212,7 @@ resources:
         properties:
             name: { get_param: public_external_policy_name}
             external_segments: [ { get_resource: public_external_segment } ]
-            shared: True
+            shared: False
 
     mgmt_external_segment:
         type: OS::GroupBasedPolicy::ExternalSegment
@@ -220,7 +220,7 @@ resources:
             name: { get_param: mgmt_external_segment_name}
             port_address_translation:
             external_routes:
-                - destination: '1.103.2.0/24'
+                - destination: '1.102.2.0/24'
                   nexthop:
             shared: True
 
@@ -229,7 +229,7 @@ resources:
         properties:
             name: { get_param: mgmt_external_policy_name }
             external_segments: [ { get_resource: mgmt_external_segment } ]
-            shared: True
+            shared: False
 
     public_nat_pool:
         type: OS::GroupBasedPolicy::NATPool

@@ -88,7 +88,6 @@ class gbp_main_config(object):
             # self.gbpheat.cfg_all_cli(0,self.heat_stack_name) ## Stack delete
             # will cause cleanup
             self.cleanup()
-            sys.exit(1)
 
         sleep(5)  # Sleep 5s assuming that all objects areated in APIC
         self._log.info(
@@ -110,4 +109,3 @@ class gbp_main_config(object):
         # Ntk namespace cleanup in Network-Node.. VM names are static
         # throughout the test-cycle
         self.gbpcfg.del_netns(self.ntk_node)
-        sys.exit(1)
