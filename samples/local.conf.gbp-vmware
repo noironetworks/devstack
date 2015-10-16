@@ -25,6 +25,8 @@ GBPAPICAPI_REPO=${GIT_BASE}/noironetworks/apicapi.git
 GBPAPICAPI_BRANCH=master
 GBPOPFLEX_REPO=${GIT_BASE}/noironetworks/python-opflex-agent.git
 GBPOPFLEX_BRANCH=noiro
+GBPAPICML2_REPO=${GIT_BASE}/tbachman/apic-ml2-driver.git
+GBPAPICML2_BRANCH=demo/vmware
 
 # Pick up fix for VMware vCenter driver for nova
 NOVA_REPO=$GIT_BASE/noironetworks/nova.git
