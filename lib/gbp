@@ -17,9 +17,11 @@
 GBPSERVICE_DIR=$DEST/gbpservice
 GBPCLIENT_DIR=$DEST/python-gbpclient
 GBPAPICAPI_DIR=$DEST/apicapi
+GBPAPICML2_DIR=$DEST/apic-ml2-driver
 GBPOPFLEX_DIR=$DEST/python-opflex-agent
 GBPHEAT_DIR=$DEST/gbpautomation
 GBPUI_DIR=$DEST/gbpui
+NEUTRON_DIR=$DEST/neutron
 NEUTRON_CONF_DIR=/etc/neutron
 NEUTRON_CONF=$NEUTRON_CONF_DIR/neutron.conf
 
@@ -63,10 +65,21 @@ function install_gbpui {
     ln -sf $GBPUI_DIR/gbpui/_*project*.py $HORIZON_DIR/openstack_dashboard/enabled
 }
 
-# install_apicapi() - Collect source and prepare
+# install_gbpapicapi() - Collect source and prepare
 function install_gbpapicapi {
     git_clone $GBPAPICAPI_REPO $GBPAPICAPI_DIR $GBPAPICAPI_BRANCH
     pip_install -e $GBPAPICAPI_DIR
+}
+
+# install_gbpapicml2() - Collect source and prepare
+function install_gbpapicml2 {
+    git_clone $GBPAPICML2_REPO $GBPAPICML2_DIR $GBPAPICML2_BRANCH
+    pip_install -e $GBPAPICML2_DIR
+    if [ ! -e $NEUTRON_DIR/neutron/plugins/ml2/drivers/cisco/apic.orig ]; then
+        mv $NEUTRON_DIR/neutron/plugins/ml2/drivers/cisco/apic $NEUTRON_DIR/neutron/plugins/ml2/drivers/cisco/apic.orig
+        ln -sf $GBPAPICML2_DIR/apic_ml2/neutron/plugins/ml2/drivers/cisco/apic $NEUTRON_DIR/neutron/plugins/ml2/drivers/cisco/apic
+        ln -sf $NEUTRON_DIR/neutron/plugins/ml2/drivers/cisco/apic.orig/apic_model.py $NEUTRON_DIR/neutron/plugins/ml2/drivers/cisco/apic/apic_model.py
+    fi
 }
 
 # install_opflex() - Collect source and prepare

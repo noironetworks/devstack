@@ -1170,6 +1170,7 @@ install_gbpheat
 install_gbpui
 sudo service apache2 restart
 install_gbpapicapi
+install_gbpapicml2
 install_gbpopflex
 
 # Extras Configuration
