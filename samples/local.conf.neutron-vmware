@@ -1,0 +1,137 @@
+[[local|localrc]]
+ADMIN_PASSWORD=abc123
+MYSQL_PASSWORD=abc123
+RABBIT_PASSWORD=abc123
+SERVICE_PASSWORD=$ADMIN_PASSWORD
+SERVICE_TOKEN=abc123
+
+
+# Using group-policy branches
+# ---------------------------
+
+GIT_BASE=http://github.com
+
+
+GBPSERVICE_REPO=${GIT_BASE}/stackforge/group-based-policy.git
+GBPSERVICE_BRANCH=master
+GBPUI_REPO=${GIT_BASE}/stackforge/group-based-policy-ui.git
+GBPUI_BRANCH=stable/kilo
+GBPHEAT_REPO=${GIT_BASE}/stackforge/group-based-policy-automation.git
+GBPHEAT_BRANCH=stable/kilo
+GBPCLIENT_REPO=${GIT_BASE}/stackforge/python-group-based-policy-client.git
+GBPCLIENT_BRANCH=stable/kilo
+GBPAPICAPI_REPO=${GIT_BASE}/noironetworks/apicapi.git
+GBPAPICAPI_BRANCH=master
+GBPOPFLEX_REPO=${GIT_BASE}/noironetworks/python-opflex-agent.git
+GBPOPFLEX_BRANCH=noiro
+GBPAPICML2_REPO=${GIT_BASE}/tbachman/apic-ml2-driver.git
+GBPAPICML2_BRANCH=master
+
+ML2_L3_PLUGIN=neutron.services.l3_router.l3_apic.ApicL3ServicePlugin,ncp
+
+# Pick up fix for VMware vCenter driver for nova
+NOVA_REPO=$GIT_BASE/noironetworks/nova.git
+NOVA_BRANCH=vmware/stablekilo
+
+# Enable neutron for group-policy-poc
+# -----------------------------------
+disable_service n-net
+enable_service q-svc
+#enable_service q-agt
+disable_service q-agt
+enable_service q-dhcp
+enable_service q-l3
+enable_service q-fwaas
+enable_service q-lbaas
+enable_service q-meta
+enable_service neutron
+#enable_service group-policy
+disable_service tempest
+
+SYSLOG=True
+DEST=/opt/stack
+SCREEN_LOGDIR=$DEST/logs/screen
+LOGFILE=$DEST/logs/stack.sh.log
+SKIP_EXERCISES=volumes,trove,swift,sahara,euca,bundle,boot_from_volume,aggregates,zaqar,client-env,neutron-adv-test,floating_ips,client-args,horizon,sec_groups
+
+#OFFLINE=True
+
+[[post-config|/etc/nova/nova.conf]]
+[DEFAULT]
+compute_driver=vmwareapi.VMwareVCDriver
+
+[vmware]
+# vCenter IP, username, password, and cluster
+host_ip=172.31.217.220
+host_username=root
+host_password=vmware
+cluster_name=testcluster
+
+# Group-based Policy configuration
+# Comment the lines below if you don't want to configure the datapath
+# and use the dummy driver.
+[[post-config|/etc/heat/heat.conf]]
+[DEFAULT]
+plugin_dirs=/opt/stack/gbpautomation/gbpautomation/heat
+
+[[post-config|/etc/neutron/neutron.conf]]
+[DEFAULT]
+apic_system_id=openstack
+
+[group_policy]
+policy_drivers=implicit_policy,apic
+
+[servicechain]
+servicechain_drivers = simplechain_driver
+
+[node_composition_plugin]
+#node_plumber = agnostic_plumber
+#node_drivers = heat_node_driver
+
+[quotas]
+default_quota = -1
+quota_network = -1
+quota_subnet = -1
+quota_port = -1
+quota_security_group = -1
+quota_security_group_rule = -1
+quota_router = -1
+quota_floatingip = -1
+
+[ml2_cisco_apic]
+# APIC IP, username, login, etc.
+apic_hosts=172.31.217.221
+apic_username=admin
+apic_password=ins3965!
+apic_app_profile_name=noiro
+
+# Additional APIC configuration options
+use_vmm=True
+apic_use_ssl=True
+scope_names=False
+apic_name_mapping=use_name
+apic_clear_node_profiles=True
+enable_arp_flooding=False
+enable_aci_routing=True
+vni_ranges=11000:11100
+
+# Hypervisor type. Use OpenStack for KVM,
+# or VMware for vCenter/ESX
+apic_vmm_type=vmware
+
+# DVS to create in vCenter
+apic_domain_name=VMM-Dom
+
+
+[[post-config|/etc/neutron/plugins/ml2/ml2_conf.ini]]
+[ml2]
+tenant_network_types = opflex
+type_drivers = local,flat,vlan,gre,vxlan, opflex
+
+mechanism_drivers = openvswitch,cisco_apic_ml2
+
+[ml2_type_vlan]
+#network_vlan_ranges = physnet1:1000:2999,physnet2
+
+
+
