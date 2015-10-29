@@ -1126,6 +1126,16 @@ if is_service_enabled nova; then
     init_nova_cells
 fi
 
+source $TOP_DIR/lib/gbp
+install_gbpclient
+install_gbpservice
+init_gbpservice
+install_gbpheat
+install_gbpui
+sudo service apache2 restart
+install_gbpapicapi
+install_gbpapicml2
+install_gbpopflex
 
 # Extras Configuration
 # ====================
