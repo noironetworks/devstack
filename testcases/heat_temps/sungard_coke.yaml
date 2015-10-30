@@ -13,50 +13,14 @@ parameters:
     label: mgmt_external_segment_name
     type: string
 
-  public_external_policy_name:
-    default: 'PublicExtPol'
-    description: Name of the external policy used by Public External Seg
-    label: public_external_policy_name
-    type: string
-
-  mgmt_external_policy_name:
-    default: 'MgmtExtPol'
-    description: Name of the external policy used by Mgmt External Seg
-    label: mgmt_external_policy_name
-    type: string
-
-  public_nat_pool_name:
-    default: 'PublicNATPool'
-    description: Name of the NAT Pool for Public Ext Seg
-    label: public_nat_pool_name
-    type: string
-
-  mgmt_nat_pool_name:
-    default: 'MgmtNATPool'
-    description: Name of the NAT Pool for Mgmt Ext Seg
-    label: mgmt_nat_pool_name
-    type: string
-
-  public_nat_ip_pool:
-    default: "1.102.1.0/24"
-    description: NAT IP-Pool for Public Ext Seg
-    label: public_nat_ip_pool
-    type: string
-
-  mgmt_nat_ip_pool:
-    default: '1.102.2.0/24'
-    description: NAT IP-Pool for Mgmt Ext Seg
-    label: mgmt_nat_ip_pool
-    type: string
-
   l3p_ip_pool:
-    default: '11.101.0.0/16'
+    default: '1.1.0.0/16'
     description: IP Pool for L3Policy
     label: l3p_ip_pool
     type: string
 
   l3_policy_name:
-    default: 'DCL3P'
+    default: 'DCL3P1_Coke'
     description: Name of the L3 policy used by Web and App PTGs
     label: l3_policy_name
     type: string
@@ -65,19 +29,19 @@ parameters:
     type: string
     label: web_ptg_name
     description: Name of the web PTG
-    default: 'WEBPTG'
+    default: 'WEBPTG_Coke'
 
   app_ptg_name:
     type: string
     label: app_ptg_name
     description: Name of the app PTG
-    default: 'APPPTG'
+    default: 'APPPTG_Coke'
 
   backup_ptg_name:
     type: string
     label: backup_ptg_name
     description: Name of the backup PTG
-    default: 'BACKUPPTG'
+    default: 'BACKUPPTG_Coke'
 
   vm_image:
     type: string
@@ -99,77 +63,27 @@ parameters:
 
 resources:
 
-#### Setup External Connectivity Resources ####
-
-    public_external_segment:
-        type: OS::GroupBasedPolicy::ExternalSegment
-        properties:
-            name: { get_param: public_external_segment_name}
-            port_address_translation:
-            external_routes:
-                - destination: '0.0.0.0/0'
-                  nexthop:
-            shared: True
-
-    public_external_policy:
-        type: OS::GroupBasedPolicy::ExternalPolicy
-        properties:
-            name: { get_param: public_external_policy_name}
-            external_segments: [ { get_resource: public_external_segment } ]
-            shared: True
-
-    mgmt_external_segment:
-        type: OS::GroupBasedPolicy::ExternalSegment
-        properties:
-            name: { get_param: mgmt_external_segment_name}
-            port_address_translation:
-            external_routes:
-                - destination: '200.200.0.0/24'
-                  nexthop:
-            shared: True
-
-    mgmt_external_policy:
-        type: OS::GroupBasedPolicy::ExternalPolicy
-        properties:
-            name: { get_param: mgmt_external_policy_name }
-            external_segments: [ { get_resource: mgmt_external_segment } ]
-            shared: True
-
-    public_nat_pool:
-        type: OS::GroupBasedPolicy::NATPool
-        properties:
-            name: { get_param: public_nat_pool_name}
-            external_segment_id: { get_resource: public_external_segment }
-            ip_pool: { get_param: public_nat_ip_pool }
-            shared: True
-
-    mgmt_nat_pool:
-        type: OS::GroupBasedPolicy::NATPool
-        properties:
-            name: { get_param: mgmt_nat_pool_name}
-            external_segment_id: { get_resource: mgmt_external_segment }
-            ip_pool: { get_param: mgmt_nat_ip_pool }
-            shared: True
-
-#### Setup L3/L2 Resources, L3Policy is SHARED ####
+#### Setup L3/L2 Resources ####
 
     l3_policy:
         type: OS::GroupBasedPolicy::L3Policy
-        depends_on: public_external_segment
         properties:
             name: { get_param: l3_policy_name}
             ip_pool: { get_param: l3p_ip_pool }
             subnet_prefix_length: 24
             external_segments:
-                 - external_segment_id: {get_resource: public_external_segment}
+                 - external_segment_id: 'bfecaff7-41f2-4ea0-aa64-34bba2d3d525'
                    allocated_address: []
-            shared: True
+            external_segments:
+                 - external_segment_id: 'ff58a875-ddd1-4501-8c9f-21dcaaa21f97'
+                   allocated_address: []
+            shared: False
 
     web_l2_policy:
         type: OS::GroupBasedPolicy::L2Policy
         depends_on: l3_policy
         properties:
-            name: "WEBL2P"
+            name: "WEBL2P1_Coke"
             l3_policy_id: { get_resource: l3_policy }
             shared: False
 
@@ -177,7 +91,7 @@ resources:
         type: OS::GroupBasedPolicy::L2Policy
         depends_on: l3_policy
         properties:
-            name: "APPL2P"
+            name: "APPL2P1_Coke"
             l3_policy_id: { get_resource: l3_policy }
             shared: False
 
@@ -185,26 +99,18 @@ resources:
         type: OS::GroupBasedPolicy::L2Policy
         depends_on: l3_policy
         properties:
-            name: "BACKUPL2P"
+            name: "BACKUPL2P1_Coke"
             l3_policy_id: { get_resource: l3_policy }
             shared: False
 
-#### Setup PTGs and NSP ####
-
-    network_service_policy:
-      type: OS::GroupBasedPolicy::NetworkServicePolicy
-      properties: 
-          name: "test-nsp"
-          network_service_params: [{'type': 'ip_pool', 'name': 'nat', 'value': 'nat_pool'}]
-          shared: True
+#### Setup PTGs and External Policy ####
 
     web_ptg:
         type: OS::GroupBasedPolicy::PolicyTargetGroup
-        depends_on: [web_l2_policy, network_service_policy]
+        depends_on: [web_l2_policy]
         properties:
             name: { get_param: web_ptg_name }
             l2_policy_id: { get_resource: web_l2_policy }
-            network_service_policy_id: { get_resource: network_service_policy}
             shared: False
 
     app_ptg:
@@ -213,7 +119,6 @@ resources:
         properties:
             name: { get_param: app_ptg_name }
             l2_policy_id: { get_resource: app_l2_policy }
-            network_service_policy_id: { get_resource: network_service_policy}
             shared: False
 
     backup_ptg:
@@ -247,18 +152,18 @@ resources:
             name: "app-pt1"
             policy_target_group_id: { get_resource: app_ptg }
 
-    backup_pt2:
+    backup_pt1:
         type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: backup_ptg
         properties:
-            name: "backup-pt2"
+            name: "backup-pt1"
             policy_target_group_id: { get_resource: backup_ptg }
   
     web_vm1:
         type: OS::Nova::Server
         depends_on: [web_pt1,backup_pt1]
         properties:
-            name: "Web-Server-1"
+            name: "CokeWebVM1"
             image: { get_param: vm_image }
             flavor: { get_param: vm_flavor }
             networks:
@@ -267,13 +172,13 @@ resources:
 
     app_vm1:
         type: OS::Nova::Server
-        depends_on: [app_pt1,backup_pt2]
+        depends_on: [app_pt1,backup_pt1]
         properties:
-            name: "App-Server-1"
+            name: "CokeAppVM1"
             image: { get_param: vm_image }
             flavor: { get_param: vm_flavor }
             networks:
                 - port: {get_attr: [app_pt1, port_id]}
-                - port: {get_attr: [backup_pt2, port_id]}
+                - port: {get_attr: [backup_pt1, port_id]}
 
 

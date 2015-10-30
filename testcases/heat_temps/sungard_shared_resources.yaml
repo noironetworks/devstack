@@ -1,0 +1,86 @@
+heat_template_version: 2013-05-23
+parameters:
+
+  public_external_segment_name:
+    default: 'PublicL3Out'
+    description: Name of the external segment used for Internet Access
+    label: public_external_segment_name
+    type: string
+
+  mgmt_external_segment_name:
+    default: 'MgmtL3Out'
+    description: Name of the external segment used for Inter-DC Mgmt
+    label: mgmt_external_segment_name
+    type: string
+
+  public_nat_pool_name:
+    default: 'PublicNATPool'
+    description: Name of the NAT Pool for Public Ext Seg
+    label: public_nat_pool_name
+    type: string
+
+  mgmt_nat_pool_name:
+    default: 'MgmtNATPool'
+    description: Name of the NAT Pool for Mgmt Ext Seg
+    label: mgmt_nat_pool_name
+    type: string
+
+  public_nat_ip_pool:
+    default: "103.103.1.0/24"
+    description: NAT IP-Pool for Public Ext Seg
+    label: public_nat_ip_pool
+    type: string
+
+  mgmt_nat_ip_pool:
+    default: '103.103.2.0/24'
+    description: NAT IP-Pool for Mgmt Ext Seg
+    label: mgmt_nat_ip_pool
+    type: string
+
+#### Setup External Connectivity  as Shared Resources ####
+resources:
+
+    public_external_segment:
+        type: OS::GroupBasedPolicy::ExternalSegment
+        properties:
+            name: { get_param: public_external_segment_name}
+            port_address_translation:
+            external_routes:
+                - destination: '0.0.0.0/0'
+                  nexthop:
+            shared: True
+
+    mgmt_external_segment:
+        type: OS::GroupBasedPolicy::ExternalSegment
+        properties:
+            name: { get_param: mgmt_external_segment_name}
+            port_address_translation:
+            external_routes:
+                - destination: '200.200.200.0/24'
+                  nexthop:
+            shared: True
+
+    public_nat_pool:
+        type: OS::GroupBasedPolicy::NATPool
+        properties:
+            name: { get_param: public_nat_pool_name}
+            external_segment_id: { get_resource: public_external_segment }
+            ip_pool: { get_param: public_nat_ip_pool }
+            shared: True
+
+    mgmt_nat_pool:
+        type: OS::GroupBasedPolicy::NATPool
+        properties:
+            name: { get_param: mgmt_nat_pool_name}
+            external_segment_id: { get_resource: mgmt_external_segment }
+            ip_pool: { get_param: mgmt_nat_ip_pool }
+            shared: True
+
+    network_service_policy:
+      type: OS::GroupBasedPolicy::NetworkServicePolicy
+      properties: 
+          name: "test-nsp"
+          network_service_params: [{'type': 'ip_pool', 'name': 'nat', 'value': 'nat_pool'}]
+          shared: True
+
+

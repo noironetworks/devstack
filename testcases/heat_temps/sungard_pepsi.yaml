@@ -1,0 +1,184 @@
+heat_template_version: 2013-05-23
+parameters:
+
+  public_external_segment_name:
+    default: 'PublicL3Out'
+    description: Name of the external segment used for Internet Access
+    label: public_external_segment_name
+    type: string
+
+  mgmt_external_segment_name:
+    default: 'MgmtL3Out'
+    description: Name of the external segment used for Inter-DC Mgmt
+    label: mgmt_external_segment_name
+    type: string
+
+  l3p_ip_pool:
+    default: '2.2.0.0/16'
+    description: IP Pool for L3Policy
+    label: l3p_ip_pool
+    type: string
+
+  l3_policy_name:
+    default: 'DCL3P2_Pepsi'
+    description: Name of the L3 policy used by Web and App PTGs
+    label: l3_policy_name
+    type: string
+
+  web_ptg_name:
+    type: string
+    label: web_ptg_name
+    description: Name of the web PTG
+    default: 'WEBPTG_Pepsi'
+
+  app_ptg_name:
+    type: string
+    label: app_ptg_name
+    description: Name of the app PTG
+    default: 'APPPTG_Pepsi'
+
+  backup_ptg_name:
+    type: string
+    label: backup_ptg_name
+    description: Name of the backup PTG
+    default: 'BACKUPPTG_Pepsi'
+
+  vm_image:
+    type: string
+    label: vm_image
+    description: Image for all VMs
+    default: ubuntu_multi_nics
+
+  vm_flavor:
+    type: string
+    label: vm_flavor
+    description: Flavor for all VMs
+    default: m1.medium
+
+  availability_zone:
+    type: string
+    label: availability_zone
+    description: The Availability Zone to Launch Instance
+    default: 'gbp_zone'
+
+resources:
+
+#### Setup L3/L2 Resources ####
+
+    l3_policy:
+        type: OS::GroupBasedPolicy::L3Policy
+        properties:
+            name: { get_param: l3_policy_name}
+            ip_pool: { get_param: l3p_ip_pool }
+            subnet_prefix_length: 24
+            external_segments:
+                 - external_segment_id: 'bfecaff7-41f2-4ea0-aa64-34bba2d3d525'
+                   allocated_address: []
+            external_segments:
+                 - external_segment_id: 'ff58a875-ddd1-4501-8c9f-21dcaaa21f97'
+                   allocated_address: []
+            shared: False
+
+    web_l2_policy:
+        type: OS::GroupBasedPolicy::L2Policy
+        depends_on: l3_policy
+        properties:
+            name: "WEBL2P2_Pepsi"
+            l3_policy_id: { get_resource: l3_policy }
+            shared: False
+
+    app_l2_policy:
+        type: OS::GroupBasedPolicy::L2Policy
+        depends_on: l3_policy
+        properties:
+            name: "APPL2P2_Pepsi"
+            l3_policy_id: { get_resource: l3_policy }
+            shared: False
+
+    backup_l2_policy:
+        type: OS::GroupBasedPolicy::L2Policy
+        depends_on: l3_policy
+        properties:
+            name: "BACKUPL2P2_Pepsi"
+            l3_policy_id: { get_resource: l3_policy }
+            shared: False
+
+#### Setup PTGs and External Policy ####
+
+    web_ptg:
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
+        depends_on: [web_l2_policy]
+        properties:
+            name: { get_param: web_ptg_name }
+            l2_policy_id: { get_resource: web_l2_policy }
+            shared: False
+
+    app_ptg:
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
+        depends_on: app_l2_policy
+        properties:
+            name: { get_param: app_ptg_name }
+            l2_policy_id: { get_resource: app_l2_policy }
+            shared: False
+
+    backup_ptg:
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
+        depends_on: backup_l2_policy
+        properties:
+            name: { get_param: backup_ptg_name }
+            l2_policy_id: { get_resource: backup_l2_policy }
+            shared: False
+
+#### Setup PTs and VMs ####
+
+    web_pt2:
+        type: OS::GroupBasedPolicy::PolicyTarget
+        depends_on: web_ptg
+        properties:
+            name: "web-pt2"
+            policy_target_group_id: { get_resource: web_ptg }
+    
+    backup_pt2:
+        type: OS::GroupBasedPolicy::PolicyTarget
+        depends_on: backup_ptg
+        properties:
+            name: "backup-pt2"
+            policy_target_group_id: { get_resource: backup_ptg }
+
+    app_pt2:
+        type: OS::GroupBasedPolicy::PolicyTarget
+        depends_on: app_ptg
+        properties:
+            name: "app-pt2"
+            policy_target_group_id: { get_resource: app_ptg }
+
+    backup_pt2:
+        type: OS::GroupBasedPolicy::PolicyTarget
+        depends_on: backup_ptg
+        properties:
+            name: "backup-pt2"
+            policy_target_group_id: { get_resource: backup_ptg }
+  
+    web_vm1:
+        type: OS::Nova::Server
+        depends_on: [web_pt2,backup_pt2]
+        properties:
+            name: "PepsiWebVM1"
+            image: { get_param: vm_image }
+            flavor: { get_param: vm_flavor }
+            networks:
+                - port: {get_attr: [web_pt2, port_id]}
+                - port: {get_attr: [backup_pt2, port_id]}
+
+    app_vm1:
+        type: OS::Nova::Server
+        depends_on: [app_pt2,backup_pt2]
+        properties:
+            name: "PepsiAppVM1"
+            image: { get_param: vm_image }
+            flavor: { get_param: vm_flavor }
+            networks:
+                - port: {get_attr: [app_pt2, port_id]}
+                - port: {get_attr: [backup_pt2, port_id]}
+
+
