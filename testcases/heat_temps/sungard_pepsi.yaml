@@ -74,7 +74,6 @@ resources:
             external_segments:
                  - external_segment_id: 'bfecaff7-41f2-4ea0-aa64-34bba2d3d525'
                    allocated_address: []
-            external_segments:
                  - external_segment_id: 'ff58a875-ddd1-4501-8c9f-21dcaaa21f97'
                    allocated_address: []
             shared: False
@@ -138,11 +137,11 @@ resources:
             name: "web-pt2"
             policy_target_group_id: { get_resource: web_ptg }
     
-    backup_pt2:
+    backup_pt3:
         type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: backup_ptg
         properties:
-            name: "backup-pt2"
+            name: "backup-pt3"
             policy_target_group_id: { get_resource: backup_ptg }
 
     app_pt2:
@@ -152,33 +151,33 @@ resources:
             name: "app-pt2"
             policy_target_group_id: { get_resource: app_ptg }
 
-    backup_pt2:
+    backup_pt4:
         type: OS::GroupBasedPolicy::PolicyTarget
         depends_on: backup_ptg
         properties:
-            name: "backup-pt2"
+            name: "backup-pt4"
             policy_target_group_id: { get_resource: backup_ptg }
   
     web_vm1:
         type: OS::Nova::Server
-        depends_on: [web_pt2,backup_pt2]
+        depends_on: [web_pt2,backup_pt3]
         properties:
             name: "PepsiWebVM1"
             image: { get_param: vm_image }
             flavor: { get_param: vm_flavor }
             networks:
                 - port: {get_attr: [web_pt2, port_id]}
-                - port: {get_attr: [backup_pt2, port_id]}
+                - port: {get_attr: [backup_pt3, port_id]}
 
     app_vm1:
         type: OS::Nova::Server
-        depends_on: [app_pt2,backup_pt2]
+        depends_on: [app_pt2,backup_pt4]
         properties:
             name: "PepsiAppVM1"
             image: { get_param: vm_image }
             flavor: { get_param: vm_flavor }
             networks:
                 - port: {get_attr: [app_pt2, port_id]}
-                - port: {get_attr: [backup_pt2, port_id]}
+                - port: {get_attr: [backup_pt4, port_id]}
 
 
