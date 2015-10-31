@@ -14,23 +14,23 @@ GIT_BASE=http://github.com
 
 
 GBPSERVICE_REPO=${GIT_BASE}/stackforge/group-based-policy.git
-GBPSERVICE_BRANCH=stable/juno
+GBPSERVICE_BRANCH=master
 GBPUI_REPO=${GIT_BASE}/stackforge/group-based-policy-ui.git
-GBPUI_BRANCH=stable/juno
+GBPUI_BRANCH=stable/kilo
 GBPHEAT_REPO=${GIT_BASE}/stackforge/group-based-policy-automation.git
-GBPHEAT_BRANCH=stable/juno
+GBPHEAT_BRANCH=stable/kilo
 GBPCLIENT_REPO=${GIT_BASE}/stackforge/python-group-based-policy-client.git
-GBPCLIENT_BRANCH=stable/juno
+GBPCLIENT_BRANCH=stable/kilo
 GBPAPICAPI_REPO=${GIT_BASE}/noironetworks/apicapi.git
 GBPAPICAPI_BRANCH=master
 GBPOPFLEX_REPO=${GIT_BASE}/noironetworks/python-opflex-agent.git
-GBPOPFLEX_BRANCH=noiro
-GBPAPICML2_REPO=${GIT_BASE}/tbachman/apic-ml2-driver.git
-GBPAPICML2_BRANCH=demo/vmware
+GBPOPFLEX_BRANCH=master
+GBPAPICML2_REPO=${GIT_BASE}/noironetworks/apic-ml2-driver.git
+GBPAPICML2_BRANCH=master
 
 # Pick up fix for VMware vCenter driver for nova
 NOVA_REPO=$GIT_BASE/noironetworks/nova.git
-NOVA_BRANCH=demo/vmware
+NOVA_BRANCH=vmware/stablekilo
 
 # Enable neutron for group-policy-poc
 # -----------------------------------
@@ -61,7 +61,7 @@ compute_driver=vmwareapi.VMwareVCDriver
 
 [vmware]
 # vCenter IP, username, password, and cluster
-host_ip=172.31.217.220
+host_ip=172.28.184.85
 host_username=root
 host_password=vmware
 cluster_name=testcluster
@@ -100,9 +100,9 @@ quota_floatingip = -1
 
 [ml2_cisco_apic]
 # APIC IP, username, login, etc.
-apic_hosts=172.31.217.221
+apic_hosts=172.28.184.80
 apic_username=admin
-apic_password=ins3965!
+apic_password=noir0123
 apic_app_profile_name=noiro
 
 # Additional APIC configuration options
@@ -120,7 +120,7 @@ vni_ranges=11000:11100
 apic_vmm_type=vmware
 
 # DVS to create in vCenter
-apic_domain_name=VMM-Dom
+apic_domain_name=vmware
 
 
 [[post-config|/etc/neutron/plugins/ml2/ml2_conf.ini]]
