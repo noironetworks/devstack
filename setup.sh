@@ -23,6 +23,6 @@ systemctl restart openstack-heat-engine.service
 systemctl restart openstack-heat-api.service
 
 # APIC Route-Reflector
-apic route-reflector-create --ssl --no-secure --apic-ip 172.28.184.40 --apic-username admin --apic-password noir0123
+apic route-reflector-create --ssl --no-secure --apic-ip <> --apic-username <> --apic-password <>
 
 

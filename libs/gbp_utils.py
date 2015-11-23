@@ -8,7 +8,7 @@ import sys
 import json
 import requests
 import itertools
-import HTML
+#import HTML
 from prettytable import PrettyTable
 from Crypto.PublicKey import RSA
 from raise_exceptions import *
@@ -93,6 +93,7 @@ def gen_tc_header():
         table.add_row(["TESTCASE_DP_%s" %(i+1),"TBA","%s" %(final_headers[i])])
     print table
 
+'''
 def gen_test_report(test_results,suite,w_or_a):
     """
     The function generates HTML Test Report
@@ -123,7 +124,8 @@ def gen_test_report(test_results,suite,w_or_a):
     f.write(htmlcode)
     f.write('<p>')
     f.close()
-
+'''
+"""
 def gen_ssh_key(keyname): #TODO
     key = RSA.generate(2048)
     with open("~/%s_private.key" %(keyname), 'w') as keyfile:
@@ -134,7 +136,7 @@ def gen_ssh_key(keyname): #TODO
          keyfile.write(pubkey.exportKey('OpenSSH'))
     pubkeypath="~/%s_public.pub" %(keyname)  
     return pubkeypath
-     
+"""    
 
 class Apic(object):
     def __init__(self, addr, user, passwd, ssl=True):

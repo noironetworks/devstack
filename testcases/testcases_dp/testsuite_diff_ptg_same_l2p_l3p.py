@@ -84,9 +84,6 @@ class test_diff_ptg_same_l2p_l3p(object):
                         ), log_string.upper(), string.upper(test.__name__.lstrip('self.'))))
             except TestFailed as err:
                 print err
-        # Send test results to generate test report
-        suite_name = "%s_%s" % (self.__class__.__name__, log_string)
-        gen_test_report(test_results, suite_name.upper(), 'a')
 
     def verify_traff(self, proto=['all']):
         """

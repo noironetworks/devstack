@@ -82,7 +82,7 @@ class DNAT_VMs_to_VMs(object):
             except TestFailed as err:
                 print err
         # Send test results to generate test report
-        gen_test_report(test_results, 'DNAT_VM2VM_TESTCASES', 'a')
+        #gen_test_report(test_results, 'DNAT_VM2VM_TESTCASES', 'a')
         if vpc == 1:
             return 1  # TBD: JISHNU, waiting on fix proxy for getrootpasswd
         return 1
