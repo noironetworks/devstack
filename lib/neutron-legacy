@@ -744,6 +744,10 @@ function start_neutron_agents {
     if is_service_enabled q-metering; then
         run_process q-metering "python $AGENT_METERING_BINARY --config-file $NEUTRON_CONF --config-file $METERING_AGENT_CONF_FILENAME"
     fi
+
+    if is_service_enabled q-cfgagt; then
+        run_process q-cfgagt "python $NEUTRON_BIN_DIR/neutron-cisco-cfg-agent --config-file $NEUTRON_CONF --config-file $NEUTRON_CONF_DIR/plugins/cisco/cisco_cfg_agent.ini --config-file $NEUTRON_CONF_DIR/plugins/cisco/cisco_device_manager_plugin.ini --config-file $NEUTRON_CONF_DIR/plugins/cisco/cisco_router_plugin.ini --log-file $SCREEN_LOGDIR/cisco-cfg-agent.log"
+    fi
 }
 
 # stop_neutron() - Stop running processes (non-screen)

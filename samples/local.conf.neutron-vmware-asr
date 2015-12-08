@@ -1,0 +1,305 @@
+[[local|localrc]]
+ADMIN_PASSWORD=abc123
+MYSQL_PASSWORD=abc123
+RABBIT_PASSWORD=abc123
+SERVICE_PASSWORD=$ADMIN_PASSWORD
+SERVICE_TOKEN=abc123
+
+
+# Using group-policy branches
+# ---------------------------
+
+GIT_BASE=http://github.com
+
+
+NEUTRON_REPO=${GIT_BASE}/CiscoSystems/neutron.git
+NEUTRON_BRANCH=asr1k-stable-kilo
+GBPSERVICE_REPO=${GIT_BASE}/stackforge/group-based-policy.git
+GBPSERVICE_BRANCH=stable/kilo
+GBPUI_REPO=${GIT_BASE}/stackforge/group-based-policy-ui.git
+GBPUI_BRANCH=stable/kilo
+GBPHEAT_REPO=${GIT_BASE}/stackforge/group-based-policy-automation.git
+GBPHEAT_BRANCH=stable/kilo
+GBPCLIENT_REPO=${GIT_BASE}/stackforge/python-group-based-policy-client.git
+GBPCLIENT_BRANCH=stable/kilo
+GBPAPICAPI_REPO=${GIT_BASE}/noironetworks/apicapi.git
+GBPAPICAPI_BRANCH=master
+GBPOPFLEX_REPO=${GIT_BASE}/noironetworks/python-opflex-agent.git
+GBPOPFLEX_BRANCH=master
+GBPAPICML2_REPO=${GIT_BASE}/noironetworks/apic-ml2-driver.git
+GBPAPICML2_BRANCH=master
+
+#ML2_L3_PLUGIN=neutron.services.l3_router.l3_apic.ApicL3ServicePlugin,ncp
+ML2_L3_PLUGIN=neutron.plugins.cisco.service_plugins.cisco_device_manager_plugin.CiscoDeviceManagerPlugin,neutron.plugins.cisco.service_plugins.cisco_router_plugin.CiscoRouterPlugin
+
+# Pick up fix for VMware vCenter driver for nova
+NOVA_REPO=$GIT_BASE/noironetworks/nova.git
+NOVA_BRANCH=vmware/stablekilo
+
+# Enable neutron for group-policy-poc
+# -----------------------------------
+disable_service n-net
+enable_service q-svc
+#enable_service q-agt
+disable_service q-agt
+enable_service q-dhcp
+enable_service q-l3
+enable_service q-fwaas
+enable_service q-lbaas
+enable_service q-meta
+enable_service neutron
+#enable_service group-policy
+disable_service tempest
+enable_service q-cfgagt
+
+SYSLOG=True
+DEST=/opt/stack
+SCREEN_LOGDIR=$DEST/logs/screen
+LOGFILE=$DEST/logs/stack.sh.log
+SKIP_EXERCISES=volumes,trove,swift,sahara,euca,bundle,boot_from_volume,aggregates,zaqar,client-env,neutron-adv-test,floating_ips,client-args,horizon,sec_groups
+
+#OFFLINE=True
+
+[[post-config|/etc/nova/nova.conf]]
+[DEFAULT]
+compute_driver=vmwareapi.VMwareVCDriver
+
+[vmware]
+# vCenter IP, username, password, and cluster
+host_ip=172.28.184.85
+host_username=root
+host_password=vmware
+cluster_name=testcluster
+
+# Group-based Policy configuration
+# Comment the lines below if you don't want to configure the datapath
+# and use the dummy driver.
+[[post-config|/etc/heat/heat.conf]]
+[DEFAULT]
+plugin_dirs=/opt/stack/gbpautomation/gbpautomation/heat
+
+[[post-config|/etc/neutron/neutron.conf]]
+[DEFAULT]
+apic_system_id=openstack1
+
+[group_policy]
+policy_drivers=implicit_policy,apic
+
+[servicechain]
+servicechain_drivers = simplechain_driver
+
+[node_composition_plugin]
+#node_plumber = agnostic_plumber
+#node_drivers = heat_node_driver
+
+[quotas]
+default_quota = -1
+quota_network = -1
+quota_subnet = -1
+quota_port = -1
+quota_security_group = -1
+quota_security_group_rule = -1
+quota_router = -1
+quota_floatingip = -1
+
+[ml2_cisco_apic]
+# APIC IP, username, login, etc.
+apic_hosts=172.28.184.80
+apic_username=admin
+apic_password=noir0123
+apic_app_profile_name=noiro
+
+# Additional APIC configuration options
+use_vmm=True
+apic_use_ssl=True
+scope_names=False
+apic_name_mapping=use_name
+apic_clear_node_profiles=True
+enable_arp_flooding=False
+enable_aci_routing=True
+vni_ranges=11000:11100
+
+# Hypervisor type. Use OpenStack for KVM,
+# or VMware for vCenter/ESX
+apic_vmm_type=vmware
+
+# DVS to create in vCenter
+apic_domain_name=vmware
+
+
+[[post-config|/etc/neutron/plugins/ml2/ml2_conf.ini]]
+[ml2]
+tenant_network_types = opflex
+type_drivers = local,flat,vlan,gre,vxlan, opflex
+
+mechanism_drivers = openvswitch,cisco_apic_ml2
+
+[ml2_type_vlan]
+#network_vlan_ranges = physnet1:1000:2999,physnet2
+
+
+[[post-config|/etc/neutron/plugins/cisco/cisco_cfg_agent.ini]]
+[cfg_agent]
+# (IntOpt) Interval in seconds for processing of service updates.
+# That is when the config agent's process_services() loop executes
+# and it lets each service helper to process its service resources.
+# rpc_loop_interval = 10
+
+# (StrOpt) Period-separated module path to the routing service helper class.
+# routing_svc_helper_class = neutron.plugins.cisco.cfg_agent.service_helpers.routing_svc_helper.RoutingServiceHelper
+
+# (IntOpt) Timeout value in seconds for connecting to a hosting device.
+# device_connection_timeout = 30
+
+# (IntOpt) The time in seconds until a backlogged hosting device is
+# presumed dead or booted to an error state.
+# hosting_device_dead_timeout = 300
+
+[DEFAULT]
+debug = True
+verbose = True
+
+[[post-config|/etc/neutron/plugins/cisco/cisco_device_manager_plugin.ini]]
+[hosting_device_credentials]
+[cisco_hosting_device_credential:1]
+name="Universal credential"
+description="Credential used for all hosting devices"
+user_name=stack
+password=cisco
+type=
+
+[hosting_devices_templates]
+[cisco_hosting_device_template:1]
+name=NetworkNode
+enabled=True
+host_category=Network_Node
+service_types=router:FW:VPN
+image=
+flavor=
+default_credentials_id=1
+configuration_mechanism=
+protocol_port=22
+booting_time=360
+slot_capacity=2000
+desired_slots_free=0
+tenant_bound=
+device_driver=neutron.plugins.cisco.device_manager.hosting_device_drivers.noop_hd_driver.NoopHostingDeviceDriver
+plugging_driver=neutron.plugins.cisco.device_manager.plugging_drivers.noop_plugging_driver.NoopPluggingDriver
+
+[cisco_hosting_device_template:2]
+name="CSR1kv template"
+enabled=True
+host_category=VM
+service_types=router:FW:VPN
+image=csr1kv_openstack_img
+flavor=621
+default_credentials_id=1
+configuration_mechanism=
+protocol_port=22
+booting_time=360
+slot_capacity=2000
+desired_slots_free=0
+tenant_bound=
+device_driver=neutron.plugins.cisco.device_manager.hosting_device_drivers.csr1kv_hd_driver.CSR1kvHostingDeviceDriver
+plugging_driver=neutron.plugins.cisco.device_manager.plugging_drivers.n1kv_trunking_driver.N1kvTrunkingPlugDriver
+
+[cisco_hosting_device_template:3]
+name="ASR1k template"
+enabled=True
+host_category=Hardware
+service_types=router:FW:VPN
+image=
+flavor=
+default_credentials_id=1
+configuration_mechanism=
+protocol_port=22
+booting_time=360
+slot_capacity=2000
+desired_slots_free=0
+tenant_bound=
+device_driver=neutron.plugins.cisco.device_manager.hosting_device_drivers.noop_hd_driver.NoopHostingDeviceDriver
+plugging_driver=neutron.plugins.cisco.device_manager.plugging_drivers.hw_vlan_trunking_driver.HwVLANTrunkingPlugDriver
+
+[hosting_devices]
+[cisco_hosting_device:3]
+template_id=3
+credentials_id=1
+device_id=SN:abcd1234efgh
+admin_state_up=True
+management_ip_address=10.0.100.5
+protocol_port=22
+tenant_bound=
+auto_delete=False
+
+#[cisco_hosting_device:4]
+#template_id=3
+#credentials_id=1
+#device_id=SN:efgh5678ijkl
+#admin_state_up=True
+#management_ip_address=10.0.100.6
+#protocol_port=22
+#tenant_bound=
+#auto_delete=False
+#
+#[cisco_hosting_device:5]
+#template_id=3
+#credentials_id=1
+#device_id=SN:ijkl9012mnop
+#admin_state_up=True
+#management_ip_address=10.0.100.7
+#protocol_port=22
+#tenant_bound=
+#auto_delete=False
+
+
+[plugging_drivers]
+[HwVLANTrunkingPlugDriver:3]
+internal_net_interface_1=*:GigabitEthernet/1/0/1
+external_net_interface_1=*:GigabitEthernet/2/0/1
+
+#[HwVLANTrunkingPlugDriver:4]
+#internal_net_interface_1=*:GigabitEthernet/1/0/2
+#external_net_interface_1=*:GigabitEthernet/2/0/3
+#
+#[HwVLANTrunkingPlugDriver:5]
+#internal_net_interface_1=*:GigabitEthernet/1/0/4
+#external_net_interface_1=*:GigabitEthernet/1/0/5
+#
+
+[[post-config|/etc/neutron/plugins/cisco/cisco_router_plugin.ini]]
+# Name of default router type to create. Must be a unique name.
+default_router_type = ASR1kv_router
+
+[router_types]
+[cisco_router_type:1]
+name=Namespace_Neutron_router
+description="Neutron router implemented in Linux network namespace"
+template_id=1
+shared=True
+slot_need=0
+scheduler=
+driver=
+cfg_agent_service_helper=
+cfg_agent_driver=
+
+[cisco_router_type:2]
+name=CSR1kv_router
+description="Neutron router implemented in Cisco CSR1kv device"
+template_id=2
+shared=True
+slot_need=10
+scheduler=neutron.plugins.cisco.l3.schedulers.l3_router_hosting_device_scheduler.L3RouterHostingDeviceLongestRunningScheduler
+driver=neutron.plugins.cisco.l3.drivers.noop_routertype_driver.NoopL3RouterDriver
+cfg_agent_service_helper=neutron.plugins.cisco.cfg_agent.service_helpers.routing_svc_helper.RoutingServiceHelper
+cfg_agent_driver=neutron.plugins.cisco.cfg_agent.device_drivers.csr1kv.csr1kv_routing_driver.CSR1kvRoutingDriver
+
+[cisco_router_type:3]
+name=ASR1kv_router
+description="Neutron router implemented in Cisco ASR1k device"
+template_id=3
+shared=True
+slot_need=2
+scheduler=neutron.plugins.cisco.l3.schedulers.l3_router_hosting_device_scheduler.L3RouterHostingDeviceHARandomScheduler
+driver=neutron.plugins.cisco.l3.drivers.asr1k.asr1k_routertype_driver.ASR1kL3RouterDriver
+cfg_agent_service_helper=neutron.plugins.cisco.cfg_agent.service_helpers.routing_svc_helper.RoutingServiceHelper
+cfg_agent_driver=neutron.plugins.cisco.cfg_agent.device_drivers.asr1k.asr1k_routing_driver.ASR1kRoutingDriver
