@@ -11,6 +11,8 @@ SERVICE_TOKEN=abc123
 
 GIT_BASE=http://github.com
 
+SEGMENTATION_ID=1001
+
 
 NEUTRON_REPO=${GIT_BASE}/CiscoSystems/neutron.git
 NEUTRON_BRANCH=asr1k-stable-kilo
@@ -24,8 +26,8 @@ GBPCLIENT_REPO=${GIT_BASE}/stackforge/python-group-based-policy-client.git
 GBPCLIENT_BRANCH=stable/kilo
 GBPAPICAPI_REPO=${GIT_BASE}/noironetworks/apicapi.git
 GBPAPICAPI_BRANCH=master
-GBPOPFLEX_REPO=${GIT_BASE}/noironetworks/python-opflex-agent.git
-GBPOPFLEX_BRANCH=master
+GBPOPFLEX_REPO=${GIT_BASE}/tbachman/python-opflex-agent.git
+GBPOPFLEX_BRANCH=hack/asr-integration
 GBPAPICML2_REPO=${GIT_BASE}/noironetworks/apic-ml2-driver.git
 GBPAPICML2_BRANCH=master
 
@@ -57,6 +59,10 @@ DEST=/opt/stack
 SCREEN_LOGDIR=$DEST/logs/screen
 LOGFILE=$DEST/logs/stack.sh.log
 SKIP_EXERCISES=volumes,trove,swift,sahara,euca,bundle,boot_from_volume,aggregates,zaqar,client-env,neutron-adv-test,floating_ips,client-args,horizon,sec_groups
+Q_PLUGIN_EXTRA_CONF_PATH=etc/neutron/plugins/cisco
+#Q_PLUGIN_EXTRA_CONF_FILES[0]=cisco_cfg_agent.ini
+Q_PLUGIN_EXTRA_CONF_FILES[0]=cisco_device_manager_plugin.ini
+Q_PLUGIN_EXTRA_CONF_FILES[1]=cisco_router_plugin.ini
 
 #OFFLINE=True
 
@@ -160,6 +166,10 @@ debug = True
 verbose = True
 
 [[post-config|/etc/neutron/plugins/cisco/cisco_device_manager_plugin.ini]]
+[general]
+# Name of the L3 admin tenant
+l3_admin_tenant = admin
+
 [hosting_device_credentials]
 [cisco_hosting_device_credential:1]
 name="Universal credential"
@@ -186,22 +196,6 @@ tenant_bound=
 device_driver=neutron.plugins.cisco.device_manager.hosting_device_drivers.noop_hd_driver.NoopHostingDeviceDriver
 plugging_driver=neutron.plugins.cisco.device_manager.plugging_drivers.noop_plugging_driver.NoopPluggingDriver
 
-[cisco_hosting_device_template:2]
-name="CSR1kv template"
-enabled=True
-host_category=VM
-service_types=router:FW:VPN
-image=csr1kv_openstack_img
-flavor=621
-default_credentials_id=1
-configuration_mechanism=
-protocol_port=22
-booting_time=360
-slot_capacity=2000
-desired_slots_free=0
-tenant_bound=
-device_driver=neutron.plugins.cisco.device_manager.hosting_device_drivers.csr1kv_hd_driver.CSR1kvHostingDeviceDriver
-plugging_driver=neutron.plugins.cisco.device_manager.plugging_drivers.n1kv_trunking_driver.N1kvTrunkingPlugDriver
 
 [cisco_hosting_device_template:3]
 name="ASR1k template"
@@ -226,49 +220,22 @@ template_id=3
 credentials_id=1
 device_id=SN:abcd1234efgh
 admin_state_up=True
-management_ip_address=10.0.100.5
+management_ip_address=10.30.120.252
 protocol_port=22
 tenant_bound=
 auto_delete=False
 
-#[cisco_hosting_device:4]
-#template_id=3
-#credentials_id=1
-#device_id=SN:efgh5678ijkl
-#admin_state_up=True
-#management_ip_address=10.0.100.6
-#protocol_port=22
-#tenant_bound=
-#auto_delete=False
-#
-#[cisco_hosting_device:5]
-#template_id=3
-#credentials_id=1
-#device_id=SN:ijkl9012mnop
-#admin_state_up=True
-#management_ip_address=10.0.100.7
-#protocol_port=22
-#tenant_bound=
-#auto_delete=False
-
 
 [plugging_drivers]
 [HwVLANTrunkingPlugDriver:3]
-internal_net_interface_1=*:GigabitEthernet/1/0/1
-external_net_interface_1=*:GigabitEthernet/2/0/1
-
-#[HwVLANTrunkingPlugDriver:4]
-#internal_net_interface_1=*:GigabitEthernet/1/0/2
-#external_net_interface_1=*:GigabitEthernet/2/0/3
-#
-#[HwVLANTrunkingPlugDriver:5]
-#internal_net_interface_1=*:GigabitEthernet/1/0/4
-#external_net_interface_1=*:GigabitEthernet/1/0/5
-#
+internal_net_interface_1=*:GigabitEthernet1/0/7
+external_net_interface_1=*:GigabitEthernet1/0/1
 
 [[post-config|/etc/neutron/plugins/cisco/cisco_router_plugin.ini]]
+[routing]
 # Name of default router type to create. Must be a unique name.
 default_router_type = ASR1kv_router
+#default_router_type = Namespace_Neutron_router
 
 [router_types]
 [cisco_router_type:1]
@@ -281,17 +248,6 @@ scheduler=
 driver=
 cfg_agent_service_helper=
 cfg_agent_driver=
-
-[cisco_router_type:2]
-name=CSR1kv_router
-description="Neutron router implemented in Cisco CSR1kv device"
-template_id=2
-shared=True
-slot_need=10
-scheduler=neutron.plugins.cisco.l3.schedulers.l3_router_hosting_device_scheduler.L3RouterHostingDeviceLongestRunningScheduler
-driver=neutron.plugins.cisco.l3.drivers.noop_routertype_driver.NoopL3RouterDriver
-cfg_agent_service_helper=neutron.plugins.cisco.cfg_agent.service_helpers.routing_svc_helper.RoutingServiceHelper
-cfg_agent_driver=neutron.plugins.cisco.cfg_agent.device_drivers.csr1kv.csr1kv_routing_driver.CSR1kvRoutingDriver
 
 [cisco_router_type:3]
 name=ASR1kv_router
