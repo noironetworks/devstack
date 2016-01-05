@@ -17,7 +17,7 @@ from testcases.testcases_dp.testsuite_diff_ptg_diff_l2p_diff_l3p import test_dif
 def main():
     header_to_suite_map = {'header1': [header1, test_same_ptg_same_l2p_same_l3p],
                            'header2': [header2, test_diff_ptg_same_l2p_l3p],
-                           'header3': [header3, test_diff_ptg_diff_l2p_same_l3p],
+                            'header3': [header3, test_diff_ptg_diff_l2p_same_l3p],
                            'header4': [header4, test_diff_ptg_diff_l2p_diff_l3p]}
 
     # Build the Test Config to be used for all DataPath Testcases
@@ -57,14 +57,13 @@ def main():
         """
         for bdtype in ['vxlan']:
             for ip in ['ipv4']:
-                for vpc in ['novpc']:
-                    for location in ['same_host', 'diff_host_diff_leaf']:
+                for vpc in ['vpc']:
+                    for location in ['diff_host_diff_leaf','same_host']:
                         # Run the testcases specific to the initialized
                         # testsuite
                         log_string = "%s_%s_%s_%s" % (
                             bdtype, ip, vpc, location)
                         testsuite.test_runner(log_string, location)
-
         # Testsuite specific cleanup
         # header.cleanup()
     testbed_cfg.cleanup()

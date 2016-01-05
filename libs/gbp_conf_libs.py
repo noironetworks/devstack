@@ -172,7 +172,7 @@ class Gbp_Config(object):
         _log.info(cmd)
         # Execute the cmd
         cmd_out = getoutput(cmd)
-        #_log.info(cmd_out)
+        #_log.info(cmd_out) 
         # Catch for non-exception error strings, even though try clause succeded
         for err in self.err_strings:
             if re.search(r'\b%s\b' %(err), cmd_out, re.I):
@@ -340,6 +340,7 @@ class Gbp_Config(object):
         env.host_string = net_node_ip
         env.user = 'root'
         env.password = 'noir0123'
+        
         if isinstance(subnet,list):
            netns_list = []
            with settings(warn_only=True):
@@ -371,8 +372,10 @@ class Gbp_Config(object):
         env.host_string = net_node_ip
         env.user = 'root'
         env.password = 'noir0123'
+        run("neutron-netns-cleanup")
         if netns == []:
          with settings(warn_only=True):
+                run("neutron-netns-cleanup")
                 result = run("ip netns | grep qdhcp")
                 netns = [x.strip() for x in result.split('\n')]
         for ns in netns:

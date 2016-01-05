@@ -19,13 +19,17 @@ class gbp_main_config(object):
     The intent of this class is to setup the complete GBP config 
     needed for running all DP testcases
     """
+
     # Initialize logging
-    logging.basicConfig(
-        format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
+    #logging.basicConfig(level=logging.INFO)
     _log = logging.getLogger(__name__)
-    hdlr = logging.FileHandler('/tmp/test_gbp_dp_main_config.log')
     _log.setLevel(logging.INFO)
-    _log.setLevel(logging.DEBUG)
+    # create a logfile handler
+    hdlr = logging.FileHandler('/tmp/test_gbp_dp_main_config.log')
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    hdlr.setFormatter(formatter)
+    # Add the handler to the logger
+    _log.addHandler(hdlr)
 
     def __init__(self, cfg_file):
         """
@@ -60,22 +64,25 @@ class gbp_main_config(object):
         getoutput(cmd)
 
         # Updating/Enabling Nova config for quota & availability-zone
-        self._log.info("\n Update/Enable Nova Quoat & Availability Zone")
+        self._log.info("\n Update/Enable Nova Quota & Availability Zone")
         if self.gbpnova.quota_update() == 0:
-            self._log.info(
+            self._log.error(
                 "\n ABORTING THE TESTSUITE RUN, Updating the Nova Quota's Failed")
             sys.exit(1)
         if self.num_hosts > 1:
-            self.agg_id = self.gbpnova.avail_zone(
+            try:
+               self.agg_id = self.gbpnova.avail_zone(
                 'api', 'create', self.nova_agg, avail_zone_name=self.nova_az)
-            if self.agg_id == 0:
-                self._log.info(
-                    "\n ABORTING THE TESTSUITE RUN,nova host aggregate creation Failed")
+            except Exception, e:
+                self._log.error(
+                    "\n ABORTING THE TESTSUITE RUN,nova host aggregate creation Failed", exc_info=True)
                 sys.exit(1)
             self._log.info(" Agg %s" % (self.agg_id))
-            if self.gbpnova.avail_zone('api', 'addhost', self.agg_id, hostname=self.comp_node) == 0:
-                self._log.info(
-                    "\n ABORTING THE TESTSUITE RUN, availability zone creation Failed")
+            try:
+             self.gbpnova.avail_zone('api', 'addhost', self.agg_id, hostname=self.comp_node)
+            except Exception, e:
+                self._log.error(
+                    "\n ABORTING THE TESTSUITE RUN, availability zone creation Failed", exc_info=True)
                 self.gbpnova.avail_zone(
                     'cli', 'delete', self.agg_id)  # Cleanup Agg_ID
                 sys.exit(1)
@@ -83,7 +90,7 @@ class gbp_main_config(object):
         # Invoking Heat Stack for building up the Openstack Config
         self._log.info("\n Invoking Heat Stack for building config and VMs")
         if self.gbpheat.cfg_all_cli(1, self.heat_stack_name, heat_temp=self.heat_temp_test) == 0:
-            self._log.info(
+            self._log.error(
                 "\n ABORTING THE TESTSUITE RUN, Heat-Stack create of %s Failed" % (self.heat_stack_name))
             # self.gbpheat.cfg_all_cli(0,self.heat_stack_name) ## Stack delete
             # will cause cleanup
@@ -99,9 +106,11 @@ class gbp_main_config(object):
             'demo_srvr_bd', 'demo_clnt_bd'
         ]
         create_add_filter(self.apic_ip, svc_epg_list)
+        sleep(15)
 
     def cleanup(self):
         # Need to call for instance delete if there is an instance
+        self._log.info("Cleaning Up The Test Config")
         self.gbpheat.cfg_all_cli(0, self.heat_stack_name)
         self.gbpnova.avail_zone('cli', 'removehost',
                                 self.nova_agg, hostname=self.comp_node)
