@@ -38,13 +38,13 @@ parameters:
     type: string
 
   public_nat_ip_pool:
-    default: "3.103.1.0/24"
+    default: "55.55.55.0/24"
     description: NAT IP-Pool for Public Ext Seg
     label: public_nat_ip_pool
     type: string
 
   mgmt_nat_ip_pool:
-    default: '3.103.2.0/24'
+    default: '66.66.66.0/24'
     description: NAT IP-Pool for Mgmt Ext Seg
     label: mgmt_nat_ip_pool
     type: string

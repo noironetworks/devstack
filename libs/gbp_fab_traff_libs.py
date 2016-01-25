@@ -56,9 +56,9 @@ class Gbp_def_traff(object):
         env.user = user
         env.password = pwd
         print "Sending TCP SYN,SYN ACK,SYN-ACK-FIN to %s" %(target_ip)
-        cmd_s = "sudo hping3 %s -S -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt)
-        cmd_sa = "sudo hping3 %s -S -A -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt)
-        cmd_saf = "sudo hping3 %s -S -A -F -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt)
+        cmd_s = "sudo hping3 %s -S -V -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt)
+        cmd_sa = "sudo hping3 %s -S -A -V -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt)
+        cmd_saf = "sudo hping3 %s -S -A -F -V -p %s -c %s --fast -q" %(target_ip,port,pkt_cnt)
         with settings(warn_only=True):
            for cmd in [cmd_s,cmd_sa,cmd_saf]:
               result = run(cmd)

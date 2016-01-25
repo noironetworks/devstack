@@ -4,6 +4,7 @@ import sys
 import logging
 import os
 import datetime
+import pprint
 import string
 from libs.gbp_crud_libs import GBPCrud
 from libs.raise_exceptions import *
@@ -15,14 +16,15 @@ from libs.gbp_utils import *
 class SNAT_VMs_to_ExtGw(object):
 
     # Initialize logging
-    logging.basicConfig(
-        format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
+    # logging.basicConfig(level=logging.INFO)
     _log = logging.getLogger(__name__)
-    hdlr = logging.FileHandler('/tmp/testsuite_dnat_extgw_to_vms.log')
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-    hdlr.setFormatter(formatter)
-    _log.addHandler(hdlr)
     _log.setLevel(logging.INFO)
+    # create a logfile handler
+    hdlr = logging.FileHandler('/tmp/testsuite_snat_vms_to_extgw.log')
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    hdlr.setFormatter(formatter)
+    # Add the handler to the logger
+    _log.addHandler(hdlr)
 
     def __init__(self, objs_uuid):
         """
@@ -62,27 +64,35 @@ class SNAT_VMs_to_ExtGw(object):
             self.test_3_traff_apply_prs_icmp,
             self.test_4_traff_apply_prs_tcp,
             self.test_5_traff_apply_prs_icmp_tcp,
-            self.test_6_traff_rem_prs
+            self.test_6_traff_apply_prs_icmp_tcp_with_jumbo,
+            self.test_7_traff_rem_prs
         ]
         test_results = {}
+        abort = 0
         for test in test_list:
-            try:
-                if test() != 1:
-                    #raise TestFailed("%s_%s == FAILED" %(self.__class__.__name__.upper(),string.upper(test.__name__.lstrip('self.'))))
-                    test_results[test] = 'FAIL'
-                    self._log.info("\n%s_%s == FAIL" % (
+                repeat_test = 1
+                while repeat_test < 4:
+                  if test() == 1:
+                     break
+                  if test() == 2:
+                     abort = 1
+                     break
+                  self._log.warning("Repeat Run of the Testcase = %s" %(test.__name__.lstrip('self.')))
+                  repeat_test += 1
+                if repeat_test == 4:
+                    test_results[string.upper(test.__name__.lstrip('self.'))] = 'FAIL'
+                    self._log.error("\n%s_%s == FAIL" % (
                         self.__class__.__name__.upper(), string.upper(test.__name__.lstrip('self.'))))
+                elif abort == 1:
+                     test_results[string.upper(test.__name__.lstrip('self.'))] = 'ABORT'
+                     self._log.error("\n%s_%s == ABORT" % (
+                         self.__class__.__name__.upper(), string.upper(test.__name__.lstrip('self.'))))
+                     break
                 else:
-                    test_results[test] = 'PASS'
+                    test_results[string.upper(test.__name__.lstrip('self.'))] = 'PASS'
                     self._log.info("\n%s_%s == PASS" % (
                         self.__class__.__name__.upper(), string.upper(test.__name__.lstrip('self.'))))
-            except TestFailed as err:
-                print err
-        # Send test results to generate test report
-        #gen_test_report(test_results, 'SNAT_TESTCASES', 'a')
-        if vpc == 1:
-            return 1  # TBD: JISHNU, waiting on fix proxy for getrootpasswd
-        return 1
+        pprint.pprint(test_results)
 
     def test_1_traff_with_no_prs(self):
         """
@@ -94,8 +104,11 @@ class SNAT_VMs_to_ExtGw(object):
                 "\nTestcase_SNAT_%s_TO_EXTGW: NO CONTRACT APPLIED and VERIFY TRAFFIC" % (srcvm))
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
                 srcvm, self.extgwips)
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = ABORTED" %(srcvm))
+               return 2
             if not isinstance(run_traffic, tuple):  # Negative check
-                failed.append(vm)
+                failed.append(srcvm)
         if len(failed) > 1:
             self._log.info(
                 "\nFollowing Traffic Test with NO Contract Failed = %s" % (failed))
@@ -124,7 +137,7 @@ class SNAT_VMs_to_ExtGw(object):
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
                 srcvm, self.extgwips)
             if not isinstance(run_traffic, tuple):  # Negative check
-                failed.append(vm)
+                failed.append(srcvm)
         if len(failed) > 1:
             self._log.info(
                 "\nFollowing Traffic Test with NO Contract, Failed = %s" % (failed))
@@ -147,15 +160,13 @@ class SNAT_VMs_to_ExtGw(object):
         for ptg in [self.websrvr_ptg, self.webclnt_ptg, self.appsrvr_ptg]:
             if self.gbp_crud.update_gbp_policy_target_group(ptg, property_type='uuid', provided_policy_rulesets=prs) == 0:
                 return 0
-        action_service('172.28.184.36', 'agent-ovs')
-        action_service('172.28.184.37', 'agent-ovs')
         for srcvm in self.vm_list:
             self._log.info(
                 "\nTestcase_SNAT_%s_TO_EXTGW: APPLY ICMP CONTRACT and VERIFY TRAFFIC" % (srcvm))
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
                 srcvm, self.extgwips, proto='icmp')
             if isinstance(run_traffic, tuple):
-                failed[vm] = run_traffic[1]
+                failed[srcvm] = run_traffic[1]
         if len(failed) > 0:
             self._log.info(
                 "\nFollowing Traffic Test Failed After Applying ICMP Contract == %s" % (failed))
@@ -178,15 +189,13 @@ class SNAT_VMs_to_ExtGw(object):
         for ptg in [self.websrvr_ptg, self.webclnt_ptg, self.appsrvr_ptg]:
             if self.gbp_crud.update_gbp_policy_target_group(ptg, property_type='uuid', provided_policy_rulesets=prs) == 0:
                 return 0
-        action_service('172.28.184.36', 'agent-ovs')
-        action_service('172.28.184.37', 'agent-ovs')
         for srcvm in self.vm_list:
             self._log.info(
                 "\nTestcase_SNAT_%s_TO_EXTGW: APPLY TCP CONTRACT and VERIFY TRAFFIC" % (srcvm))
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
                 srcvm, self.extgwips, proto='tcp')
             if isinstance(run_traffic, tuple):
-                failed[vm] = run_traffic[1]
+                failed[srcvm] = run_traffic[1]
         if len(failed) > 0:
             self._log.info(
                 "\nFollowing Traffic Test Failed After Applying TCP Contract == %s" % (failed))
@@ -209,15 +218,13 @@ class SNAT_VMs_to_ExtGw(object):
         for ptg in [self.websrvr_ptg, self.webclnt_ptg, self.appsrvr_ptg]:
             if self.gbp_crud.update_gbp_policy_target_group(ptg, property_type='uuid', provided_policy_rulesets=prs) == 0:
                 return 0
-        action_service('172.28.184.36', 'agent-ovs')
-        action_service('172.28.184.37', 'agent-ovs')
         for srcvm in self.vm_list:
             self._log.info(
                 "\nTestcase_SNAT_%s_TO_EXTGW: APPLY ICMP-TCP-Combo CONTRACT and VERIFY TRAFFIC" % (srcvm))
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
-                srcvm, self.extgwips, proto='tcp')
+                srcvm, self.extgwips)
             if isinstance(run_traffic, tuple):
-                failed[vm] = run_traffic[1]
+                failed[srcvm] = run_traffic[1]
         if len(failed) > 0:
             self._log.info(
                 "\nFollowing Traffic Test Failed After Applying ICMP-TCP-Combo Contract == %s" % (failed))
@@ -225,19 +232,54 @@ class SNAT_VMs_to_ExtGw(object):
         else:
             return 1
 
-    def test_6_traff_rem_prs(self):
+    def test_6_traff_apply_prs_icmp_tcp_with_jumbo(self):
+        """
+        Apply Policy-RuleSet to the in-use PTG
+        Send traffic
+        """
+        self._log.info(
+            "\nTestcase_SNAT_VM_TO_EXTGW_JUMBO: APPLY ICMP-TCP-Combo CONTRACT and VERIFY TRAFFIC with JUMBO")
+        prs = self.test_5_prs
+        failed = {}
+        for ext_pol in [self.external_pol_1, self.external_pol_2]:
+            if self.gbp_crud.update_gbp_external_policy(ext_pol, property_type='uuid', consumed_policy_rulesets=prs) == 0:
+                return 0
+        for ptg in [self.websrvr_ptg, self.webclnt_ptg, self.appsrvr_ptg]:
+            if self.gbp_crud.update_gbp_policy_target_group(ptg, property_type='uuid', provided_policy_rulesets=prs) == 0:
+                return 0
+        for srcvm in self.vm_list:
+            self._log.info(
+                "\nTestcase_SNAT_%s_TO_EXTGW_JUMBO: APPLY ICMP-TCP-Combo CONTRACT and VERIFY TRAFFIC with JUMBO" % (srcvm))
+            run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
+                srcvm, self.extgwips,jumbo=1)
+            if isinstance(run_traffic, tuple):
+                failed[srcvm] = run_traffic[1]
+        if len(failed) > 0:
+            self._log.info(
+                "\nFollowing Traffic Test Failed After Applying ICMP-TCP-Combo Contract for Jumbo Frames == %s" % (failed))
+            return 0
+        else:
+            return 1
+
+    def test_7_traff_rem_prs(self):
         """
         Remove the PRS/Contract from the PTG
         Test all traffic types
         """
         failed = {}
+        for ext_pol in [self.external_pol_1, self.external_pol_2]:
+            if self.gbp_crud.update_gbp_external_policy(ext_pol, property_type='uuid') == 0:
+                return 0
+        for ptg in [self.websrvr_ptg, self.webclnt_ptg, self.appsrvr_ptg]:
+            if self.gbp_crud.update_gbp_policy_target_group(ptg, property_type='uuid') == 0:
+                return 0
         for srcvm in self.vm_list:
             self._log.info(
                 "\nTestcase_SNAT_%s_TO_EXTGW: CONTRACT REMOVED and VERIFY TRAFFIC" % (srcvm))
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
                 srcvm, self.extgwips)
             if not isinstance(run_traffic, tuple):  # Negative check
-                failed[vm] = run_traffic[1]
+                failed[srcvm] = run_traffic[1]
         if len(failed) > 1:
             self._log.info(
                 "\nFollowing Traffic Test with Contract Removed, Failed = %s" % (failed))

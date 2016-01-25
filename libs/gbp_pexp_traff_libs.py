@@ -74,9 +74,9 @@ class Gbp_pexp_traff(object):
            else:
               results[dest_ep]['icmp']=0
         if protocol=='tcp'or protocol=='all':
-           cmd_s = "sudo hping3 %s -S -p %s -c %s --fast -q" %(dest_ep,port,self.pkt_cnt)
-           cmd_sa = "sudo hping3 %s -S -A -p %s -c %s --fast -q" %(dest_ep,port,self.pkt_cnt)
-           cmd_saf = "sudo hping3 %s -S -A -F -p %s -c %s --fast -q" %(dest_ep,port,self.pkt_cnt)
+           cmd_s = "sudo hping3 %s -S -V -p %s -c %s --fast -q" %(dest_ep,port,self.pkt_cnt)
+           cmd_sa = "sudo hping3 %s -S -A -V -p %s -c %s --fast -q" %(dest_ep,port,self.pkt_cnt)
+           cmd_saf = "sudo hping3 %s -S -A -F -V -p %s -c %s --fast -q" %(dest_ep,port,self.pkt_cnt)
            if tcp_syn_only == 0:
             for cmd in [cmd_s,cmd_sa,cmd_saf]:
                child.sendline(cmd)

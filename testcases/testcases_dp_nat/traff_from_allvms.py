@@ -41,32 +41,38 @@ class NatTraffic(object):
         Verifies the expected traffic result per testcase
         :: proto - 'all'/'icmp'/'tcp', all = both icmp & tcp
         """
-        print 'Results from the Testcase == ', results
+        print 'Results from the Traffic Run == ', results
+        print 'TARGET VM IPs == ', target_vm_ip
         failed = {}
         for key, val in results.iteritems():
+            failed[key] = {}
             if proto == 'icmp':
                 if val['icmp'] != 1:
-                    failed[key] = {'icmp': 'FAIL'}
+                    failed[key]['icmp'] = 'FAIL'
                 if val['tcp'] != 0:
-                    failed[key] = {'tcp': 'FAIL'}
+                    failed[key]['tcp'] =  'FAIL'
             if proto == 'tcp':
                 if val['icmp'] != 0:
-                    failed[key] = {'icmp': 'FAIL'}
+                    failed[key]['icmp'] = 'FAIL'
                 if val['tcp'] != 1:
-                    failed[key] = {'tcp': 'FAIL'}
+                    failed[key]['tcp'] = 'FAIL'
             if proto == 'all':
                 if val['icmp'] != 1:
-                    failed[key] = {'icmp': 'FAIL'}
+                    failed[key]['icmp'] = 'FAIL'
                 if val['tcp'] != 1:
-                    failed[key] = {'tcp': 'FAIL'}
+                    failed[key]['tcp'] = 'FAIL'
+            if failed[key] == {}:
+               failed = {}
         if len(failed) > 1:
-            for key in failed.keys():
-                for k, v in target_vm_ip.iteritems():  # target_vm_ip is expected to be a dict
-                    if key in v:
-                        # Replacing the FIP by its VM Name
-                        failed[k] = failed.pop(key)
-            print failed
-            return 0, failed
+           print "Verify Failed Traffic == ", failed
+           if isinstance(target_vm_ip,dict):
+              for key in failed.keys():
+                  for k, v in target_vm_ip.iteritems():  # target_vm_ip is expected to be a dict
+                      if key in v:
+                         # Replacing the FIP by its VM Name
+                         failed[k] = failed.pop(key)
+           #print failed
+           return 0, failed
         else:
             return 1
 
@@ -98,15 +104,19 @@ class NatTraffic(object):
         print 'VM List After Restoration', self.vm_list
         return self.verify_traff(results, dest_vm_fips, proto)
 
-    def test_traff_anyvm_to_extgw(self, vm_name, extgw, proto=all, jumbo=0):
+    def test_traff_anyvm_to_extgw(self, vm_name, extgw, proto='all', jumbo=0):
         """
         Test Traffic from each VM to ExtGW
         """
         dhcp_ns_vm = self.vm_to_ip_ns[vm_name][1]
         vm_pvt_ip = self.vm_to_ip_ns[vm_name][0][0]
+        print 'EXTERNAL GW IPs from TESTUITE == ', extgw
         gbppexptraff = Gbp_pexp_traff(
             self.ntk_node, dhcp_ns_vm, vm_pvt_ip, extgw)
         # Run for all protocols irrespective of the contract type
         results = gbppexptraff.test_run(
-            protocols=['icmp', 'tcp'], tcp_syn_only=1)
-        return self.verify_traff(results, extgw, proto)
+            protocols=['icmp', 'tcp'], tcp_syn_only=1,jumbo=1)
+        if results == {}:
+           return 2
+        else:
+           return self.verify_traff(results, extgw, proto)

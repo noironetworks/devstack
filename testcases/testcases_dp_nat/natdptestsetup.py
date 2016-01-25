@@ -5,6 +5,7 @@ import logging
 import os
 import datetime
 import yaml
+from commands import *
 from time import sleep
 from libs.gbp_conf_libs import Gbp_Config
 from libs.gbp_verify_libs import Gbp_Verify
@@ -61,8 +62,7 @@ class nat_dp_main_config(object):
         """
         # Enabling Route Reflector
         self._log.info("\n Set the APIC Route Reflector")
-        cmd = 'apic-route-reflector --ssl SSL %s admin noir0123' % (
-            self.apic_ip)
+        cmd = 'apic-route-reflector --ssl --no-secure --apic-ip %s admin noir0123' % (self.apic_ip)
         getoutput(cmd)
 
         if nat_type == 'dnat':
@@ -109,6 +109,7 @@ class nat_dp_main_config(object):
                 'WEBL2P2'
             ]
             create_add_filter(self.apic_ip, svc_epg_list)
+            sleep(15) # TODO: SSH/Ping fails possible its taking time PolicyDownload
 
         if do_config == 0 or do_config == 1:
                 ### <Generate the dict comprising VM-name and its FIPs > ###
@@ -118,8 +119,9 @@ class nat_dp_main_config(object):
             for vm in targetvm_list:
                 fipsOftargetVMs[vm] = self.gbpnova.get_any_vm_property(vm)['networks'][
                     0][1:3]
-            print 'FIPs of Target VMs == %s' % (fipsOftargetVMs)
-            return fipsOftargetVMs
+            if nat_type == 'dnat':
+               print 'FIPs of Target VMs == %s' % (fipsOftargetVMs)
+               return fipsOftargetVMs
 
     def cleanup(self):
         # Need to call for instance delete if there is an instance

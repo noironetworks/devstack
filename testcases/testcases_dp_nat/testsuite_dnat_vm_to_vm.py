@@ -4,6 +4,7 @@ import sys
 import logging
 import os
 import datetime
+import pprint
 import string
 from libs.gbp_crud_libs import GBPCrud
 from libs.raise_exceptions import *
@@ -60,32 +61,31 @@ class DNAT_VMs_to_VMs(object):
         # Note: Cleanup per testcases is not required,since every testcase
         # updates the PTG, hence over-writing previous attr vals
         test_list = [
-            self.test_1_traff_with_no_prs,
-            self.test_2_traff_apply_prs_icmp_extptgs_not_regptgs,
-            self.test_3_traff_apply_prs_icmp,
-            self.test_4_traff_apply_prs_tcp,
-            self.test_5_traff_apply_prs_icmp_tcp,
+            #self.test_1_traff_with_no_prs,
+            #self.test_2_traff_apply_prs_icmp_extptgs_not_regptgs,
+            #self.test_3_traff_apply_prs_icmp,
+            #self.test_4_traff_apply_prs_tcp,
+            #self.test_5_traff_apply_prs_icmp_tcp,
             self.test_6_traff_rem_prs
         ]
+
         test_results = {}
         for test in test_list:
-            try:
-                if test() != 1:
-                    #raise TestFailed("%s_%s == FAILED" %(self.__class__.__name__.upper(),string.upper(test.__name__.lstrip('self.'))))
-                    test_results[test] = 'FAIL'
-                    self._log.info("\n%s_%s == FAIL" % (
+                repeat_test = 1
+                while repeat_test < 4:
+                  if test() == 1:
+                     break
+                  self._log.warning("Repeat Run of the Testcase = %s" %(test.__name__.lstrip('self.')))
+                  repeat_test += 1
+                if repeat_test == 4:
+                    test_results[string.upper(test.__name__.lstrip('self.'))] = 'FAIL'
+                    self._log.error("\n%s_%s == FAIL" % (
                         self.__class__.__name__.upper(), string.upper(test.__name__.lstrip('self.'))))
                 else:
-                    test_results[test] = 'PASS'
+                    test_results[string.upper(test.__name__.lstrip('self.'))] = 'PASS'
                     self._log.info("\n%s_%s == PASS" % (
                         self.__class__.__name__.upper(), string.upper(test.__name__.lstrip('self.'))))
-            except TestFailed as err:
-                print err
-        # Send test results to generate test report
-        #gen_test_report(test_results, 'DNAT_VM2VM_TESTCASES', 'a')
-        if vpc == 1:
-            return 1  # TBD: JISHNU, waiting on fix proxy for getrootpasswd
-        return 1
+        pprint.pprint(test_results)
 
     def test_1_traff_with_no_prs(self):
         """
