@@ -38,21 +38,16 @@ class testcase_gbp_extsegnat_crud_cli_1(object):
 
         self.config = Gbp_Config()
         self.verify = Gbp_Verify()
-        self.extseg_name = 'TEST_EXT'
-        self.cidr = '1.103.2.254/24'
-        self.neutron_subnet = '1.103.2.0/24'
-        self.gateway = '1.103.2.1'
-        self.leafport = '1/2'
-        self.encap = 'vlan-1031'
-        self.router_id = '1.0.0.2'
-        self.leafnodeid = '301'
+        self.extseg_name = 'Management-Out'
+        self.neutron_subnet = '169.254.0.0/25'
+        cmd = 'crudini --get /etc/neutron/neutron.conf apic_external_network:%s cidr_exposed' %(self.extseg_name)
+        self.cidr = getoutput(cmd)
 
     def test_runner(self):
         """
         Method to run the Testcase in Ordered Steps
         """
         test_name = 'TESTCASE_GBP_EXTERNAL_SEGMENT_CRUD_1'
-        self.write_neutron_conf()
         self._log.info(
             "\nSteps of the TESTCASE_GBP_EXTERNAL_SEGMENT_CRUD_1 to be executed\n")
         testcase_steps = [self.test_step_CreateExternalSeg,
@@ -62,28 +57,20 @@ class testcase_gbp_extsegnat_crud_cli_1(object):
                           self.test_step_VerifyExternalSegDel,
                           self.test_step_VerifyImplicitNeutronObjsDel
                           ]
-        for step in testcase_steps:  # TODO: Needs FIX
-            try:
-                if step() == 0:
+        failed = 0
+        for step in testcase_steps:
+            if step() == 0:
                     self._log.info("Test Failed at Step == %s" %
                                    (step.__name__.lstrip('self')))
-                    raise TestFailed("%s == FAIL" % (test_name))
-            except TestFailed as err:
-                self._log.info('\n%s' % (err))
-        self._log.info("%s == PASS" % (test_name))
+                    self._log.info("On Cleanup deleting configured objects")
+                    self.test_step_DeleteExternalSeg()
+                    failed +=1
+                    break
+        if failed > 0:
+           self._log.info("%s == FAIL" % (test_name))
+        else:
+           self._log.info("%s == PASS" % (test_name))
 
-    def write_neutron_conf(self):
-        """
-        Write External Segment Section into the Neutron.conf
-        Restart the neutron server
-        """
-        self._log.info(
-            "\nWrite ExtSeg Section into Neutron.conf & Restart Neutron Server\n")
-        self.config.write_to_conf_file('/etc/neutron/neutron.conf', 'apic_external_network:%s' % (self.extseg_name),
-                                       router_id=self.router_id, switch=self.leafnodeid, cidr_exposed=self.cidr,
-                                       gateway_ip=self.gateway, port=self.leafport, encap=self.encap)
-        getoutput('systemctl restart neutron-server.service')
-        sleep(2)
 
     def test_step_CreateExternalSeg(self):
         """
@@ -117,7 +104,7 @@ class testcase_gbp_extsegnat_crud_cli_1(object):
             'subnet', self.subnet, ret='network_id', cidr=self.neutron_subnet)
         if subnet_check == 0:
             self._log.info(
-                "\nVerify of mplicitly created Neutron Subnet & Network failed\n")
+                "\nVerify of Implicitly created Neutron Subnet & Network failed\n")
             return 0
         else:
             self.network_id = subnet_check

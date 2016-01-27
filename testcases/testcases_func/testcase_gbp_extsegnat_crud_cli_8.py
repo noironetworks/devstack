@@ -38,14 +38,7 @@ class testcase_gbp_extsegnat_crud_cli_8(object):
 
         self.config = Gbp_Config()
         self.verify = Gbp_Verify()
-        self.extseg_name = 'TestL3Out'
-        self.cidr = '200.103.2.254/24'
-        self.neutron_subnet = '200.103.2.0/24'
-        self.gateway = '200.103.2.1'
-        self.leafport = '1/2'
-        self.encap = 'vlan-1031'
-        self.router_id = '200.0.0.2'
-        self.leafnodeid = '201'
+        self.extseg_name = 'Management-Out'
 
     def test_runner(self):
         """

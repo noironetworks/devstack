@@ -163,10 +163,15 @@ class Gbp_Verify(object):
         # If "verify" cmd succeeds then parse the cmd_out to match the user-fed expected attributes & their values
         if cmd_val == 1:
          for arg, val in kwargs.items():
-           if re.search("\\b%s\\b\s+\| \\b%s\\b.*" %(arg,val),cmd_out,re.I)==None:
-             _log.info(cmd_out)
-             _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the PolicyObject == %s" %(arg,val,verifyobj))
-             return 0
+           if arg == "external_routes":
+              if val not in cmd_out:
+                 _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the PolicyObject == %s" %(arg,val,verifyobj))
+                 return 0
+           else:
+              if re.search("\\b%s\\b\s+\| \\b%s\\b.*" %(arg,val),cmd_out,re.I)==None:
+                 _log.info(cmd_out)
+                 _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the PolicyObject == %s" %(arg,val,verifyobj))
+                 return 0
         #_log.info("All attributes & values found Valid for the object Policy %s" %(verifyobj))
         return 1
 
@@ -267,12 +272,6 @@ class Gbp_Verify(object):
             if re.search('\\b%s\\b' %(err), cmd_out, re.I):
                _log.info("Neutron Cmd execution failed! with this Return Error: %s\n" %(cmd_out))
                return 0
-        if ret !='':
-           match=re.search("\\b%s\\b\s+\| (.*) \|" %(ret),cmd_out,re.I)
-           if match != None:
-              return match.group(1).rstrip()
-           else:
-              return 0
         for arg, val in kwargs.items():
            if isinstance(val,list):  ## This is a case where more than 1 value is to verified for a given attribute
               for i in val:
@@ -285,6 +284,12 @@ class Gbp_Verify(object):
                 _log.info(cmd_out)
                 _log.info("The Attribute== %s and its Value== %s DID NOT MATCH for the NeutronObject == %s" %(arg,val,verifyobj))
                 return 0
+        if ret !='':
+           match=re.search("\\b%s\\b\s+\| (.*) \|" %(ret),cmd_out,re.I)
+           if match != None:
+              return match.group(1).rstrip()
+           else:
+              return 0
         #_log.info("All attributes & values found Valid for the object Policy %s" %(verifyobj))
         return 1
 
