@@ -68,7 +68,7 @@ class testcase_gbp_extsegnat_crud_cli_3(object):
                     self._log.info("Test Failed at Step == %s" %
                                    (step.__name__.lstrip('self')))
                     self._log.info("On Cleanup deleting configured objects")
-                    self.test_step_DeleteNatPool
+                    self.test_step_DeleteNatPool()
                     self.test_step_DeleteExternalSeg()
                     failed +=1
                     break
