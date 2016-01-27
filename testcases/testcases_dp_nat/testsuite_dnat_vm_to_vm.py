@@ -35,8 +35,8 @@ class DNAT_VMs_to_VMs(object):
         self.extgwrtr = objs_uuid['external_gw']
         self.ostack_controller = objs_uuid['ostack_controller']
         self.ntk_node = objs_uuid['ntk_node']
-        self.external_pol_1 = objs_uuid['public_external_policy_id']
-        self.external_pol_2 = objs_uuid['mgmt_external_policy_id']
+        self.external_pol_1 = objs_uuid['mgmt_external_policy_id']
+        self.external_pol_2 = objs_uuid['dc_external_policy_id']
         self.websrvr_ptg = objs_uuid['web_srvr_ptg_id']
         self.webclnt_ptg = objs_uuid['web_clnt_ptg_id']
         self.appsrvr_ptg = objs_uuid['app_ptg_id']
@@ -51,9 +51,8 @@ class DNAT_VMs_to_VMs(object):
         }
         self.dest_vm_fips = dest_vm_fips
         self.gbp_crud = GBPCrud(self.ostack_controller)
-        # Add external routes to the Shadow L3Out
+        # Add external routes to the Shadow L3Out(only for Datacenter-Out)
         self.gbp_crud.gbp_ext_route_add_to_extseg_util(self.ext_seg_2,'Datacenter-Out')
-        self.gbp_crud.gbp_ext_route_add_to_extseg_util(self.ext_seg_2,'Management-Out')
         self.nat_traffic = NatTraffic(
             self.ostack_controller, self.vm_list, self.ntk_node)
 

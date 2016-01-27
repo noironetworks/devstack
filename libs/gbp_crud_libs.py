@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import sys
 import logging
+import re
+from commands import *
 from gbpclient.v2_0 import client as gbpclient
 
 # Initialize logging

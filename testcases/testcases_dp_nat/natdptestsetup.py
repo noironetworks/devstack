@@ -77,6 +77,10 @@ class nat_dp_main_config(object):
                     "\n ABORTING THE TESTSUITE RUN, Updating the Nova Quota's Failed")
                 sys.exit(1)
             if self.num_hosts > 1:
+                cmd = "nova aggregate-list" # Check if Agg already exists then delete
+                if self.nova_agg in getoutput(cmd):
+                   self._log.warning("Residual Nova Agg exits, hence deleting it")
+                   self.gbpnova.avail_zone('cli', 'delete', self.nova_agg)
                 self.agg_id = self.gbpnova.avail_zone(
                     'api', 'create', self.nova_agg, avail_zone_name=self.nova_az)
                 if self.agg_id == 0:
@@ -128,7 +132,7 @@ class nat_dp_main_config(object):
         self.gbpheat.cfg_all_cli(0, self.heat_stack_name)
         self.gbpnova.avail_zone('cli', 'removehost',
                                 self.nova_agg, hostname=self.comp_node)
-        self.gbpnova.avail_zone('cli', 'delete', self.agg_id)
+        self.gbpnova.avail_zone('cli', 'delete', self.nova_agg)
         # Ntk namespace cleanup in Network-Node.. VM names are static
         # throughout the test-cycle
         self.gbpcfg.del_netns(self.ntk_node)
