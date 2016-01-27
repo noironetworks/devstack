@@ -36,6 +36,8 @@ class SNAT_VMs_to_ExtGw(object):
         self.extgwrtr = objs_uuid['external_gw']
         self.ostack_controller = objs_uuid['ostack_controller']
         self.ntk_node = objs_uuid['ntk_node']
+        self.ext_seg_1 = objs_uuid['mgmt_external_segment_id']
+        self.ext_seg_2 = objs_uuid['dc_external_segment_id']
         self.external_pol_1 = objs_uuid['public_external_policy_id']
         self.external_pol_2 = objs_uuid['mgmt_external_policy_id']
         self.websrvr_ptg = objs_uuid['web_srvr_ptg_id']
@@ -51,6 +53,9 @@ class SNAT_VMs_to_ExtGw(object):
         self.extgwips = objs_uuid['ipsofextgw']
         self.nat_traffic = NatTraffic(
             self.ostack_controller, self.vm_list, self.ntk_node)
+        # Add external routes to the Shadow L3Out
+        self.gbp_crud.gbp_ext_route_add_to_extseg_util(self.ext_seg_2,'Datacenter-Out')
+        self.gbp_crud.gbp_ext_route_add_to_extseg_util(self.ext_seg_2,'Management-Out')
 
     def test_runner(self, vpc=0):
         """
@@ -105,7 +110,7 @@ class SNAT_VMs_to_ExtGw(object):
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
                 srcvm, self.extgwips)
             if run_traffic == 2:
-               self._log.error("\n Traffic VM %s Unreachable, Test = ABORTED" %(srcvm))
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(srcvm))
                return 2
             if not isinstance(run_traffic, tuple):  # Negative check
                 failed.append(srcvm)
@@ -136,6 +141,9 @@ class SNAT_VMs_to_ExtGw(object):
                 "\nTestcase_SNAT_%s_TO_EXTGW: APPLY CONTRACT BUT NO RULE and VERIFY TRAFFIC" % (srcvm))
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
                 srcvm, self.extgwips)
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(srcvm))
+               return 2
             if not isinstance(run_traffic, tuple):  # Negative check
                 failed.append(srcvm)
         if len(failed) > 1:
@@ -165,6 +173,9 @@ class SNAT_VMs_to_ExtGw(object):
                 "\nTestcase_SNAT_%s_TO_EXTGW: APPLY ICMP CONTRACT and VERIFY TRAFFIC" % (srcvm))
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
                 srcvm, self.extgwips, proto='icmp')
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(srcvm))
+               return 2
             if isinstance(run_traffic, tuple):
                 failed[srcvm] = run_traffic[1]
         if len(failed) > 0:
@@ -194,6 +205,9 @@ class SNAT_VMs_to_ExtGw(object):
                 "\nTestcase_SNAT_%s_TO_EXTGW: APPLY TCP CONTRACT and VERIFY TRAFFIC" % (srcvm))
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
                 srcvm, self.extgwips, proto='tcp')
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(srcvm))
+               return 2
             if isinstance(run_traffic, tuple):
                 failed[srcvm] = run_traffic[1]
         if len(failed) > 0:
@@ -223,6 +237,9 @@ class SNAT_VMs_to_ExtGw(object):
                 "\nTestcase_SNAT_%s_TO_EXTGW: APPLY ICMP-TCP-Combo CONTRACT and VERIFY TRAFFIC" % (srcvm))
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
                 srcvm, self.extgwips)
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(srcvm))
+               return 2
             if isinstance(run_traffic, tuple):
                 failed[srcvm] = run_traffic[1]
         if len(failed) > 0:
@@ -252,6 +269,9 @@ class SNAT_VMs_to_ExtGw(object):
                 "\nTestcase_SNAT_%s_TO_EXTGW_JUMBO: APPLY ICMP-TCP-Combo CONTRACT and VERIFY TRAFFIC with JUMBO" % (srcvm))
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
                 srcvm, self.extgwips,jumbo=1)
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(srcvm))
+               return 2
             if isinstance(run_traffic, tuple):
                 failed[srcvm] = run_traffic[1]
         if len(failed) > 0:
@@ -278,6 +298,9 @@ class SNAT_VMs_to_ExtGw(object):
                 "\nTestcase_SNAT_%s_TO_EXTGW: CONTRACT REMOVED and VERIFY TRAFFIC" % (srcvm))
             run_traffic = self.nat_traffic.test_traff_anyvm_to_extgw(
                 srcvm, self.extgwips)
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(srcvm))
+               return 2
             if not isinstance(run_traffic, tuple):  # Negative check
                 failed[srcvm] = run_traffic[1]
         if len(failed) > 1:

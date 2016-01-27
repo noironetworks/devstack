@@ -102,7 +102,10 @@ class NatTraffic(object):
         # earlier
         self.vm_list.append(vm_name)
         print 'VM List After Restoration', self.vm_list
-        return self.verify_traff(results, dest_vm_fips, proto)
+        if results == {}:
+           return 2
+        else:
+           return self.verify_traff(results, dest_vm_fips, proto)
 
     def test_traff_anyvm_to_extgw(self, vm_name, extgw, proto='all', jumbo=0):
         """

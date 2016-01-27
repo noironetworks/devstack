@@ -19,7 +19,7 @@ class DNAT_VMs_to_VMs(object):
     logging.basicConfig(
         format='%(asctime)s [%(levelname)s] %(name)s - %(message)s', level=logging.WARNING)
     _log = logging.getLogger(__name__)
-    hdlr = logging.FileHandler('/tmp/testsuite_dnat_extgw_to_vms.log')
+    hdlr = logging.FileHandler('/tmp/testsuite_dnat_vm_to_vms.log')
     formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     hdlr.setFormatter(formatter)
     _log.addHandler(hdlr)
@@ -51,6 +51,9 @@ class DNAT_VMs_to_VMs(object):
         }
         self.dest_vm_fips = dest_vm_fips
         self.gbp_crud = GBPCrud(self.ostack_controller)
+        # Add external routes to the Shadow L3Out
+        self.gbp_crud.gbp_ext_route_add_to_extseg_util(self.ext_seg_2,'Datacenter-Out')
+        self.gbp_crud.gbp_ext_route_add_to_extseg_util(self.ext_seg_2,'Management-Out')
         self.nat_traffic = NatTraffic(
             self.ostack_controller, self.vm_list, self.ntk_node)
 
@@ -61,19 +64,23 @@ class DNAT_VMs_to_VMs(object):
         # Note: Cleanup per testcases is not required,since every testcase
         # updates the PTG, hence over-writing previous attr vals
         test_list = [
-            #self.test_1_traff_with_no_prs,
-            #self.test_2_traff_apply_prs_icmp_extptgs_not_regptgs,
-            #self.test_3_traff_apply_prs_icmp,
-            #self.test_4_traff_apply_prs_tcp,
-            #self.test_5_traff_apply_prs_icmp_tcp,
+            self.test_1_traff_with_no_prs,
+            self.test_2_traff_apply_prs_icmp_extptgs_not_regptgs,
+            self.test_3_traff_apply_prs_icmp,
+            self.test_4_traff_apply_prs_tcp,
+            self.test_5_traff_apply_prs_icmp_tcp,
             self.test_6_traff_rem_prs
         ]
 
         test_results = {}
+        abort = 0
         for test in test_list:
                 repeat_test = 1
                 while repeat_test < 4:
                   if test() == 1:
+                     break
+                  if test() == 2:
+                     abort = 1
                      break
                   self._log.warning("Repeat Run of the Testcase = %s" %(test.__name__.lstrip('self.')))
                   repeat_test += 1
@@ -81,6 +88,10 @@ class DNAT_VMs_to_VMs(object):
                     test_results[string.upper(test.__name__.lstrip('self.'))] = 'FAIL'
                     self._log.error("\n%s_%s == FAIL" % (
                         self.__class__.__name__.upper(), string.upper(test.__name__.lstrip('self.'))))
+                elif abort == 1:
+                     test_results[string.upper(test.__name__.lstrip('self.'))] = 'ABORT'
+                     self._log.error("\n%s_%s == ABORT" % (
+                         self.__class__.__name__.upper(), string.upper(test.__name__.lstrip('self.'))))
                 else:
                     test_results[string.upper(test.__name__.lstrip('self.'))] = 'PASS'
                     self._log.info("\n%s_%s == PASS" % (
@@ -97,6 +108,9 @@ class DNAT_VMs_to_VMs(object):
                 "\nTestcase_DNAT_%s_to_RESTOFVMs: NO CONTRACT APPLIED and VERIFY TRAFFIC" % (vm))
             run_traffic = self.nat_traffic.test_traff_from_vm_to_allvms(
                 vm, proto='icmp')
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(vm))
+               return 2
             if not isinstance(run_traffic, tuple):  # Negative check
                 failed.append(vm)
         if len(failed) > 1:
@@ -109,6 +123,7 @@ class DNAT_VMs_to_VMs(object):
     def test_2_traff_apply_prs_icmp_extptgs_not_regptgs(self):
         """
         ICMP Policy-RuleSet Provided and Consumed by the External PTGs
+        The above Rule-Set is NOT Provided/Consumed by Regular PTGs
         Send traffic
         """
         failed = []
@@ -122,6 +137,9 @@ class DNAT_VMs_to_VMs(object):
             self._log.info(
                 "\nTestcase_DNAT_%s_to_RESTOFVMs: ICMP CONTRACT NOT APPLIED on REG PTGs but Ext PTGs and VERIFY TRAFFIC" % (vm))
             run_traffic = self.nat_traffic.test_traff_from_vm_to_allvms(vm)
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(vm))
+               return 2
             if not isinstance(run_traffic, tuple):  # Negative check
                 failed.append(vm)
         if len(failed) > 1:
@@ -157,6 +175,9 @@ class DNAT_VMs_to_VMs(object):
                 return 0
             run_traffic = self.nat_traffic.test_traff_from_vm_to_allvms(
                 vm, proto='icmp')
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(vm))
+               return 2
             if isinstance(run_traffic, tuple):
                 failed[vm] = run_traffic[1]
         if len(failed) > 0:
@@ -191,6 +212,9 @@ class DNAT_VMs_to_VMs(object):
                 return 0
             run_traffic = self.nat_traffic.test_traff_from_vm_to_allvms(
                 vm, proto='tcp')
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(vm))
+               return 2
             if isinstance(run_traffic, tuple):
                 failed[vm] = run_traffic[1]
         if len(failed) > 0:
@@ -224,6 +248,9 @@ class DNAT_VMs_to_VMs(object):
             if self.gbp_crud.update_gbp_policy_target_group(self.vm_to_ptg_dict[vm], property_type='uuid', provided_policy_rulesets=prs) == 0:
                 return 0
             run_traffic = self.nat_traffic.test_traff_from_vm_to_allvms(vm)
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(vm))
+               return 2
             if isinstance(run_traffic, tuple):
                 failed[vm] = run_traffic[1]
         if len(failed) > 0:
@@ -247,6 +274,9 @@ class DNAT_VMs_to_VMs(object):
             self._log.info(
                 "\nTestcase_DNAT_%s_to_RESTOFVMs: CONTRACT REMOVED FROM ExtPTGs and VERIFY TRAFFIC" % (vm))
             run_traffic = self.nat_traffic.test_traff_from_vm_to_allvms(vm)
+            if run_traffic == 2:
+               self._log.error("\n Traffic VM %s Unreachable, Test = Aborted" %(vm))
+               return 2
             if not isinstance(run_traffic, tuple):  # Negative check
                 failed.append(vm)
         if len(failed) > 1:

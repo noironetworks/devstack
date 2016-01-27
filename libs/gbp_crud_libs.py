@@ -931,3 +931,17 @@ class GBPCrud(object):
            _log.info("\nException Error: %s\n" %(e))
            _log.info("Updating External Policy = %s, failed" %(name_uuid))
            return 0
+
+    def gbp_ext_route_add_to_extseg_util(self,extseg_id,extseg_name,route='0.0.0.0/0'):
+        """
+        Utility Method to add ext_routes to Ext_Seg
+        ONLY needed for NAT DP TESTs
+        """
+        if extseg_name == 'Datacenter-Out':
+           cmd = 'crudini --get /etc/neutron/neutron.conf apic_external_network:%s cidr_exposed' %(extseg_name)
+           out = re.search('\\b(\d+.\d+.\d+).\d+.*' '', getoutput(cmd), re.I)
+           route = out.group(1)+'.0/24'
+        cmd = 'crudini --get /etc/neutron/neutron.conf apic_external_network:%s gateway_ip' %(extseg_name)
+        route_gw = getoutput(cmd)
+        _log.info("Route to be added to External Segment %s with GW %s  == %s" %(extseg_name,route_gw,route))
+        self.update_gbp_external_segment(extseg_id,external_routes=[{'destination' : route, 'nexthop' : route_gw}])
