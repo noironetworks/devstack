@@ -71,8 +71,12 @@ class gbp_main_config(object):
             sys.exit(1)
         if self.num_hosts > 1:
             try:
+               cmd = "nova aggregate-list" # Check if Agg already exists then delete
+               if self.nova_agg in getoutput(cmd):
+                  self._log.warning("Residual Nova Agg exits, hence deleting it")
+                  self.gbpnova.avail_zone('cli', 'delete', self.nova_agg)
                self.agg_id = self.gbpnova.avail_zone(
-                'api', 'create', self.nova_agg, avail_zone_name=self.nova_az)
+                       'api', 'create', self.nova_agg, avail_zone_name=self.nova_az)
             except Exception, e:
                 self._log.error(
                     "\n ABORTING THE TESTSUITE RUN,nova host aggregate creation Failed", exc_info=True)
@@ -92,8 +96,6 @@ class gbp_main_config(object):
         if self.gbpheat.cfg_all_cli(1, self.heat_stack_name, heat_temp=self.heat_temp_test) == 0:
             self._log.error(
                 "\n ABORTING THE TESTSUITE RUN, Heat-Stack create of %s Failed" % (self.heat_stack_name))
-            # self.gbpheat.cfg_all_cli(0,self.heat_stack_name) ## Stack delete
-            # will cause cleanup
             self.cleanup()
 
         sleep(5)  # Sleep 5s assuming that all objects areated in APIC
@@ -114,7 +116,7 @@ class gbp_main_config(object):
         self.gbpheat.cfg_all_cli(0, self.heat_stack_name)
         self.gbpnova.avail_zone('cli', 'removehost',
                                 self.nova_agg, hostname=self.comp_node)
-        self.gbpnova.avail_zone('cli', 'delete', self.agg_id)
+        self.gbpnova.avail_zone('cli', 'delete', self.nova_agg)
         # Ntk namespace cleanup in Network-Node.. VM names are static
         # throughout the test-cycle
         self.gbpcfg.del_netns(self.ntk_node)

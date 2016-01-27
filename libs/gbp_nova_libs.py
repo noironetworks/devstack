@@ -123,6 +123,7 @@ class Gbp_Nova(object):
               if self.cmd_error_check(cmd_out) == 0:
                  return 0
               return 1
+    
 
     def add_host_avail_zone(self,hostname,availzone_name):
         """

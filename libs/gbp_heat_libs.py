@@ -32,7 +32,7 @@ class Gbp_Heat(object):
         tenant_id = '23523b6f27454cf0959d4e6f89abae5a'
         heat_url = "http://%s:8004/v1/%s" % (controller,tenant_id)
         self.hc = Client('1',endpoint=heat_url,auth_token=auth_token)
-        self.err_strings=['Unable','Conflict','Bad Request','Error', 'Unknown','Exception']
+        self.err_strings=['Unable','Conflict','Bad Request','Error', 'Unknown','Exception','ERROR']
 
     def cfg_all_api(self,val,heat_temp,name):
         """
