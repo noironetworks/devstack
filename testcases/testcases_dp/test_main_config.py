@@ -74,6 +74,7 @@ class gbp_main_config(object):
                cmd = "nova aggregate-list" # Check if Agg already exists then delete
                if self.nova_agg in getoutput(cmd):
                   self._log.warning("Residual Nova Agg exits, hence deleting it")
+                  self.gbpnova.avail_zone('cli', 'removehost', self.nova_agg, hostname=self.comp_node)
                   self.gbpnova.avail_zone('cli', 'delete', self.nova_agg)
                self.agg_id = self.gbpnova.avail_zone(
                        'api', 'create', self.nova_agg, avail_zone_name=self.nova_az)
@@ -92,6 +93,13 @@ class gbp_main_config(object):
                 sys.exit(1)
 
         # Invoking Heat Stack for building up the Openstack Config
+        # Expecting if at all there is residual heat-stack it
+        # should be of the same name as that of this DP Reg
+        self._log.info("\nCheck and Delete Residual Heat Stack")
+        if self.gbpheat.cfg_all_cli(0, self.heat_stack_name) != 1:
+           self._log.error(
+               "\n ABORTING THE TESTSUITE RUN, Delete of Residual Heat-Stack Failed") 
+               self.cleanup()
         self._log.info("\n Invoking Heat Stack for building config and VMs")
         if self.gbpheat.cfg_all_cli(1, self.heat_stack_name, heat_temp=self.heat_temp_test) == 0:
             self._log.error(

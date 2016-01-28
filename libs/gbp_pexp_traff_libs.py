@@ -30,7 +30,7 @@ class Gbp_pexp_traff(object):
     def test_run(self,protocols=['icmp','tcp','udp'],port=443,tcp_syn_only=0,jumbo=0):
       child = pexpect.spawn('ssh root@%s' %(self.net_node))
       child.expect('#')
-      child.sendline('ifconfig eth2')
+      child.sendline('hostname')
       child.expect('#')
       print child.before
       child.sendline('ip netns exec %s ping %s -c 2' %(self.netns,self.src_ep)) ## Check whether ping works first

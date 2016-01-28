@@ -85,13 +85,24 @@ class Gbp_Heat(object):
            _log.info("Sleeping for 10 secs ... to check if stack got deleted")
            sleep(10)
            cmd_out = getoutput(cmd_ver)
+           num_try = 1
            if self.cmd_error_check(cmd_out) == 0:
-               return 0
-           if cmd_out.find('not found') != -1:
-              return 1
-           else:
-              return 0
-
+               _log.info("Verify cmd for heat-cli failed")
+           elif cmd_out.find('Stack not found') != -1:
+               return 1
+           else:    
+               while num_try > 0 :
+                     cmd_out = getoutput(cmd_ver)
+                     if cmd_out.find('Stack not found') != -1:
+                        break
+                     else:
+                        _log.info("Keep Retrying every 5s to check if heat stack-delete completed")
+                        sleep(5)
+                        num_try +=1
+                     if num_try > 10:
+                        _log.info(" After 10 re-tries, the stack delete has still NOT COMPLETED")
+                        return 0
+               return 1
 
     def get_output_cli(self,stack_id_name,template_file):
         """
