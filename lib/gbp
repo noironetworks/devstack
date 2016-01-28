@@ -24,6 +24,9 @@ GBPUI_DIR=$DEST/gbpui
 NEUTRON_DIR=$DEST/neutron
 NEUTRON_CONF_DIR=/etc/neutron
 NEUTRON_CONF=$NEUTRON_CONF_DIR/neutron.conf
+NETWORKING_CISCO_DIR=$DEST/networking-cisco
+NETWORKING_CISCO_CONF_DIR=/etc/networking-cisco
+NETWORKING_CISCO_CONF=$NEUTRON_CONF_DIR/networking-cisco.conf
 
 # Save trace setting
 XTRACE=$(set +o | grep xtrace)
@@ -86,6 +89,18 @@ function install_gbpapicml2 {
 function install_gbpopflex {
     git_clone $GBPOPFLEX_REPO $GBPOPFLEX_DIR $GBPOPFLEX_BRANCH
     pip_install -e $GBPOPFLEX_DIR
+}
+
+# install_networking_cisco() - Collect source and prepare
+function install_networking_cisco {
+    git_clone $NETWORKING_CISCO_REPO $NETWORKING_CISCO_DIR $NETWORKING_CISCO_BRANCH
+    pip_install -e $NETWORKING_CISCO_DIR
+}
+
+# init_networking_cisco() - Initialize databases, etc.
+function init_networking_cisco {
+    # Run GBP db migrations
+    networking-cisco-db-manage --config-file $NEUTRON_CONF --config-file /$Q_PLUGIN_CONF_FILE upgrade head
 }
 
 

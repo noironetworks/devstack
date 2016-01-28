@@ -14,8 +14,8 @@ GIT_BASE=http://github.com
 SEGMENTATION_ID=1001
 
 
-NEUTRON_REPO=${GIT_BASE}/CiscoSystems/neutron.git
-NEUTRON_BRANCH=asr1k-stable-kilo
+NEUTRON_REPO=${GIT_BASE}/openstack/neutron.git
+NEUTRON_BRANCH=stable/kilo
 GBPSERVICE_REPO=${GIT_BASE}/stackforge/group-based-policy.git
 GBPSERVICE_BRANCH=stable/kilo
 GBPUI_REPO=${GIT_BASE}/stackforge/group-based-policy-ui.git
@@ -29,10 +29,12 @@ GBPAPICAPI_BRANCH=master
 GBPOPFLEX_REPO=${GIT_BASE}/tbachman/python-opflex-agent.git
 GBPOPFLEX_BRANCH=hack/asr-integration
 GBPAPICML2_REPO=${GIT_BASE}/noironetworks/apic-ml2-driver.git
-GBPAPICML2_BRANCH=master
+GBPAPICML2_BRANCH=kilo
+NETWORKING_CISCO_REPO=${GIT_BASE}/CiscoSystems/networking-cisco.git
+NETWORKING_CISCO_BRANCH=asr1k_stable_kilo_wip
 
 #ML2_L3_PLUGIN=neutron.services.l3_router.l3_apic.ApicL3ServicePlugin,ncp
-ML2_L3_PLUGIN=neutron.plugins.cisco.service_plugins.cisco_device_manager_plugin.CiscoDeviceManagerPlugin,neutron.plugins.cisco.service_plugins.cisco_router_plugin.CiscoRouterPlugin
+ML2_L3_PLUGIN=networking_cisco.plugins.cisco.service_plugins.cisco_device_manager_plugin.CiscoDeviceManagerPlugin,networking_cisco.plugins.cisco.service_plugins.cisco_router_plugin.CiscoRouterPlugin
 
 # Pick up fix for VMware vCenter driver for nova
 NOVA_REPO=$GIT_BASE/noironetworks/nova.git
@@ -86,7 +88,7 @@ plugin_dirs=/opt/stack/gbpautomation/gbpautomation/heat
 
 [[post-config|/etc/neutron/neutron.conf]]
 [DEFAULT]
-apic_system_id=openstack1
+apic_system_id=openstack2
 
 [group_policy]
 policy_drivers=implicit_policy,apic
@@ -193,8 +195,8 @@ booting_time=360
 slot_capacity=2000
 desired_slots_free=0
 tenant_bound=
-device_driver=neutron.plugins.cisco.device_manager.hosting_device_drivers.noop_hd_driver.NoopHostingDeviceDriver
-plugging_driver=neutron.plugins.cisco.device_manager.plugging_drivers.noop_plugging_driver.NoopPluggingDriver
+device_driver=networking_cisco.plugins.cisco.device_manager.hosting_device_drivers.noop_hd_driver.NoopHostingDeviceDriver
+plugging_driver=networking_cisco.plugins.cisco.device_manager.plugging_drivers.noop_plugging_driver.NoopPluggingDriver
 
 
 [cisco_hosting_device_template:3]
@@ -211,8 +213,8 @@ booting_time=360
 slot_capacity=2000
 desired_slots_free=0
 tenant_bound=
-device_driver=neutron.plugins.cisco.device_manager.hosting_device_drivers.noop_hd_driver.NoopHostingDeviceDriver
-plugging_driver=neutron.plugins.cisco.device_manager.plugging_drivers.hw_vlan_trunking_driver.HwVLANTrunkingPlugDriver
+device_driver=networking_cisco.plugins.cisco.device_manager.hosting_device_drivers.noop_hd_driver.NoopHostingDeviceDriver
+plugging_driver=networking_cisco.plugins.cisco.device_manager.plugging_drivers.hw_vlan_trunking_driver.HwVLANTrunkingPlugDriver
 
 [hosting_devices]
 [cisco_hosting_device:3]
@@ -255,7 +257,7 @@ description="Neutron router implemented in Cisco ASR1k device"
 template_id=3
 shared=True
 slot_need=2
-scheduler=neutron.plugins.cisco.l3.schedulers.l3_router_hosting_device_scheduler.L3RouterHostingDeviceHARandomScheduler
-driver=neutron.plugins.cisco.l3.drivers.asr1k.asr1k_routertype_driver.ASR1kL3RouterDriver
-cfg_agent_service_helper=neutron.plugins.cisco.cfg_agent.service_helpers.routing_svc_helper.RoutingServiceHelper
-cfg_agent_driver=neutron.plugins.cisco.cfg_agent.device_drivers.asr1k.asr1k_routing_driver.ASR1kRoutingDriver
+scheduler=networking_cisco..plugins.cisco.l3.schedulers.l3_router_hosting_device_scheduler.L3RouterHostingDeviceHARandomScheduler
+driver=networking_cisco..plugins.cisco.l3.drivers.asr1k.asr1k_routertype_driver.ASR1kL3RouterDriver
+cfg_agent_service_helper=networking_cisco..plugins.cisco.cfg_agent.service_helpers.routing_svc_helper.RoutingServiceHelper
+cfg_agent_driver=networking_cisco..plugins.cisco.cfg_agent.device_drivers.asr1k.asr1k_routing_driver.ASR1kRoutingDriver

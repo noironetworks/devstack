@@ -1136,6 +1136,8 @@ sudo service apache2 restart
 install_gbpapicapi
 install_gbpapicml2
 install_gbpopflex
+install_networking_cisco
+init_networking_cisco
 
 # Extras Configuration
 # ====================
