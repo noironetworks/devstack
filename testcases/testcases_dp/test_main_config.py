@@ -99,32 +99,35 @@ class gbp_main_config(object):
         if self.gbpheat.cfg_all_cli(0, self.heat_stack_name) != 1:
            self._log.error(
                "\n ABORTING THE TESTSUITE RUN, Delete of Residual Heat-Stack Failed") 
-               self.cleanup()
+           self.cleanup(stack=1) # Because residual stack-delete already failed above
+           sys.exit(1)
         self._log.info("\n Invoking Heat Stack for building config and VMs")
         if self.gbpheat.cfg_all_cli(1, self.heat_stack_name, heat_temp=self.heat_temp_test) == 0:
             self._log.error(
                 "\n ABORTING THE TESTSUITE RUN, Heat-Stack create of %s Failed" % (self.heat_stack_name))
             self.cleanup()
-
-        sleep(5)  # Sleep 5s assuming that all objects areated in APIC
+            sys.exit(1)
+        sleep(5)  # Sleep 5s assuming that all objects are created in APIC
         self._log.info(
             "\n Adding SSH-Filter to Svc_epg created for every dhcp_agent")
         svc_epg_list = [
-            'demo_same_ptg_l2p_l3p_bd',
-            'demo_diff_ptg_same_l2p_l3p_bd',
-            'demo_diff_ptg_l2p_same_l3p_bd',
-            'demo_srvr_bd', 'demo_clnt_bd'
-        ]
+                        'demo_same_ptg_l2p_l3p_bd',
+                        'demo_diff_ptg_same_l2p_l3p_bd',
+                        'demo_diff_ptg_l2p_same_l3p_bd',
+                        'demo_srvr_bd', 'demo_clnt_bd'
+                       ]
         create_add_filter(self.apic_ip, svc_epg_list)
         sleep(15)
 
-    def cleanup(self):
+    def cleanup(self,stack=0,avail=0):
         # Need to call for instance delete if there is an instance
         self._log.info("Cleaning Up The Test Config")
-        self.gbpheat.cfg_all_cli(0, self.heat_stack_name)
-        self.gbpnova.avail_zone('cli', 'removehost',
-                                self.nova_agg, hostname=self.comp_node)
-        self.gbpnova.avail_zone('cli', 'delete', self.nova_agg)
-        # Ntk namespace cleanup in Network-Node.. VM names are static
-        # throughout the test-cycle
-        self.gbpcfg.del_netns(self.ntk_node)
+        if stack == 0:
+           self.gbpheat.cfg_all_cli(0, self.heat_stack_name)
+           # Ntk namespace cleanup in Network-Node.. VM names are static
+           # throughout the test-cycle
+           self.gbpcfg.del_netns(self.ntk_node)
+        if avail == 0:
+           self.gbpnova.avail_zone('cli', 'removehost',
+                                   self.nova_agg, hostname=self.comp_node)
+           self.gbpnova.avail_zone('cli', 'delete', self.nova_agg)

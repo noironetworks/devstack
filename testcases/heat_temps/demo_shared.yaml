@@ -1,0 +1,135 @@
+heat_template_version: 2013-05-23
+parameters:
+
+  mgmt_external_segment_name:
+    default: 'Management-Out'
+    description: Name of the external segment used for Internet Access
+    label: mgmt_external_segment_name
+    type: string
+
+  mgmt_external_policy_name:
+    default: 'MgmtExtPol'
+    description: Name of the external policy used by Mgmt External Seg
+    label: mgmt_external_policy_name
+    type: string
+
+
+resources:
+
+# Creating allow action #
+    shared_act:
+        type: OS::GroupBasedPolicy::PolicyAction
+        properties:
+            name: shared_act
+            action_type: allow
+            shared: True
+
+# Creating Classifiers for ICMP & TCP #
+    shared_class_icmp:
+        type: OS::GroupBasedPolicy::PolicyClassifier
+        properties:
+            name: shared_class_icmp
+            protocol: icmp
+            direction: bi
+            shared: True
+
+    shared_class_tcp:
+        type: OS::GroupBasedPolicy::PolicyClassifier
+        properties:
+            name: shared_class_tcp
+            protocol: tcp
+            direction: bi
+            shared: True
+
+# Creating Rules for ICMP & TCP #
+    shared_rule_icmp:
+        type: OS::GroupBasedPolicy::PolicyRule
+        properties:
+            name: shared_rule_icmp
+            policy_classifier_id: { get_resource: shared_class_icmp }
+            policy_actions: [{ get_resource: shared_act }]
+            shared: True
+
+    shared_rule_tcp:
+        type: OS::GroupBasedPolicy::PolicyRule
+        properties:
+            name: shared_rule_tcp
+            policy_classifier_id: { get_resource: shared_class_tcp }
+            policy_actions: [{ get_resource: shared_act }]
+            shared: True
+
+# Creating Policy RuleSet for ExtGw<->VMs, VM<->VM #
+
+    demo_ruleset_icmp_tcp:
+        type: OS::GroupBasedPolicy::PolicyRuleSet
+        properties:
+            name: demo_ruleset_icmp_tcp
+            policy_rules: [{ get_resource: shared_rule_icmp }, { get_resource: shared_rule_tcp }]
+            child_policy_rule_sets: []
+            shared: False
+
+    shared_ruleset_icmp:
+        type: OS::GroupBasedPolicy::PolicyRuleSet
+        properties:
+            name: shared_ruleset_icmp
+            policy_rules: [{ get_resource: shared_rule_icmp }]
+            child_policy_rule_sets: []
+            shared: True
+
+    shared_ruleset_tcp:
+        type: OS::GroupBasedPolicy::PolicyRuleSet
+        properties:
+            name: shared_ruleset_tcp
+            policy_rules: [{ get_resource: shared_rule_tcp }]
+            child_policy_rule_sets: []
+            shared: True
+
+    shared_ruleset_icmp_tcp:
+        type: OS::GroupBasedPolicy::PolicyRuleSet
+        properties:
+            name: shared_ruleset_icmp_tcp
+            policy_rules: [{ get_resource: shared_rule_icmp }, { get_resource: shared_rule_tcp }]
+            child_policy_rule_sets: []
+            shared: True
+
+    shared_ruleset_norule:
+        type: OS::GroupBasedPolicy::PolicyRuleSet
+        properties:
+            name: shared_ruleset_norule
+            policy_rules: []
+            child_policy_rule_sets: []
+            shared: True
+
+#### Setup External Connectivity Resources ####
+
+    mgmt_external_segment:
+        type: OS::GroupBasedPolicy::ExternalSegment
+        properties:
+            name: { get_param: mgmt_external_segment_name}
+            port_address_translation:
+            external_routes:
+                - destination: '0.0.0.0/0'
+                  nexthop:
+            shared: True
+
+
+outputs:
+
+    demo_ruleset_icmp_tcp_id:
+        value: { get_resource: demo_ruleset_icmp_tcp }
+
+    shared_ruleset_icmp_tcp_id:
+        value: { get_resource: shared_ruleset_icmp_tcp }
+
+    shared_ruleset_icmp_id:
+        value: { get_resource: shared_ruleset_icmp }
+
+    shared_ruleset_tcp_id:
+        value: { get_resource: shared_ruleset_tcp }
+
+    shared_ruleset_norule_id:
+        value: { get_resource: shared_ruleset_norule }
+
+    mgmt_external_segment_id:
+        value: { get_resource: mgmt_external_segment }
+

@@ -1,0 +1,188 @@
+heat_template_version: 2013-05-23
+parameters:
+
+  l3p_ip_pool_1:
+    default: '192.101.0.0/16'
+    description: IP Pool for L3Policy
+    label: l3p_ip_pool_1
+    type: string
+
+  l3p_ip_pool_2:
+    default: '192.102.0.0/16'
+    description: IP Pool for L3Policy
+    label: l3p_ip_pool_2
+    type: string
+
+  l3_policy_name_1:
+    default: 'CokeDCL3P1'
+    description: Name of the L3 policy used by Web and App PTGs
+    label: l3_policy_name
+    type: string
+
+  l3_policy_name_2:
+    default: 'CokeDCL3P2'
+    description: Name of the L3 policy used by Web and App PTGs
+    label: l3_policy_name
+    type: string
+
+  vm_image:
+    type: string
+    label: vm_image
+    description: Image for all VMs
+    default: ubuntu_multi_nics
+
+  vm_flavor:
+    type: string
+    label: vm_flavor
+    description: Flavor for all VMs
+    default: m1.medium
+
+
+resources:
+
+
+#### Setup L3/L2 Resources ####
+
+    l3_policy_1:
+        type: OS::GroupBasedPolicy::L3Policy
+        properties:
+            name: { get_param: l3_policy_name_1}
+            ip_pool: { get_param: l3p_ip_pool_1 }
+            subnet_prefix_length: 24
+            external_segments:
+                 - external_segment_id: '9298975b-a490-4abb-bd97-5749a1a88b9b'
+                   allocated_address: []
+            shared: False
+
+    l3_policy_2:
+        type: OS::GroupBasedPolicy::L3Policy
+        properties:
+            name: { get_param: l3_policy_name_2}
+            ip_pool: { get_param: l3p_ip_pool_2 }
+            subnet_prefix_length: 24
+            external_segments:
+                 - external_segment_id: '9298975b-a490-4abb-bd97-5749a1a88b9b'
+                   allocated_address: []
+            shared: False
+
+    websrvr_l2_policy:
+        type: OS::GroupBasedPolicy::L2Policy
+        depends_on: l3_policy_1
+        properties:
+            name: "CokeWEBL2P1" 
+            l3_policy_id: { get_resource: l3_policy_1 }
+            shared: False
+
+    webclnt_l2_policy:
+        type: OS::GroupBasedPolicy::L2Policy
+        depends_on: l3_policy_1
+        properties:
+            name: "CokeWEBL2P2" 
+            l3_policy_id: { get_resource: l3_policy_1 }
+            shared: False
+
+    app_l2_policy:
+        type: OS::GroupBasedPolicy::L2Policy
+        depends_on: l3_policy_2
+        properties:
+            name: "CokeAPPL2P1" 
+            l3_policy_id: { get_resource: l3_policy_2 }
+            shared: False
+
+#### Setup PTGs and NSP ####
+
+    web_srvr_ptg:
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
+        depends_on: websrvr_l2_policy
+        properties:
+            name: 'coke_web_srvr_ptg'
+            l2_policy_id: { get_resource: websrvr_l2_policy }
+            shared: False
+
+    web_clnt_ptg:
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
+        depends_on: webclnt_l2_policy
+        properties:
+            name: 'coke_web_clnt_ptg'
+            l2_policy_id: { get_resource: webclnt_l2_policy }
+            shared: False
+
+    app_ptg:
+        type: OS::GroupBasedPolicy::PolicyTargetGroup
+        depends_on: app_l2_policy
+        properties:
+            name: 'coke_app_ptg'
+            l2_policy_id: { get_resource: app_l2_policy }
+            shared: False
+
+
+#### Setup PTs and VMs ####
+
+    web_srvr_pt:
+        type: OS::GroupBasedPolicy::PolicyTarget
+        depends_on: web_srvr_ptg
+        properties:
+            name: "coke_web-srvr-pt"
+            policy_target_group_id: { get_resource: web_srvr_ptg }
+    
+    web_clnt_pt1:
+        type: OS::GroupBasedPolicy::PolicyTarget
+        depends_on: web_clnt_ptg
+        properties:
+            name: "coke_web-clnt-pt-1"
+            policy_target_group_id: { get_resource: web_clnt_ptg }
+
+    web_clnt_pt2:
+        type: OS::GroupBasedPolicy::PolicyTarget
+        depends_on: web_clnt_ptg
+        properties:
+            name: "coke_web-clnt-pt-2"
+            policy_target_group_id: { get_resource: web_clnt_ptg }
+
+    app_pt1:
+        type: OS::GroupBasedPolicy::PolicyTarget
+        depends_on: app_ptg
+        properties:
+            name: "coke_app-pt-1"
+            policy_target_group_id: { get_resource: app_ptg }
+
+    web_srvr_vm:
+        type: OS::Nova::Server
+        depends_on: web_srvr_pt
+        properties:
+            name: "Coke-Web-Server"
+            image: { get_param: vm_image }
+            flavor: { get_param: vm_flavor }
+            networks:
+                - port: {get_attr: [web_srvr_pt, port_id]}
+
+    web_clnt_vm_1:
+        type: OS::Nova::Server
+        depends_on: web_clnt_pt1
+        properties:
+            name: "Coke-Web-Client-1"
+            image: { get_param: vm_image }
+            flavor: { get_param: vm_flavor }
+            networks:
+                - port: {get_attr: [web_clnt_pt1, port_id]}
+
+    web_clnt_vm_2:
+        type: OS::Nova::Server
+        depends_on: web_clnt_pt2
+        properties:
+            name: "Coke-Web-Client-2"
+            image: { get_param: vm_image }
+            flavor: { get_param: vm_flavor }
+            networks:
+                - port: {get_attr: [web_clnt_pt2, port_id]}
+
+    app_vm:
+        type: OS::Nova::Server
+        depends_on: app_pt1
+        properties:
+            name: "Coke-App-Server"
+            image: { get_param: vm_image }
+            flavor: { get_param: vm_flavor }
+            networks:
+                - port: {get_attr: [app_pt1, port_id]}
+
