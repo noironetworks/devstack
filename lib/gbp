@@ -74,6 +74,12 @@ function install_gbpapicapi {
     pip_install -e $GBPAPICAPI_DIR
 }
 
+# init_apicml2service() - Initialize databases, etc.
+function init_apicml2service {
+    # Run apic-ml2-driver db migrations
+    apic-ml2-db-manage --config-file $NEUTRON_CONF --config-file /$Q_PLUGIN_CONF_FILE upgrade head
+}
+
 # install_gbpapicml2() - Collect source and prepare
 function install_gbpapicml2 {
     git_clone $GBPAPICML2_REPO $GBPAPICML2_DIR $GBPAPICML2_BRANCH
