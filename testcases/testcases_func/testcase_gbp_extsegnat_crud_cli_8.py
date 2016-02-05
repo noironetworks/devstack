@@ -13,21 +13,13 @@ from libs.gbp_aci_libs import Gbp_Aci
 from commands import *
 
 
-def main():
-    # Run the Testcase: # when suite_runner is ready ensure to delete main &
-    # __name__ at EOF
-    test = testcase_gbp_extsegnat_crud_cli_8()
-    test.test_runner()
-    sys.exit(1)
-
-
 class testcase_gbp_extsegnat_crud_cli_8(object):
     """
     This is a GBP NAT CRUD TestCase
     """
     # Initialize logging
     _log = logging.getLogger()
-    hdlr = logging.FileHandler('/tmp/testcase_gbp_extsegnat_crud_cli_8.log')
+    hdlr = logging.FileHandler('/tmp/testcase_gbp_extsegnat_crud_cli.log')
     #formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     formatter = logging.Formatter('%(asctime)s %(message)s')
     hdlr.setFormatter(formatter)
@@ -45,7 +37,6 @@ class testcase_gbp_extsegnat_crud_cli_8(object):
         Method to run the Testcase in Ordered Steps
         """
         test_name = 'TESTCASE_GBP_EXTERNAL_SEGMENT_CRUD_8'
-        # self.write_neutron_conf()
         self._log.info(
             "\nSteps of the TESTCASE_GBP_EXTERNAL_SEGMENT_CRUD_8 to be executed\n")
         testcase_steps = [self.test_step_CreateExternalSeg,
@@ -59,28 +50,21 @@ class testcase_gbp_extsegnat_crud_cli_8(object):
                           self.test_step_VerifyAllL3PolDel,
                           self.test_step_VerifyImplicitNeutronObjsDel
                           ]
-        for step in testcase_steps:  # TODO: Needs FIX
-            try:
-                if step() == 0:
+        failed = 0
+        for step in testcase_steps:
+            if step() == 0:
                     self._log.info("Test Failed at Step == %s" %
                                    (step.__name__.lstrip('self')))
-                    raise TestFailed("%s == FAIL" % (test_name))
-            except TestFailed as err:
-                self._log.info('\n%s' % (err))
-        self._log.info("%s ::PASS" % (test_name))
-
-    def write_neutron_conf(self):
-        """
-        Write External Segment Section into the Neutron.conf
-        Restart the neutron server
-        """
-        self._log.info(
-            "\nWrite ExtSeg Section into Neutron.conf & Restart Neutron Server\n")
-        self.config.write_to_conf_file('/etc/neutron/neutron.conf', 'apic_external_network:%s' % (self.extseg_name),
-                                       router_id=self.router_id, switch=self.leafnodeid, cidr_exposed=self.cidr,
-                                       gateway_ip=self.gateway, port=self.leafport, encap=self.encap)
-        getoutput('systemctl restart neutron-server.service')
-        sleep(2)
+                    self._log.info("On Cleanup deleting configured objects")
+                    self.test_step_DeletePtg()
+                    self.test_step_DeleteNatPool()
+                    self.test_step_DeleteExternalSeg()
+                    failed +=1
+                    break
+        if failed > 0:
+           self._log.info("%s == FAIL" % (test_name))
+        else:
+           self._log.info("%s == PASS" % (test_name))
 
     def test_step_CreateExternalSeg(self):
         """
@@ -113,6 +97,8 @@ class testcase_gbp_extsegnat_crud_cli_8(object):
                 self._log.info("\nException Error = %s\n" % (e))
                 self._log.info(
                     "\nCreate Multiple(n=4) L3 Policies referencing One External Segment failed\n")
+                self._log.info("\nClean Up config from previous steps")
+                self.config.gbp_policy_cfg_all(0, 'extseg', self.extseg_name)
                 return 0
 
     def test_step_VerifyExternalSeg(self):
@@ -124,6 +110,10 @@ class testcase_gbp_extsegnat_crud_cli_8(object):
         if self.verify.gbp_obj_ver_attr_all_values('extseg', self.extseg_id, 'l3_policies', self.l3p_list) == 0:
             self._log.info(
                 "\nVerify of External Segment and it's associated L3Policies failed\n")
+            self._log.info("\nCleaning Up config from previous steps")
+            self.config.gbp_policy_cfg_all(0, 'extseg', self.extseg_name)
+            for l3p in self.l3p_list:
+               self.config.gbp_policy_cfg_all(0, 'l3p', l3p)
             return 0
 
     def test_step_VerifyAllL3Pol(self):
@@ -142,6 +132,10 @@ class testcase_gbp_extsegnat_crud_cli_8(object):
                 self._log.info("\nException Error = %s\n" % (e))
                 self._log.info(
                     "\nVerify of L3Policy and its External Segment failed\n")
+                self._log.info("\nCleaning Up config from previous steps")
+                self.config.gbp_policy_cfg_all(0, 'extseg', self.extseg_name)
+                for l3p in self.l3p_list:
+                    self.config.gbp_policy_cfg_all(0, 'l3p', l3p)
                 return 0
 
     def test_step_DeleteAllL3Pol(self):
@@ -213,5 +207,3 @@ class testcase_gbp_extsegnat_crud_cli_8(object):
                     "\nImplicit Neutron Router still persists in dbase after L3P & Ext-Seg deletion\n")
                 return 0
 
-if __name__ == '__main__':
-    main()

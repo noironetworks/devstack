@@ -27,7 +27,7 @@ class testcase_gbp_extsegnat_crud_cli_3(object):
     """
     # Initialize logging
     _log = logging.getLogger()
-    hdlr = logging.FileHandler('/tmp/testcase_gbp_extsegnat_crud_cli_3.log')
+    hdlr = logging.FileHandler('/tmp/testcase_gbp_extsegnat_crud_cli.log')
     #formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     formatter = logging.Formatter('%(asctime)s %(message)s')
     hdlr.setFormatter(formatter)

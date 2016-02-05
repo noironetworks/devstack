@@ -28,7 +28,7 @@ class testcase_gbp_extsegnat_crud_cli_2(object):
     """
     # Initialize logging
     _log = logging.getLogger()
-    hdlr = logging.FileHandler('/tmp/testcase_gbp_extsegnat_crud_cli_2.log')
+    hdlr = logging.FileHandler('/tmp/testcase_gbp_extsegnat_crud_cli.log')
     #formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
     formatter = logging.Formatter('%(asctime)s %(message)s')
     hdlr.setFormatter(formatter)
@@ -59,7 +59,7 @@ class testcase_gbp_extsegnat_crud_cli_2(object):
                           self.test_step_VerifyImplicitNeutronObjsDel
                           ]
         failed = 0
-        for step in testcase_steps:  # TODO: Needs FIX
+        for step in testcase_steps: 
             if step() == 0:
                     self._log.info("Test Failed at Step == %s" %
                                    (step.__name__.lstrip('self')))

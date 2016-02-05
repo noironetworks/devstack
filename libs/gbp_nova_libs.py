@@ -238,7 +238,8 @@ class Gbp_Nova(object):
         instance = self.nova.servers.find(name=vmname)
         try:
            floating_ips = []
-           floating_ip_class_list = self.nova.floating_ips.findall(instance_id=instance.id) # this returns a list of class FloatingIP for each floating ip of an instance
+           floating_ip_class_list = self.nova.floating_ips.findall(instance_id=instance.id) 
+           # this returns a list of class FloatingIP for each floating ip of an instance
            # The above list contains many attributes like fixed_ip,pool_id etc, we can use it to fetch those attribute if need be
            for index in range(0,len(floating_ip_class_list)):
                floating_ips.append(floating_ip_class_list[index].ip.encode('ascii'))
@@ -247,6 +248,37 @@ class Gbp_Nova(object):
             _log.info('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
             return 0
         return floating_ips
+
+    def action_fip_to_vm(self,action,vmname,extseg_name=None,vmfip=None):
+        """
+        Depending on action type caller
+        Can associate or disassociate a FIP
+        action:: valid strings are 'associate' or 'disassociate'
+        extseg_name:: Must be passed ONLY in case of 'associate'
+        vmfip:: Must be passed ONLY in case of 'disassociate'
+        """
+        if action == 'associate':
+            fip_pools = self.nova.floating_ip_pools.list()
+            if len(fip_pools) > 0:
+               for pool in fip_pools:
+                   if extseg_name in pool.name:
+                      try:
+                          fip = self.nova.floating_ips.create(pool=admin_pool.name.encode())
+                          self.nova.servers.find(name=vmname).add_floating_ip(fip)
+                      except Exception as e:
+                          exc_type, exc_value, exc_traceback = sys.exc_info()
+                          _log.info('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
+                          return 0
+                      return fip
+            _log.error('There are NO Floating IP Pools')
+            return 0
+        if action == 'disassociate':
+           try:
+              self.nova.servers.find(name=vmname).remove_floating_ip(vmfip)
+           except Exception as e:
+              exc_type, exc_value, exc_traceback = sys.exc_info()
+              _log.info('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
+              return 0
 
     def get_any_vm_property(self,vmname):
         """
@@ -258,7 +290,9 @@ class Gbp_Nova(object):
         try:
            vm_dict['name'] = instance.name.encode('ascii')
            vm_dict['id'] = instance.id.encode('ascii')
-           vm_dict['networks'] = instance.networks.values() #just built-in networks method returns a dict in a list. Dict's values is again a list of ip addresses
+           vm_dict['networks'] = instance.networks.values()
+           # just built-in networks method returns a dict in a list.
+           # Dict's values is again a list of ip addresses
            vm_dict['hostid'] = instance.hostId.encode('ascii')
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()

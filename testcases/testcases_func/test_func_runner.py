@@ -8,17 +8,9 @@ import importlib
 import yaml
 from commands import *
 
-
-def main():
-    f = open(sys.argv[1], 'rt')
-    test_conf = yaml.load(f)
-    test_runner = wrapper(test_conf)
-    test_runner.run()
-
-
 class wrapper(object):
 
-    def __init__(self, config_file):
+    def __init__(self):
         """
         Read Config from Config File
         """
@@ -49,13 +41,18 @@ class wrapper(object):
 
     def run(self):
         # Reason: Any new testcase added to the directory will be automatically run
-        # provided i's name string starts with testcase_gbp_aci_intg
-        for class_name in [filename.strip('.py') for filename in glob.glob('testcase_gbp_aci_intg*.py')]:
+        # provided name string starts with testcase_gbp_extsegnat_crud_cli_
+        for class_name in [filename.strip('.py') for filename in glob.glob('testcase_gbp_extsegnat_crud_cli_*.py')]:
             imp_class = importlib.import_module(class_name)
             class_obj = getattr(imp_class, class_name)
             if callable(class_obj):
-                cls = class_obj(self.all_class_init_params)
+                cls = class_obj()
                 cls.test_runner()
+
+def main():
+    func_runner = wrapper()
+    func_runner.run()
+
 
 if __name__ == '__main__':
     main()

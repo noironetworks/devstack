@@ -2,6 +2,7 @@
 import sys
 import logging
 import re
+import string
 from commands import *
 from gbpclient.v2_0 import client as gbpclient
 
@@ -18,7 +19,10 @@ class GBPCrud(object):
     by calling directly the APIs of the GBP Python Client
     """
 
-    def __init__(self,ostack_controller, username='admin', password='noir0123', tenant='admin'):
+    def __init__(self,ostack_controller,
+                 username='admin',
+                 password='noir0123',
+                 tenant='admin'):
         cred = {}
         cred['username']=username
         cred['password']=password
@@ -42,8 +46,8 @@ class GBPCrud(object):
            body = {"policy_action":policy_action}
            self.client.create_policy_action(body)
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Create of Policy Action= %s, failed" %(name))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Create of Policy Action= %s, failed" %(name))
            return 0
     
     def verify_gbp_policy_action(self,name):
@@ -53,7 +57,7 @@ class GBPCrud(object):
         for action in self.client.list_policy_actions()['policy_actions']:
             if action['name'].encode('ascii') == name:
                return action['id'].encode('ascii')
-        _log.info("Policy Action NOT Found")
+        _log.error("Policy Action NOT Found")
         return 0
  
     def get_gbp_policy_action_list(self,getlist=False):
@@ -69,8 +73,8 @@ class GBPCrud(object):
            else:
                pas = self.client.list_policy_actions()       
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Fetching Policy Action List, failed")
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Fetching Policy Action List, failed")
            return 0
         if getlist == True:
            return name_uuid
@@ -84,8 +88,8 @@ class GBPCrud(object):
         try:
            pa = self.client.show_policy_action(uuid)
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Fetching a given Policy Action=%s, failed" %(uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Fetching a given Policy Action=%s, failed" %(uuid))
            return 0
         return pa
 
@@ -93,7 +97,8 @@ class GBPCrud(object):
          """
          Delete a GBP Policy Action
          property_type='name' or 'uuid'
-         If property_type=='name', pass 'name_string' for name_uuid, else pass 'uuid_string' for name_uuid param
+         If property_type=='name', pass 'name_string' for name_uuid,
+         else pass 'uuid_string' for name_uuid param
          """
          try:
             if property_type=='name':
@@ -102,8 +107,8 @@ class GBPCrud(object):
             else:
                self.client.delete_policy_action(name_uuid)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting Policy Action = %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Deleting Policy Action = %s, failed" %(name_uuid))
            return 0
 
     def create_gbp_policy_classifier(self,name,**kwargs): 
@@ -123,11 +128,14 @@ class GBPCrud(object):
            body = {"policy_classifier":policy_classifier}
            self.client.create_policy_classifier(body)
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Create of Policy Classifier= %s, failed" %(name))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Create of Policy Classifier= %s, failed" %(name))
            return 0
 
-    def update_gbp_policy_classifier(self,name_uuid,property_type='name',**kwargs):
+    def update_gbp_policy_classifier(self,
+                                     name_uuid,
+                                     property_type='name',
+                                     **kwargs):
          """
          Update GBP Policy Classifier editable attributes
          Supported  keyword based attributes and their values:
@@ -148,8 +156,8 @@ class GBPCrud(object):
             body = {"policy_classifier":policy_classifier}
             self.client.update_policy_classifier(classifier_id,body)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Update of Policy Classifier= %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Update of Policy Classifier= %s, failed" %(name_uuid))
            return 0
 
     def get_gbp_policy_classifier_list(self,getlist=False):
@@ -165,8 +173,8 @@ class GBPCrud(object):
            else:
                pcs = self.client.list_policy_classifiers()
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Fetching Policy Classifier List, failed")
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Fetching Policy Classifier List, failed")
            return 0
         if getlist == True:
            return name_uuid
@@ -177,7 +185,8 @@ class GBPCrud(object):
          """
          Delete a GBP Policy Classifier
          property_type='name' or 'uuid'
-         If property_type=='name', pass 'name_string' for name_uuid, else pass 'uuid_string' for name_uuid param
+         If property_type=='name', pass 'name_string' for name_uuid,
+         else pass 'uuid_string' for name_uuid param
          """
          try:
             if property_type=='name':
@@ -186,8 +195,8 @@ class GBPCrud(object):
             else:
                self.client.delete_policy_classifier(name_uuid)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting Policy Classifier = %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Deleting Policy Classifier = %s, failed" %(name_uuid))
            return 0
 
     def verify_gbp_policy_classifier(self,name):
@@ -197,13 +206,14 @@ class GBPCrud(object):
         for classifier in self.client.list_policy_classifiers()['policy_classifiers']:
             if classifier['name'].encode('ascii') == name:
                return classifier['id'].encode('ascii')
-        _log.info("Policy Classifier NOT Found")
+        _log.error("Policy Classifier NOT Found")
         return 0
 
     def create_gbp_policy_rule(self,name,classifier,action,property_type='name',**kwargs):
         """
         Create a GBP Policy Rule
-        classifier/action: Pass name-string or uuid-string depending on property_type
+        classifier/action: Pass name-string or uuid-string
+        depending on property_type
         property_type: 'uuid' or 'name'(default)
         Supported  keyword based attributes and their values:
         'shared'= 'True', 'False'
@@ -224,8 +234,8 @@ class GBPCrud(object):
         try:
            self.client.create_policy_rule(body)
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Creating Policy Rule = %s, failed" %(name))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Creating Policy Rule = %s, failed" %(name))
            return 0
         
     def update_gbp_policy_rule(self,name_uuid,property_type='name',**kwargs):
@@ -248,8 +258,8 @@ class GBPCrud(object):
             body = {"policy_rule":policy_rule}
             self.client.update_policy_rule(rule_id,body)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Update of Policy Rule= %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Update of Policy Rule= %s, failed" %(name_uuid))
            return 0
 
     def verify_gbp_policy_rule(self,name):
@@ -259,7 +269,7 @@ class GBPCrud(object):
         for rule in self.client.list_policy_rules()['policy_rules']:
             if rule['name'].encode('ascii') == name:
                return rule['id'].encode('ascii')
-        _log.info("Policy Rule NOT Found")
+        _log.error("Policy Rule NOT Found")
         return 0
 
     def get_gbp_policy_rule_list(self,getlist=False):
@@ -275,8 +285,8 @@ class GBPCrud(object):
            else:
                rules = self.client.list_policy_rules()
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Fetching Policy Rule List, failed")
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Fetching Policy Rule List, failed")
            return 0
         if getlist == True:
            return name_uuid
@@ -287,7 +297,8 @@ class GBPCrud(object):
          """
          Delete a GBP Policy Rule
          property_type='name' or 'uuid'
-         If property_type=='name', pass 'name_string' for name_uuid, else pass 'uuid_string' for name_uuid param
+         If property_type=='name', pass 'name_string' for name_uuid,
+         else pass 'uuid_string' for name_uuid param
          """
          try:
             if property_type=='name':
@@ -296,8 +307,8 @@ class GBPCrud(object):
             else:
                self.client.delete_policy_rule(name_uuid)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting Policy Rule = %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Deleting Policy Rule = %s, failed" %(name_uuid))
            return 0
 
     def create_gbp_policy_rule_set(self,name,rule_list=[],property_type='name',**kwargs):
@@ -322,8 +333,8 @@ class GBPCrud(object):
            body = {"policy_rule_set":policy_rule_set}
            self.client.create_policy_rule_set(body)
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Creating Policy RuleSet = %s, failed" %(name))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Creating Policy RuleSet = %s, failed" %(name))
            return 0
 
     def verify_gbp_policy_rule_set(self,name):
@@ -333,10 +344,13 @@ class GBPCrud(object):
         for ruleset in self.client.list_policy_rule_sets()['policy_rule_sets']:
             if ruleset['name'].encode('ascii') == name:
                return ruleset['id'].encode('ascii')
-        _log.info("Policy RuleSet NOT Found")
+        _log.error("Policy RuleSet NOT Found")
         return 0
 
-    def update_gbp_policy_rule_set(self,name_uuid,property_type='name',**kwargs):
+    def update_gbp_policy_rule_set(self,
+                                   name_uuid,
+                                   property_type='name',
+                                   **kwargs):
          """
          Update GBP Policy Rule editable attributes
          Supported  keyword based attributes and their values/type:
@@ -355,15 +369,16 @@ class GBPCrud(object):
             body = {"policy_rule_set":policy_rule_set}
             self.client.update_policy_rule_set(ruleset_id,body)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Update of Policy RuleSet= %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Update of Policy RuleSet= %s, failed" %(name_uuid))
            return 0
 
     def delete_gbp_policy_rule_set(self,name_uuid,property_type='name'):
          """
          Delete a GBP Policy RuleSet
          property_type='name' or 'uuid'
-         If property_type=='name', pass 'name_string' for name_uuid, else pass 'uuid_string' for name_uuid param
+         If property_type=='name', pass 'name_string' for name_uuid,
+         else pass 'uuid_string' for name_uuid param
          """
          try:
             if property_type=='name':
@@ -372,8 +387,8 @@ class GBPCrud(object):
             else:
                self.client.delete_policy_rule_set(name_uuid)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting Policy RuleSet = %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Deleting Policy RuleSet = %s, failed" %(name_uuid))
            return 0
 
     def get_gbp_policy_rule_set_list(self,getlist=False):
@@ -389,8 +404,8 @@ class GBPCrud(object):
            else:
                rulesets = self.client.list_policy_rule_sets()
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Fetching Policy RuleSet List, failed")
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Fetching Policy RuleSet List, failed")
            return 0
         if getlist == True:
            return name_uuid
@@ -417,8 +432,8 @@ class GBPCrud(object):
            ptg_uuid = self.client.create_policy_target_group(body)['policy_target_group']['id'].encode('ascii')
            
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Creating Policy Target Group = %s, failed" %(name))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Creating Policy Target Group = %s, failed" %(name))
            return 0
         return ptg_uuid
 
@@ -429,12 +444,16 @@ class GBPCrud(object):
         for ptg in self.client.list_policy_target_groups()['policy_target_groups']:
             if ptg['name'].encode('ascii') == name:
                return ptg['id'].encode('ascii')
-        _log.info("Policy Target Group NOT Found")
+        _log.error("Policy Target Group NOT Found")
         return 0
 
 
-    def update_gbp_policy_target_group(self, name_uuid,property_type='name',consumed_policy_rulesets=None,
-                                       provided_policy_rulesets=None, shared=False,
+    def update_gbp_policy_target_group(self,
+                                       name_uuid,
+                                       property_type='name',
+                                       consumed_policy_rulesets=None,
+                                       provided_policy_rulesets=None,
+                                       shared=False,
                                        network_service_policy=None):
         """
         Update the Policy Target Group
@@ -465,27 +484,27 @@ class GBPCrud(object):
           while True:
                if consumed_policy_rulesets!=None and provided_policy_rulesets!=None:
                     body = {"policy_target_group" : {
-                                                   "provided_policy_rule_sets" : provided_dict,
-                                                   "consumed_policy_rule_sets" : consumed_dict
-                                                  }
+                             "provided_policy_rule_sets" : provided_dict,
+                             "consumed_policy_rule_sets" : consumed_dict
+                                                    }
                          }
                     break
                elif consumed_policy_rulesets!=None and provided_policy_rulesets==None:
                     body = {"policy_target_group" : {
-                                                   "consumed_policy_rule_sets" : consumed_dict
+                            "consumed_policy_rule_sets" : consumed_dict
                                                   }
                          }
                     break
                elif provided_policy_rulesets!=None and consumed_policy_rulesets==None:
                     body = {"policy_target_group" : {
-                                                   "provided_policy_rule_sets" : provided_dict
+                            "provided_policy_rule_sets" : provided_dict
                                                   }
                          }
                     break
                elif provided_policy_rulesets==None and consumed_policy_rulesets==None:
                     body = {"policy_target_group" : {
-                                                   "provided_policy_rule_sets" : {},
-                                                   "consumed_policy_rule_sets" : {}
+                            "provided_policy_rule_sets" : {},
+                            "consumed_policy_rule_sets" : {}
                                                   }
                          }
                     break
@@ -495,15 +514,16 @@ class GBPCrud(object):
              body["policy_target_group"]["network_service_policy_id"]=network_service_policy 
           self.client.update_policy_target_group(group_id, body)
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Updating Policy Target Group = %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Updating Policy Target Group = %s, failed" %(name_uuid))
            return 0
 
     def delete_gbp_policy_target_group(self,name_uuid,property_type='name'):
          """
          Delete a GBP Policy Group
          property_type='name' or 'uuid'
-         If property_type=='name', pass 'name_string' for name_uuid, else pass 'uuid_string' for name_uuid param
+         If property_type=='name', pass 'name_string' for name_uuid,
+         else pass 'uuid_string' for name_uuid param
          """
          try:
             if property_type=='name':
@@ -512,8 +532,8 @@ class GBPCrud(object):
             else:
                self.client.delete_policy_target_group(name_uuid)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting Policy Target Group = %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Deleting Policy Target Group = %s, failed" %(name_uuid))
 
     def get_gbp_policy_target_group_list(self,getlist=False):
         """
@@ -528,8 +548,8 @@ class GBPCrud(object):
            else:
                ptgs = self.client.list_policy_target_groups()
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Fetching Policy Target Group List, failed")
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Fetching Policy Target Group List, failed")
            return 0
         if getlist == True:
            return name_uuid
@@ -545,16 +565,16 @@ class GBPCrud(object):
            ptg_id = self.verify_gbp_policy_target_group(ptg_name)
            for i in range(pt_count):
                body = {"policy_target" : {
-                                          "policy_target_group_id" : ptg_id,
-                                          "name" : name
+                                       "policy_target_group_id" : ptg_id,
+                                       "name" : name
                                          }
                       }
            post_result = self.client.create_policy_target(body)['policy_target']
            pt_uuid = post_result['id'].encode('ascii')
            neutron_port_id = post_result['port_id'].encode('ascii')
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Creating PT = %s, failed" %(name))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Creating PT = %s, failed" %(name))
            return 0
         return pt_uuid,neutron_port_id
 
@@ -566,13 +586,14 @@ class GBPCrud(object):
         for pt in self.client.list_policy_targets()['policy_targets']:
             if pt['name'].encode('ascii') == name:
                return pt['id'].encode('ascii'),pt['port_id'].encode('ascii')
-        _log.info("Policy Target NOT Found")
+        _log.error("Policy Target NOT Found")
         return 0
 
     def get_gbp_policy_target_list(self):
         """
         Fetches a list of Policy Targets
-        Returns a dict of Policy Targets UUIDs and their corresponding Neutron Port UUIDs
+        Returns a dict of Policy Targets UUIDs
+        and their corresponding Neutron Port UUIDs
         """
         pt_nic_id = {}
         for pt in self.client.list_policy_targets()['policy_targets']:
@@ -583,7 +604,8 @@ class GBPCrud(object):
          """
          Delete a GBP Policy Target
          property_type='name' or 'uuid'
-         If property_type=='name', pass 'name_string' for name_uuid, else pass 'uuid_string' for name_uuid param
+         If property_type=='name', pass 'name_string' for name_uuid,
+         else pass 'uuid_string' for name_uuid param
          """
          try:
             if property_type=='name':
@@ -592,8 +614,8 @@ class GBPCrud(object):
             else:
                self.client.delete_policy_target(name_uuid)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting Policy Target = %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Deleting Policy Target = %s, failed" %(name_uuid))
            return 0
 
     def create_gbp_l3policy(self,name,**kwargs):
@@ -609,13 +631,16 @@ class GBPCrud(object):
         try:
            l3policy={"name":name}
            for arg,val in kwargs.items():
+               if arg == 'external_segments':
+                  val = {val:[]}
                l3policy[arg]=val
            body = {"l3_policy": l3policy}
            l3p_uuid = self.client.create_l3_policy(body)['l3_policy']['id'].encode('ascii')
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Creating L3Policy = %s, failed" %(name))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Creating L3Policy = %s, failed" %(name))
            return 0
+        print l3p_uuid
         return l3p_uuid
 
     def verify_gbp_l3policy(self,name):
@@ -625,14 +650,15 @@ class GBPCrud(object):
         for l3p in self.client.list_l3_policies()['l3_policies']:
             if l3p['name'].encode('ascii') == name:
                return l3p['id'].encode('ascii')
-        _log.info("L3Policy NOT Found")
+        _log.error("L3Policy NOT Found")
         return 0
 
     def delete_gbp_l3policy(self,name_uuid,property_type='name'):
          """
          Delete a GBP L3Policy
          property_type='name' or 'uuid'
-         If property_type=='name', pass 'name_string' for name_uuid, else pass 'uuid_string' for name_uuid param
+         If property_type=='name', pass 'name_string' for name_uuid,
+         else pass 'uuid_string' for name_uuid param
          """
          try:
             if property_type=='name':
@@ -641,8 +667,8 @@ class GBPCrud(object):
             else:
                self.client.delete_l3_policy(name_uuid)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting L3Policy = %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Deleting L3Policy = %s, failed" %(name_uuid))
 
     def update_gbp_l3policy(self,name_uuid,property_type='name',**kwargs):
          """
@@ -651,6 +677,7 @@ class GBPCrud(object):
          'subnet_prefix_length' = integer'
          'shared'= 'True', 'False'
          'description'= any string
+         'external_segments'= UUID of the external segment 
          """
          if property_type=='uuid':
             l3p_id=name_uuid
@@ -659,12 +686,14 @@ class GBPCrud(object):
          l3p = {}
          try:
             for arg,val in kwargs.items():
+               if arg == 'external_segments':
+                  val = {val:[]}
                l3p[arg]=val
             body = {"l3_policy":l3p}
             self.client.update_l3_policy(l3p_id,body)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Update of L3Policy = %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Update of L3Policy = %s, failed" %(name_uuid))
            return 0
  
     def get_gbp_l3policy_list(self,getlist=False):
@@ -680,8 +709,8 @@ class GBPCrud(object):
            else:
                l3ps = self.client.list_l3_policies()
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Fetching L3Policy List, failed")
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Fetching L3Policy List, failed")
            return 0
         if getlist == True:
            return name_uuid
@@ -692,9 +721,8 @@ class GBPCrud(object):
         """
         Create a GBP L2Policy
         Supported  keyword based attributes and their values/type:
-        'l3_policy' = string (eg:'1.2.3.0/24')
+        'l3_policy_id' = string (eg:'1.2.3.0/24')
         'subnet_prefix_length' = integer
-        'external_segments': {}
         'shared': True, False
         'description': string
         """
@@ -705,8 +733,8 @@ class GBPCrud(object):
            body = {"l2_policy": l2policy}
            l2p_uuid = self.client.create_l2_policy(body)['l2_policy']['id'].encode('ascii')
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Creating L2Policy = %s, failed" %(name))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Creating L2Policy = %s, failed" %(name))
            return 0
         return l2p_uuid
 
@@ -718,18 +746,19 @@ class GBPCrud(object):
           for l2p in self.client.list_l2_policies()['l2_policies']:
             if l2p['name'].encode('ascii') == name:
                return l2p['id'].encode('ascii')
-          _log.info("L2Policy NOT Found")     
+          _log.error("L2Policy NOT Found")     
           return 0
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Verifying L2Policy = %s, failed" %(name))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Verifying L2Policy = %s, failed" %(name))
            return 0
 
     def delete_gbp_l2policy(self,name_uuid,property_type='name'):
          """
          Delete a GBP L2Policy
          property_type='name' or 'uuid'
-         If property_type=='name', pass 'name_string' for name_uuid, else pass 'uuid_string' for name_uuid param
+         If property_type=='name', pass 'name_string' for name_uuid,
+         else pass 'uuid_string' for name_uuid param
          """
          try:
             if property_type=='name':
@@ -738,8 +767,8 @@ class GBPCrud(object):
             else:
                self.client.delete_l2_policy(name_uuid)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting L2Policy = %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Deleting L2Policy = %s, failed" %(name_uuid))
 
     def get_gbp_l2policy_list(self,getlist=False):
         """
@@ -754,8 +783,8 @@ class GBPCrud(object):
            else:
                l2ps = self.client.list_l2_policies()
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Fetching L2Policy List, failed")
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Fetching L2Policy List, failed")
            return 0
         if getlist == True:
            return name_uuid
@@ -784,8 +813,8 @@ class GBPCrud(object):
            body = {"external_segment": external_segment}
            ext_seg_uuid = self.client.create_external_segment(body)['external_segment']['id'].encode('ascii')
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Creating External Segment = %s, failed" %(name))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Creating External Segment = %s, failed" %(name))
            return 0
         return ext_seg_uuid
 
@@ -796,8 +825,8 @@ class GBPCrud(object):
          try:
              self.client.delete_external_segment(uuid)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting External Segment = %s, failed" %(uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Deleting External Segment = %s, failed" %(uuid))
 
 
     def update_gbp_external_segment(self,uuid,**kwargs):
@@ -818,26 +847,25 @@ class GBPCrud(object):
             body = {"external_segment":external_segment}
             self.client.update_external_segment(uuid,body)
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Update of External Segment = %s, failed" %(uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Update of External Segment = %s, failed" %(uuid))
            return 0
 
     def create_gbp_nat_pool(self,name,**kwargs):
         """
         Create a NAT Pool
         Supported keywords based attributes and their values/type:
-        'ip-pool' = string(must be exact or subnet of cidr)
-        'external-segment' = string(name/uuid)
+        'ip_pool' = string(must be exact or subnet of cidr)
+        'external_segment_id' = string(name/uuid)
         """
         nat_pool = {'name':name}
         try:
             for arg,val in kwargs.items():
-               nat_pool[arg]=val
+                nat_pool[arg]=val
             body = {"nat_pool":nat_pool}
             nat_pool_uuid = self.client.create_nat_pool(body)['nat_pool']['id'].encode('ascii')
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Create of NAT Pool = %s, failed" %(uuid))
+           _log.error("\nException Error: %s\n" %(e))
            return 0 
         return nat_pool_uuid
 
@@ -848,46 +876,75 @@ class GBPCrud(object):
          try:
              self.client.delete_nat_pool(uuid)
          except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Deleting NAT Pool = %s, failed" %(uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Deleting NAT Pool = %s, failed" %(uuid))
 
-    def update_gbp_nat_pool(self,name,**kwargs):
+    def update_gbp_nat_pool(self,uuid,**kwargs):
         """
         Update a NAT Pool
         Supported keywords based attributes and their values/type:
-        'ip-pool' = string(must be exact or subnet of cidr)
-        'external-segment' = string(name/uuid)
+        'ip_pool' = string(must be exact or subnet of cidr)
+        'external_segment_id' = string(name/uuid)
         """
         nat_pool = {}
         try:
             for arg,val in kwargs.items():
-               nat_pool[arg]=val
+                nat_pool[arg]=val
             body = {"nat_pool":nat_pool}
             self.client.update_nat_pool(uuid,body)
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Update of NAT Pool = %s, failed" %(uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Update of NAT Pool = %s, failed" %(uuid))
            return 0
 
     def create_gbp_network_service_policy_for_nat(self,shared=False):
         """
         Create Network Service Policy
         """
-        network_service_params = [{"type": "ip_pool", "name": "nat", "value": "nat_pool"}]
+        network_service_params = [{"type": "ip_pool",
+                                   "name": "nat", 
+                                   "value": "nat_pool"}]
         nsp_nat = {'name' : name, 'network_service_params' : network_service_params}
         try:
            body = {'network_service_policy':nsp_nat}
            nsp_nat_uuid = self.client.create_network_service_policy(body)['network_service_policy']['id'].encode('ascii')
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Creating NAT NSP = %s, failed" %(uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Creating NAT NSP = %s, failed" %(uuid))
            return 0
         return nsp_nat_uuid   
 
-    def update_gbp_external_policy(self, name_uuid,property_type='name',consumed_policy_rulesets=None,provided_policy_rulesets=None, shared=False):
+    def create_gbp_external_policy(self,name,**kwargs):
+        """
+        Create the External Policy
+        Provide uniform property_type('name' or 'uuid') across objects
+        Pass external_segments as a List
+        """
+
+        try:
+           external_policy = {"name": name}
+           for arg,val in kwargs.items():
+               external_policy[arg]=val
+           body = {"external_policy":external_policy}
+           extpol_uuid = self.client.create_external_policy(body)['external_policy']['id'].encode('ascii')
+        except Exception as e:
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Creating External Policy = %s, failed" %(name))
+           return 0
+        return extpol_uuid
+
+
+    def update_gbp_external_policy(self,
+                                   name_uuid,
+                                   property_type='name',
+                                   consumed_policy_rulesets=None,
+                                   provided_policy_rulesets=None, 
+                                   external_segments=[],
+                                   shared=False):
         """
         Update the External Policy
         Provide uniform property_type('name' or 'uuid') across objects
+        Pass external_segments as a List
         """
         try:
           consumed_prs = {}
@@ -915,24 +972,74 @@ class GBPCrud(object):
                if consumed_policy_rulesets!=None and provided_policy_rulesets!=None:
                   body["external_policy"]["provided_policy_rule_sets"] = provided_prs
                   body["external_policy"]["consumed_policy_rule_sets"] = consumed_prs
+                  if external_segments != []:
+                     body["external_policy"]["consumed_policy_rule_sets"] = external_segments
                   break
                elif consumed_policy_rulesets!=None and provided_policy_rulesets==None:
                   body["external_policy"]["consumed_policy_rule_sets"] = consumed_prs
+                  if external_segments != []:
+                     body["external_policy"]["consumed_policy_rule_sets"] = external_segments
                   break
                elif provided_policy_rulesets!=None and consumed_policy_rulesets==None:
                   body["external_policy"]["provided_policy_rule_sets"] = provided_prs
+                  if external_segments != []:
+                     body["external_policy"]["consumed_policy_rule_sets"] = external_segments
                   break
                elif provided_policy_rulesets==None and consumed_policy_rulesets==None:
                   body["external_policy"]["provided_policy_rule_sets"] = {}
                   body["external_policy"]["consumed_policy_rule_sets"] = {}
+                  if external_segments != []:
+                     body["external_policy"]["consumed_policy_rule_sets"] = external_segments
                   break
                else:
                   break
           self.client.update_external_policy(policy_id, body)
         except Exception as e:
-           _log.info("\nException Error: %s\n" %(e))
-           _log.info("Updating External Policy = %s, failed" %(name_uuid))
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Updating External Policy = %s, failed" %(name_uuid))
            return 0
+
+    def gbp_verify_any_object(self,obj,obj_uuid,**kwargs):
+        """
+        Verify any objects and its attributes
+        Pass the keywords as it appears in a show cmd
+        Valid objects are:: l3_policy,l2_policy,policy_target_group,
+        policy_target,nat_pool,external_segment,external_policy and
+        others as it appears in a gbp show CLI
+        keywords:: the string should be exact as seen in gbp show CLI
+        values:: should be passed as the datatype as it appears in CLI
+        Example: For obj: l3_policy, key=l2_policies, val=['uuid of l2p']
+        """
+        if obj == 'l3_policy':
+           attributes = self.client.show_l3_policy(obj_uuid)[l3_policy]
+           for arg,val in kwargs.items():
+               if attributes[arg] != val:
+               _log.error("Attribute %s and its Value %s NOT found in the %s %s" %(arg,val,obj,obj_uuid))
+               return 0
+        if obj == 'l2_policy':
+           attributes = self.client.show_l2_policy(obj_uuid)[l2_policy]
+           for arg,val in kwargs.items():
+               if attributes[arg] != val:
+               _log.error("Attribute %s and its Value %s NOT found in the %s %s" %(arg,val,obj,obj_uuid))
+               return 0
+        if obj == 'policy_target_group':
+           attributes = self.client.show_policy_target_group(obj_uuid)[policy_target_group]
+           for arg,val in kwargs.items():
+               if attributes[arg] != val:
+               _log.error("Attribute %s and its Value %s NOT found in the %s %s" %(arg,val,obj,obj_uuid))
+               return 0
+        if obj == 'external_segment':
+           attributes = self.client.show_external_segment(obj_uuid)[external_segment]
+           for arg,val in kwargs.items():
+               if attributes[arg] != val:
+               _log.error("Attribute %s and its Value %s NOT found in the %s %s" %(arg,val,obj,obj_uuid))
+               return 0
+        if obj == 'external_policy':
+           attributes = self.client.show_external_policy(obj_uuid)[external_policy]
+           for arg,val in kwargs.items():
+               if attributes[arg] != val:
+               _log.error("Attribute %s and its Value %s NOT found in the %s %s" %(arg,val,obj,obj_uuid))
+               return 0
 
     def gbp_ext_route_add_to_extseg_util(self,extseg_id,extseg_name,route='0.0.0.0/0'):
         """
@@ -947,3 +1054,4 @@ class GBPCrud(object):
         route_gw = getoutput(cmd)
         _log.info("Route to be added to External Segment %s with GW %s  == %s" %(extseg_name,route_gw,route))
         self.update_gbp_external_segment(extseg_id,external_routes=[{'destination' : route, 'nexthop' : route_gw}])
+
