@@ -260,18 +260,22 @@ class Gbp_Nova(object):
         if action == 'associate':
             fip_pools = self.nova.floating_ip_pools.list()
             if len(fip_pools) > 0:
+               print 'FIP POOLS', fip_pools
                for pool in fip_pools:
+                   print pool.name
                    if extseg_name in pool.name:
+                      print 'MATCH'
                       try:
-                          fip = self.nova.floating_ips.create(pool=admin_pool.name.encode())
+                          fip = self.nova.floating_ips.create(pool=pool.name)
                           self.nova.servers.find(name=vmname).add_floating_ip(fip)
                       except Exception as e:
                           exc_type, exc_value, exc_traceback = sys.exc_info()
                           _log.info('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
                           return 0
-                      return fip
-            _log.error('There are NO Floating IP Pools')
-            return 0
+                      return fip.ip.encode(),fip #Returning the attr of fip(address) and the fip object itself
+            else:
+                _log.error('There are NO Floating IP Pools')
+                return 0
         if action == 'disassociate':
            try:
               self.nova.servers.find(name=vmname).remove_floating_ip(vmfip)
