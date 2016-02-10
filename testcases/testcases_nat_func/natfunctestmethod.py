@@ -24,7 +24,7 @@ def main():
     sys.exit(1)
 
 
-class TestMethods(object):
+class NatFuncTestMethods(object):
     """
     This is a GBP NAT Functionality TestCase
     """
@@ -56,36 +56,6 @@ class TestMethods(object):
         self.vm1name = 'TestVM1'
         self.vm2name = 'TestVM2'
      
-    def test_runner(self):
-        """
-        Method to run the Testcase in Ordered Steps
-        """
-        test_name = 'TESTCASE_GBP_NAT_FUNC_5'
-        #self.get_global_config()
-        self._log.info(
-            "\nSteps of the TESTCASE_GBP_NAT_FUNC_1 to be executed\n")
-        testcase_steps = [#self.test_create_ext_seg_with_default,
-                          #self.test_create_nat_pool_associate_ext_seg,
-                          #self.test_create_ptg_default_l3p,
-                          #self.test_create_non_default_l3p_and_l2p,
-                          #self.test_create_ptg_with_nondefault_l3p,
-                          #self.test_associate_ext_seg_to_both_l3ps,
-                          #self.test_create_policy_target_for_each_ptg,
-                          #self.test_create_external_policy,
-                          self.testVerifyCfgdObjects,
-                          #self.test_launch_vms_each_pt,
-                          self.test_associate_fip_to_VMs,
-                          self.test_ping_and_tcp_from_ext_rtr
-                          ]
-        for step in testcase_steps:  # TODO: Needs FIX
-            try:
-                if step() == 0:
-                    self._log.error("Test Failed at Step == %s" %
-                                   (step.__name__.lstrip('self')))
-                    raise TestFailed("%s == FAIL" % (test_name))
-            except TestFailed as err:
-                self._log.info('\n%s' % (err))
-        self._log.info("%s == PASS" % (test_name))
 
     def testCreateExtSegWithDefault(self):
         """
@@ -209,15 +179,6 @@ class TestMethods(object):
         """
         Verify all the configured objects and their atts
         """
-        ## JISHNU
-        self.nondefaultl3pid = '3d4e90da-d34e-4abc-b74a-eb562cfba3b9'
-        self.extsegid = '7df3c4f9-bdf5-41ea-8fbc-a52a83e22825'
-        self.l2policy_id = 'fe32d2ca-20b8-4cf0-9328-aa0feb39bcbe'
-        self.ptg2id = '79e152ff-e8a3-49bf-bc36-b4849521cdc4'
-        self.defaultl3pid = 'd07d9b3d-4447-4fdf-9e0e-09e8a0265e9a'
-        self.nat_pool_id = 'b40e5a00-c30f-491f-897a-903f94a5c604'
-        self.extpol_uuid = '38ce2077-42df-420f-9890-e1181649d20e'
-         
         self._log.info(
                  "\nStep: Verify the Configured Objects and their Attributes\n")
         if self.gbpcrud.verify_gbp_any_object('l3_policy',
@@ -285,7 +246,7 @@ class TestMethods(object):
         """
         self._log.info("\nStep: Ping and TCP test from external router\n")
         
-    def DeleteOrCleanup(self):
+    def DeleteOrCleanup(self,action,obj=None,uuid=''):
         """
         Specific Delete or Blind Cleanup
         """
@@ -301,6 +262,8 @@ class TestMethods(object):
            else:
               self._log.info("\n Incorrect params passed for delete action")
         if action == 'cleanup':
+           for vm in [self.vm1name, self.vm2name]:
+               self.gbpnova.vm_delete(vm)
            pt_list = self.gbpcrud.get_gbp_policy_target_list()
            if len(pt_list) > 0:
               for pt in pt_list:
@@ -330,7 +293,3 @@ class TestMethods(object):
               for extseg in extseg_list:
                  self.gbpcrud.delete_gbp_external_segment(extseg, property_type='uuid')
              
-        
-if __name__ == '__main__':
-    main()
-
