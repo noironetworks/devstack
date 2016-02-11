@@ -293,7 +293,7 @@ class GBPCrud(object):
         else:
            return rules_list
 
-    def delete_gbp_policy_rules(self,name_uuid,property_type='name'):
+    def delete_gbp_policy_rule(self,name_uuid,property_type='name'):
          """
          Delete a GBP Policy Rule
          property_type='name' or 'uuid'
@@ -547,7 +547,7 @@ class GBPCrud(object):
               for ptg in self.client.list_policy_target_groups()['policy_target_groups']:
                   name_uuid[ptg['name'].encode('ascii')]= ptg['id'].encode('ascii')
            else:
-               ptgs_list = [item['d'] for item in self.client.list_policy_target_groups()['policy_target_groups']]
+               ptgs_list = [item['id'] for item in self.client.list_policy_target_groups()['policy_target_groups']]
         except Exception as e:
            _log.error("\nException Error: %s\n" %(e))
            _log.error("Fetching Policy Target Group List, failed")
@@ -641,7 +641,6 @@ class GBPCrud(object):
            _log.error("\nException Error: %s\n" %(e))
            _log.error("Creating L3Policy = %s, failed" %(name))
            return 0
-        print l3p_uuid
         return l3p_uuid
 
     def verify_gbp_l3policy(self,name):
