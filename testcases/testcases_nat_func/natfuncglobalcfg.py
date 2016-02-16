@@ -35,6 +35,7 @@ class GbpNatFuncGlobalCfg(object):
         self.prsicmptcp = 'PrsIcmpTcp'
         self.prsicmp = 'PrsIcmp'
         self.prstcp = 'PrsTcp'
+        #self.cleanup() #JISHNU
 
     def CfgGlobalObjs(self):
         self._log.info(

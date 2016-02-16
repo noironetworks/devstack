@@ -44,7 +44,7 @@ class Gbp_Nova(object):
         """
         for err in self.err_strings:
             if re.search('\\b%s\\b' %(err), cmd_out, re.I):
-               _log.info("Cmd execution failed! with this Return Error: \n%s" %(cmd_out))
+               _log.error("Cmd execution failed! with this Return Error: \n%s" %(cmd_out))
                return 0
 
     def quota_update(self):
@@ -65,7 +65,7 @@ class Gbp_Nova(object):
             if len(re.findall('Active: active \(running\)',out)) > 0:
                return 1
             else:
-                _log.info('This service %s did not restart' %(service))
+                _log.error('This service %s did not restart' %(service))
                 return 0
 
 
@@ -151,12 +151,12 @@ class Gbp_Nova(object):
         status_try=1
         while vm_status != 'ACTIVE':
           if status_try < 11:
-             sleep(5)
+             sleep(10)
              # Retrieve the instance again so the status field updates
              instance = self.nova.servers.get(instance.id)
              vm_status = instance.status
           else:
-              _log.info("\nAfter waiting for 50 seconds, VM status is NOT ACTIVE")
+              _log.error("\nAfter waiting for 110 seconds, VM status is NOT ACTIVE")
               return 0
           status_try +=1
         return 1
@@ -201,7 +201,7 @@ class Gbp_Nova(object):
                sleep(5)
                out = getoutput(cmd)
                if status_try > 10:
-                  _log.info("After waiting for 50 seconds, VM status is NOT ACTIVE")
+                  _log.error("After waiting for 50 seconds, VM status is NOT ACTIVE")
                   return 0
             status_try +=1
         return 1
@@ -226,7 +226,7 @@ class Gbp_Nova(object):
                sleep(5)
                out = getoutput(cmd)
                if status_try > 10:
-                  _log.info("After waiting for 50 seconds, VM still NOT Deleted")
+                  _log.error("After waiting for 50 seconds, VM still NOT Deleted")
                   return 0
             status_try +=1
         return 1
@@ -245,16 +245,16 @@ class Gbp_Nova(object):
                floating_ips.append(floating_ip_class_list[index].ip.encode('ascii'))
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            _log.info('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
+            _log.error('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
             return 0
         return floating_ips
 
-    def action_fip_to_vm(self,action,vmname,extseg_name=None,vmfip=None):
+    def action_fip_to_vm(self,action,vmname,extsegname=None,vmfip=None):
         """
         Depending on action type caller
         Can associate or disassociate a FIP
         action:: valid strings are 'associate' or 'disassociate'
-        extseg_name:: Must be passed ONLY in case of 'associate'
+        extsegname:: Must be passed ONLY in case of 'associate'
         vmfip:: Must be passed ONLY in case of 'disassociate'
         """
         if action == 'associate':
@@ -263,14 +263,14 @@ class Gbp_Nova(object):
                print 'FIP POOLS', fip_pools
                for pool in fip_pools:
                    print pool.name
-                   if extseg_name in pool.name:
+                   if extsegname in pool.name:
                       print 'MATCH'
                       try:
                           fip = self.nova.floating_ips.create(pool=pool.name)
                           self.nova.servers.find(name=vmname).add_floating_ip(fip)
                       except Exception as e:
                           exc_type, exc_value, exc_traceback = sys.exc_info()
-                          _log.info('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
+                          _log.error('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
                           return 0
                       return fip.ip.encode(),fip #Returning the attr of fip(address) and the fip object itself
             else:
@@ -281,9 +281,24 @@ class Gbp_Nova(object):
               self.nova.servers.find(name=vmname).remove_floating_ip(vmfip)
            except Exception as e:
               exc_type, exc_value, exc_traceback = sys.exc_info()
-              _log.info('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
+              _log.error('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
               return 0
 
+    def delete_release_fips(self):
+        """
+        Run this method ONLY when fips
+        are disassociated from VMs
+        """
+        try:
+           disassociatedFips = self.nova.floating_ips.list()
+           for fip in disassociatedFips:
+               self.nova.floating_ips.delete(fip)
+        except Exception as e:
+           exc_type, exc_value, exc_traceback = sys.exc_info()
+           _log.error('Exception Type = %s, Exception Traceback = %s' %(exc_type,exc_traceback))
+           return 0
+
+        
     def get_any_vm_property(self,vmname):
         """
         Returns any VM property
@@ -300,7 +315,7 @@ class Gbp_Nova(object):
            vm_dict['hostid'] = instance.hostId.encode('ascii')
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            _log.info('Exception Type = %s, Exception Object = %s' %(exc_type,exc_traceback))
+            _log.error('Exception Type = %s, Exception Object = %s' %(exc_type,exc_traceback))
             return 0
         return vm_dict
  

@@ -458,6 +458,7 @@ class GBPCrud(object):
         """
         Update the Policy Target Group
         Provide uniform property_type('name' or 'uuid') across objects
+        Pass policy_rulesets as []
         """
         try:
           consumed_dict = {}
@@ -482,26 +483,26 @@ class GBPCrud(object):
                         provided_dict[ruleset] = "scope"
           body = {"policy_target_group" : {"shared" : shared}}
           while True:
-               if consumed_policy_rulesets!=None and provided_policy_rulesets!=None:
+               if consumed_policy_rulesets is not None and provided_policy_rulesets is not None:
                     body = {"policy_target_group" : {
                              "provided_policy_rule_sets" : provided_dict,
                              "consumed_policy_rule_sets" : consumed_dict
                                                     }
                          }
                     break
-               elif consumed_policy_rulesets!=None and provided_policy_rulesets==None:
+               elif consumed_policy_rulesets is not None and provided_policy_rulesets is None:
                     body = {"policy_target_group" : {
                             "consumed_policy_rule_sets" : consumed_dict
                                                   }
                          }
                     break
-               elif provided_policy_rulesets!=None and consumed_policy_rulesets==None:
+               elif provided_policy_rulesets is not None and consumed_policy_rulesets is None:
                     body = {"policy_target_group" : {
                             "provided_policy_rule_sets" : provided_dict
                                                   }
                          }
                     break
-               elif provided_policy_rulesets==None and consumed_policy_rulesets==None:
+               elif provided_policy_rulesets is None and consumed_policy_rulesets is None:
                     body = {"policy_target_group" : {
                             "provided_policy_rule_sets" : {},
                             "consumed_policy_rule_sets" : {}
@@ -510,7 +511,7 @@ class GBPCrud(object):
                     break
                else:
                     break
-          if network_service_policy!=None:
+          if network_service_policy is not None:
              body["policy_target_group"]["network_service_policy_id"]=network_service_policy 
           self.client.update_policy_target_group(group_id, body)
         except Exception as e:
@@ -837,7 +838,7 @@ class GBPCrud(object):
         Supported  keyword based attributes and their values/type:
         'cidr' = string
         'external_policies'= [](list of external-policies)
-        'external_routes' = [{'destination'=<>,'nexthop'=<>}](Pass list of dictionaries for each dest/nexthop pair)
+        'external_routes' = [{'destination':<>,'nexthop':<>}](Pass list of dictionaries for each dest/nexthop pair)
         'nexthop' = string('address should be part of the cidr')
         'shared': True, False
         'description': string
@@ -988,7 +989,8 @@ class GBPCrud(object):
                                    shared=False):
         """
         Update the External Policy
-        Provide uniform property_type('name' or 'uuid') across objects
+        Provide uniform property_type('name' or 'uuid')
+        across objects EXCEPT external_segments(only id)
         Pass external_segments as a List
         """
         try:
@@ -1014,27 +1016,27 @@ class GBPCrud(object):
                         provided_prs[ruleset] = "scope"
           body = {"external_policy" : {"shared" : shared}}
           while True:
-               if consumed_policy_rulesets!=None and provided_policy_rulesets!=None:
+               if consumed_policy_rulesets is not None and provided_policy_rulesets is not None:
                   body["external_policy"]["provided_policy_rule_sets"] = provided_prs
                   body["external_policy"]["consumed_policy_rule_sets"] = consumed_prs
                   if external_segments != []:
-                     body["external_policy"]["consumed_policy_rule_sets"] = external_segments
+                     body["external_policy"]["external_segments"] = external_segments
                   break
-               elif consumed_policy_rulesets!=None and provided_policy_rulesets==None:
+               elif consumed_policy_rulesets is not None and provided_policy_rulesets is None:
                   body["external_policy"]["consumed_policy_rule_sets"] = consumed_prs
                   if external_segments != []:
-                     body["external_policy"]["consumed_policy_rule_sets"] = external_segments
+                     body["external_policy"]["external_segments"] = external_segments
                   break
-               elif provided_policy_rulesets!=None and consumed_policy_rulesets==None:
+               elif provided_policy_rulesets is not None and consumed_policy_rulesets is None:
                   body["external_policy"]["provided_policy_rule_sets"] = provided_prs
                   if external_segments != []:
-                     body["external_policy"]["consumed_policy_rule_sets"] = external_segments
+                     body["external_policy"]["external_segments"] = external_segments
                   break
-               elif provided_policy_rulesets==None and consumed_policy_rulesets==None:
+               elif provided_policy_rulesets is None and consumed_policy_rulesets is None:
                   body["external_policy"]["provided_policy_rule_sets"] = {}
                   body["external_policy"]["consumed_policy_rule_sets"] = {}
                   if external_segments != []:
-                     body["external_policy"]["consumed_policy_rule_sets"] = external_segments
+                     body["external_policy"]["external_segments"] = external_segments
                   break
                else:
                   break
@@ -1075,6 +1077,16 @@ class GBPCrud(object):
            return name_uuid
         else:
            return extpol_list
+
+    def verify_gbp_external_policy(self,name):
+        """
+        Verify the GBP External Policy by passing its name and fetch its UUID
+        """
+        for extpol in self.client.list_external_policies()['external_policies']:
+            if extpol['name'].encode('ascii') == name:
+               return extpol['id'].encode('ascii')
+        _log.error("External Policy Group NOT Found")
+        return 0
 
     def verify_gbp_any_object(self,obj,obj_uuid,**kwargs):
         """
