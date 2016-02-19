@@ -1033,8 +1033,6 @@ class GBPCrud(object):
                      body["external_policy"]["external_segments"] = external_segments
                   break
                elif provided_policy_rulesets is None and consumed_policy_rulesets is None:
-                  body["external_policy"]["provided_policy_rule_sets"] = {}
-                  body["external_policy"]["consumed_policy_rule_sets"] = {}
                   if external_segments != []:
                      body["external_policy"]["external_segments"] = external_segments
                   break

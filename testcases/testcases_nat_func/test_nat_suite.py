@@ -8,6 +8,8 @@ import sys
 import yaml
 from time import sleep
 from libs.gbp_crud_libs import GBPCrud
+from libs.gbp_utils import *
+from libs.gbp_fab_traff_libs import Gbp_def_traff
 from natfuncglobalcfg import GbpNatFuncGlobalCfg
 from natfunctestmethod import NatFuncTestMethods
 
@@ -22,9 +24,15 @@ class NatTestSuite(object):
         with open(cfgfile, 'rt') as f:
             conf = yaml.load(f)
         self.cntlr_ip = conf['controller_ip']
-        self.extgw = conf['ext_gw_rtr']
+        self.extrtr = conf['ext_rtr']
+        self.gwip1_extrtr = conf['gwip1_extrtr']
+        self.gwip2_extrtr = conf['gwip2_extrtr']
         self.globalcfg = GbpNatFuncGlobalCfg(self.cntlr_ip)
         self.steps = NatFuncTestMethods(self.cntlr_ip)
+        self.natpoolname = self.steps.natpoolname2
+        self.fipsubnet1 = self.steps.natippool1
+        self.fipsubnet2 = self.steps.natippool2
+        self.forextrtr = Gbp_def_traff()
         
     def test_runner(self):
         """
@@ -103,7 +111,13 @@ class NatTestSuite(object):
         if self.steps.testAssociateFipToVMs() == 0:
            return 0
         sleep(10)
-        if self.steps.testTrafficFromExtRtrToVmFip(self.extgw) == 0:
+        self.forextrtr.add_route_in_extrtr(
+                                          self.extrtr,
+                                          self.fipsubnet1,
+                                          self.gwip1_extrtr,
+                                          action='update'
+                                          )
+        if self.steps.testTrafficFromExtRtrToVmFip(self.extrtr) == 0:
            return 0
         if self.steps.testDisassociateFipFromVMs() == 0:
            return 0
@@ -147,7 +161,13 @@ class NatTestSuite(object):
         if self.steps.testAssociateFipToVMs() == 0:
            return 0
         sleep(10)
-        if self.steps.testTrafficFromExtRtrToVmFip(self.extgw) == 0:
+        self.forextrtr.add_route_in_extrtr(
+                                          self.extrtr,
+                                          self.fipsubnet1,
+                                          self.gwip1_extrtr,
+                                          action='update'
+                                          )
+        if self.steps.testTrafficFromExtRtrToVmFip(self.extrtr) == 0:
            return 0
         if self.steps.testDisassociateFipFromVMs() == 0:
            return 0
@@ -190,7 +210,13 @@ class NatTestSuite(object):
         if self.steps.testAssociateFipToVMs() == 0:
            return 0
         sleep(10)
-        if self.steps.testTrafficFromExtRtrToVmFip(self.extgw) == 0:
+        self.forextrtr.add_route_in_extrtr(
+                                          self.extrtr,
+                                          self.fipsubnet1,
+                                          self.gwip1_extrtr,
+                                          action='update'
+                                          )
+        if self.steps.testTrafficFromExtRtrToVmFip(self.extrtr) == 0:
            return 0
         if self.steps.testDisassociateFipFromVMs() == 0:
            return 0
@@ -234,7 +260,13 @@ class NatTestSuite(object):
         if self.steps.testAssociateExtSegToBothL3ps() == 0:
            return 0
         sleep(10)
-        if self.steps.testTrafficFromExtRtrToVmFip(self.extgw) == 0:
+        self.forextrtr.add_route_in_extrtr(
+                                          self.extrtr,
+                                          self.fipsubnet1,
+                                          self.gwip1_extrtr,
+                                          action='update'
+                                          )
+        if self.steps.testTrafficFromExtRtrToVmFip(self.extrtr) == 0:
            return 0
         if self.steps.testDisassociateFipFromVMs() == 0:
            return 0
@@ -276,8 +308,14 @@ class NatTestSuite(object):
            return 0
         if self.steps.testAssociateFipToVMs() == 0:
            return 0
-        sleep(20)
-        if self.steps.testTrafficFromExtRtrToVmFip(self.extgw) == 0:
+        sleep(10)
+        self.forextrtr.add_route_in_extrtr(
+                                          self.extrtr,
+                                          self.fipsubnet1,
+                                          self.gwip1_extrtr,
+                                          action='update'
+                                          )
+        if self.steps.testTrafficFromExtRtrToVmFip(self.extrtr) == 0:
            return 0
         if self.steps.testDisassociateFipFromVMs(release_fip=1) == 0:
            return 0
@@ -291,11 +329,16 @@ class NatTestSuite(object):
            return 0
         if self.steps.testAssociateFipToVMs(ExtSegName='Datacenter-Out') == 0:
            return 0
-        print 'Sleeping after new NAT Pool Change'
+        sleep(10)
         if self.steps.testCreateUpdateExternalPolicy(update=1,updextseg=DcExtsegid) == 0:
            return 0
-        sleep(300)
-        if self.steps.testTrafficFromExtRtrToVmFip(self.extgw) == 0:
+        self.forextrtr.add_route_in_extrtr(
+                                          self.extrtr,
+                                          self.fipsubnet1,
+                                          self.gwip2_extrtr,
+                                          action='update'
+                                          )
+        if self.steps.testTrafficFromExtRtrToVmFip(self.extrtr) == 0:
            return 0
         if self.steps.testDisassociateFipFromVMs() == 0:
            return 0
@@ -305,20 +348,19 @@ class NatTestSuite(object):
         """
         Testcase in NAT Functionality
         """
-        self.steps.DeleteOrCleanup('cleanup')
-        if self.steps.testCreateExtSegWithDefault() == 0:
-           return 0
-        if self.steps.testCreateNatPoolAssociateExtSeg() == 0:
-           return 0
         if self.steps.testCreatePtgDefaultL3p() == 0:
            return 0
         if self.steps.testCreateNonDefaultL3pAndL2p() == 0:
            return 0
         if self.steps.testCreatePtgWithNonDefaultL3p() == 0:
            return 0
-        if self.steps.testAssociateExtSegToBothL3ps() == 0:
-           return 0
         if self.steps.testCreatePolicyTargetForEachPtg() == 0:
+           return 0
+        if self.steps.testLaunchVmsForEachPt() == 0:
+           return 0
+        print "Sleeping for VM to come up ..."
+        sleep(10)
+        if self.steps.testCreateExtSegWithDefault('Management-Out') == 0:
            return 0
         if self.steps.testCreateUpdateExternalPolicy() == 0:
            return 0
@@ -328,15 +370,42 @@ class NatTestSuite(object):
                                    self.globalcfg.prsicmptcp
                                    ) == 0:
                return 0
-        if testVerifyCfgdObjects == 0:
+        if self.steps.testVerifyCfgdObjects == 0:
            return 0
-        if testLaunchVmsForEachPt() == 0:
+        if self.steps.testAssociateExtSegToBothL3ps() == 0:
            return 0
-        sleep(60)
-        if testAssociateFipToVMs() == 0:
+        if self.steps.testCreateNatPoolAssociateExtSeg() == 0:
            return 0
-        if testTrafficFromExtRtrToVmFip == 0:
+        if self.steps.testAssociateFipToVMs() == 0:
            return 0
+        sleep(10)
+        self.forextrtr.add_route_in_extrtr(
+                                          self.extrtr,
+                                          self.fipsubnet1,
+                                          self.gwip1_extrtr,
+                                          action='update'
+                                          )
+        if self.steps.testTrafficFromExtRtrToVmFip(self.extrtr) == 0:
+           return 0
+        if self.steps.testDisassociateFipFromVMs(release_fip=1) == 0:
+           return 0
+        if self.steps.testCreateNatPoolAssociateExtSeg(
+                                   poolname=self.natpoolname,
+                                   natpool=self.fipsubnet2
+                                   ) == 0:
+           return 0
+        if self.steps.testAssociateFipToVMs() == 0:
+           return 0
+        sleep(10)
+        self.forextrtr.add_route_in_extrtr(
+                                          self.extrtr,
+                                          self.fipsubnet2,
+                                          self.gwip1_extrtr,
+                                          action='update'
+                                          )
+        if self.steps.testDisassociateFipFromVMs() == 0:
+           return 0
+        self.steps.DeleteOrCleanup('cleanup')
 
     def test_nat_func_7(self):
         """

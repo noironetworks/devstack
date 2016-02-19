@@ -35,8 +35,10 @@ class NatFuncTestMethods(object):
         self.gbpcrud = GBPCrud(cntlrip)
         self.gbpnova = Gbp_Nova(cntlrip)
         self.extsegname = 'Management-Out'
-        self.natpoolname = 'GbpNatPool'
-        self.natippool = '55.55.55.0/24'
+        self.natpoolname1 = 'GbpNatPoolTest1'
+        self.natpoolname2 = 'GbpNatPoolTest2'
+        self.natippool1 = '55.55.55.0/24'
+        self.natippool2 = '66.66.66.0/24'
         self.l3pname = 'L3PNat'
         self.l3pippool = '20.20.20.0/24'
         self.l3ppreflen = 26
@@ -64,16 +66,22 @@ class NatFuncTestMethods(object):
         else:
             return self.extsegid
 
-    def testCreateNatPoolAssociateExtSeg(self):
+    def testCreateNatPoolAssociateExtSeg(self,poolname='',natpool='',extsegid=''):
         """
         Create a NAT pool and associate the existing External Segment
         """
         self._log.info(
             "\nStep: Create a NAT pool and associate the existing External Segment\n")
+        if natpool == '':
+           natpool = self.natippool1
+        if poolname == '':
+           poolname = self.natpoolname1
+        if extsegid == '':
+           extsegid = self.extsegid
         self.nat_pool_id = self.gbpcrud.create_gbp_nat_pool(
-                                        self.natpoolname,
-                                        ip_pool = self.natippool,
-                                        external_segment_id = self.extsegid)
+                                        poolname,
+                                        ip_pool = natpool,
+                                        external_segment_id = extsegid)
         if self.nat_pool_id == 0:
             self._log.error(
                 "\nCreate the NAT pool with reference to the existing External Segment failed")

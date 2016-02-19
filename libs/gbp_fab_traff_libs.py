@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
-import sys
-import logging
-import os
 import datetime
+import logging
+import pexpect
 import re
-from commands import *
+import sys
 from fabric.api import cd,run,env, hide, get, settings
 
 class Gbp_def_traff(object):
@@ -167,7 +166,8 @@ class Gbp_def_traff(object):
         """
         Run the traffic tests
         """
-        #By default run tests for implicit rules(arp,dhcp,dns) and for protocolc:icmp,tcp,udp
+        #By default run tests for implicit rules(arp,dhcp,dns) 
+        #and for protocolc:icmp,tcp,udp
         results = {}
         results['arp']=self.test_arp(src_vm_ip,target_ip)
         results['dhcp']=self.test_dhcp(src_vm_ip,target_ip)
@@ -184,4 +184,37 @@ class Gbp_def_traff(object):
          if protocol == 'l3bcast':
             results['l3bcast']=self.test_l3bcast()
         return results
+
+    def add_route_in_extrtr(self,
+                            extrtrip,
+                            route,
+                            nexthop,
+                            user='noiro',
+                            pwd='noir0123',
+                            action='add'):
+      child = pexpect.spawn('ssh %s@%s' %(user,extrtrip))
+      child.expect('password:')
+      child.sendline(pwd)
+      child.expect('\$')
+      child.sendline('hostname')
+      child.expect('$')
+      print child.before
+      child.sendline('sudo -s')
+      child.expect('noiro:')
+      child.sendline('noir0123')
+      child.expect('#')
+      child.sendline('ip route')
+      child.expect('#')
+      print child.before
+      if action == 'add':
+         child.sendline("ip route add %s via %s" %(route,nexthop))
+         child.expect('#')
+      if action == 'update':
+         child.sendline("ip route del %s " %(route))
+         child.expect('#')
+         child.sendline("ip route add %s via %s" %(route,nexthop))
+         child.expect('#')
+      child.sendline('ip route')
+      child.expect('#')
+      print child.before
 

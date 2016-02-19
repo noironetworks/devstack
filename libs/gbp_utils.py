@@ -12,7 +12,7 @@ import itertools
 from prettytable import PrettyTable
 from Crypto.PublicKey import RSA
 from raise_exceptions import *
-from fabric.api import cd,run,env, hide, get, settings
+from fabric.api import cd,run,env, hide, get, settings,sudo
 from fabric.contrib import files
 from time import sleep
 
@@ -35,8 +35,8 @@ def sshClient(hostname, user, passwd,scp=0,file_name=''):
     return sshclient
 
 
-def report_table(suite_name):
-    ps = subprocess.Popen(['grep', '-r', 'TESTCASE', '/tmp/%s.log' %(suite_name)], stdout=subprocess.PIPE)
+def report_table(suitename):
+    ps = subprocess.Popen(['grep', '-r', 'TESTCASE', '/tmp/%s.log' %(suitename)], stdout=subprocess.PIPE)
     output = ps.communicate()[0]
     #print output
     output = output.splitlines()
@@ -58,11 +58,11 @@ def report_table(suite_name):
         table.add_row(["%s" %(key),"%s" %(val[0]),"%s" %(val[1])])
     return table
 
-def report_results(suite_name,txt_file):
+def report_results(suitename,txt_file):
     orig_stdout = sys.stdout
     f = open('%s' %(txt_file),'a')
     sys.stdout = f
-    report=report_table(suite_name)
+    report=report_table(suitename)
     print report
     sys.stdout = orig_stdout
     f.close()
@@ -165,11 +165,11 @@ class Apic(object):
     def post(self, path, data):
         return requests.post(self.url(path), data=data, cookies=self.cookies, verify=False)
 
-def create_add_filter(apic_ip,svc_epg,username='admin',password='noir0123',tenant='_noirolab_admin'):
+def create_add_filter(apicIp,svcepg,username='admin',password='noir0123',tenant='_noirolab_admin'):
         """
-        svc_epg: Preferably pass a list of svc_epgs if more than one
+        svcepg: Preferably pass a list of svcepgs if more than one
         """
-        apic = Apic(apic_ip,username,password)
+        apic = Apic(apicIp,username,password)
 
         #Create the noiro-ssh filter with ssh & rev-ssh subjects
 
@@ -178,24 +178,24 @@ def create_add_filter(apic_ip,svc_epg,username='admin',password='noir0123',tenan
         req = apic.post(path, data)
         print req.text
 
-        # Add the noiro-ssh filter to every svc_epg_contract
-        if not isinstance(svc_epg,list):
-           svc_epg = [svc_epg]
-        for epg in svc_epg:
+        # Add the noiro-ssh filter to every svcepg_contract
+        if not isinstance(svcepg,list):
+           svcepg = [svcepg]
+        for epg in svcepg:
             path = '/api/node/mo/uni/tn-%s/brc-Svc-%s/subj-Svc-%s.json' %(tenant,epg,epg)
             data = '{"vzRsSubjFiltAtt":{"attributes":{"tnVzFilterName":"noiro-ssh","status":"created"},"children":[]}}'
             req = apic.post(path, data)
             print req.text
 
-def action_service(host_ip,service_name,action='restart',user='root',pwd='noir0123'):
+def action_service(hostIp,servicename,action='restart',user='root',pwd='noir0123',ostype='redhat'):
         """
         Action = Stop,Start,Restart on Any Service
         """
-        env.host_string = host_ip
+        env.host_string = hostIp
         env.user = user
-        env.pwd = pwd
+        env.password = pwd
         with settings(warn_only=True):
-                #restart = run("systemctl %s %s.service" %(action,service_name))  JISHNU TBD
+                #restart = run("systemctl %s %s.service" %(action,servicename))  JISHNU TBD
                 restart = run("systemctl restart agent-ovs.service" )
                 sleep(5)
                 if restart.succeeded:
@@ -203,3 +203,45 @@ def action_service(host_ip,service_name,action='restart',user='root',pwd='noir01
                       print 'ERROR: OpflexAgent is NOT ACTIVE or Running on Restart'
                       return 0
         return 1   
+
+def add_route_in_extrtr(rtrip,route,nexthop,action='add',ostype='ubuntu',user='noiro',pwd='noir0123'):
+    """
+    Adding Routes in ExtRtr(Ubuntu)
+    """
+    env.host_string = rtrip
+    env.user = user
+    env.password = pwd
+    env.sudo_user = user
+    #env.sudo_prompt = '[sudo] password for %s:' %(user)
+    #print env.password
+    """
+    with settings(sudo_user=env.user):
+         #run("sudo -s")
+         if action == 'add':
+            sudo("echo hello")
+            sudo("ip route add %s via %s" %(route,nexthop),shell=False)
+         if action == 'update':
+            sudo("ip route del %s" %(route))
+            sudo("ip route add %s via %s" %(route,nexthop))
+    """
+    if action == 'add':
+       with settings(sudo_user='noiro'):
+            sudo("ip route")
+            print env
+            sudo("ip route add %s via %s" %(route,nexthop),shell=False)
+            #run("sudo ip route add %s via %s" %(route,nexthop),pty=False)
+            #run('noir0123')
+    if action == 'update':
+            sudo("ip route del %s" %(route))
+            sudo("ip route add %s via %s" %(route,nexthop))
+
+def PauseToDebug():
+    while True:
+          try:
+               print '\nDo you want to live debug, then hit CNTRL C, decide in next 20 secs'
+               sleep(20)
+          except KeyboardInterrupt:
+               print '\nPausing...  (Hit ENTER to continue, type quit to exit live debug.)'
+               response = raw_input()
+               if response.lower() == 'quit':
+                     break
