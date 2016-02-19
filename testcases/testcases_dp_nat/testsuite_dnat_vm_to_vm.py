@@ -37,6 +37,8 @@ class DNAT_VMs_to_VMs(object):
         self.ntk_node = objs_uuid['ntk_node']
         self.external_pol_1 = objs_uuid['mgmt_external_policy_id']
         self.external_pol_2 = objs_uuid['dc_external_policy_id']
+        self.ext_seg_1 = objs_uuid['mgmt_external_segment_id']
+        self.ext_seg_2 = objs_uuid['dc_external_segment_id']
         self.websrvr_ptg = objs_uuid['web_srvr_ptg_id']
         self.webclnt_ptg = objs_uuid['web_clnt_ptg_id']
         self.appsrvr_ptg = objs_uuid['app_ptg_id']
