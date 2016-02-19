@@ -167,7 +167,7 @@ resources:
     demo_same_ptg_l2p_l3p_l3_policy:
         type: OS::GroupBasedPolicy::L3Policy
         properties:
-            name: demo_same_ptg_l2p_l3p_l3p
+            name: demo_same_ptg_l2p_l3p
             ip_pool: "5.5.5.0/24"
             subnet_prefix_length: 28
             shared: False
@@ -216,7 +216,7 @@ resources:
     demo_diff_ptg_same_l2p_l3p_l3_policy:
         type: OS::GroupBasedPolicy::L3Policy
         properties:
-            name: demo_diff_ptg_same_l2p_l3p_l3p
+            name: demo_diff_ptg_same_l2p_l3p
             ip_pool: "6.6.6.0/24"
             subnet_prefix_length: 28
             shared: False
@@ -272,16 +272,24 @@ resources:
     demo_diff_ptg_l2p_same_l3p_l3_policy:
         type: OS::GroupBasedPolicy::L3Policy
         properties:
-            name: demo_diff_ptg_l2p_same_l3p_l3p
+            name: demo_diff_ptg_l2p_same_l3p
             ip_pool: "7.7.7.0/24"
             subnet_prefix_length: 28
             shared: False
 
-    demo_diff_ptg_l2p_same_l3p_l2_policy:
+    demo_diff_ptg_l2p_same_l3p_l2_policy_1:
         type: OS::GroupBasedPolicy::L2Policy
         depends_on: demo_diff_ptg_l2p_same_l3p_l3_policy
         properties:
-            name: demo_diff_ptg_l2p_same_l3p_bd
+            name: demo_diff_ptg_l2p_same_l3p_bd_1
+            l3_policy_id: { get_resource: demo_diff_ptg_l2p_same_l3p_l3_policy }
+            shared: False
+
+    demo_diff_ptg_l2p_same_l3p_l2_policy_2:
+        type: OS::GroupBasedPolicy::L2Policy
+        depends_on: demo_diff_ptg_l2p_same_l3p_l3_policy
+        properties:
+            name: demo_diff_ptg_l2p_same_l3p_bd_2
             l3_policy_id: { get_resource: demo_diff_ptg_l2p_same_l3p_l3_policy }
             shared: False
 
@@ -289,14 +297,14 @@ resources:
         type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: demo_diff_ptg_l2p_same_l3p_ptg1
-            l2_policy_id: {get_resource: demo_diff_ptg_l2p_same_l3p_l2_policy}
+            l2_policy_id: {get_resource: demo_diff_ptg_l2p_same_l3p_l2_policy_1}
             shared: False
 
     demo_diff_ptg_l2p_same_l3p_ptg2:
         type: OS::GroupBasedPolicy::PolicyTargetGroup
         properties:
             name: demo_diff_ptg_l2p_same_l3p_ptg2
-            l2_policy_id: {get_resource: demo_diff_ptg_l2p_same_l3p_l2_policy}
+            l2_policy_id: {get_resource: demo_diff_ptg_l2p_same_l3p_l2_policy_2}
             shared: False
 
     vm7_data_pt:
