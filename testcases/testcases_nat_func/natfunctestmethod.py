@@ -318,35 +318,75 @@ class NatFuncTestMethods(object):
                 "\nStep: Updating External Policy by applying Policy RuleSets\n")
             if self.gbpcrud.update_gbp_external_policy(
                                                  self.extpolname,
-                                                 #property_type='uuid',
                                                  consumed_policy_rulesets=[prs]
                                                  ) == 0:
                self._log.error(
                      "\nUpdating External Policy %s failed" %(self.extpolid))
-               #self.DeleteOrCleanup('cleanup') #JISHNU
                return 0
         if ptgtype == 'internal':
            self._log.info(
                 "\nStep: Updating Policy Target Group by applying Policy RuleSets\n")
            for ptg in [self.ptg1name, self.ptg2name]:
                if self.gbpcrud.update_gbp_policy_target_group(
-                                                        ptg,
-                                                        #property_type='uuid',
-                                                        provided_policy_rulesets=[prs]
-                                                        ) == 0:
+                                        ptg,
+                                        provided_policy_rulesets=[prs]
+                                        ) == 0:
                   self._log.error(
                      "\nUpdating PTG %s failed" %(ptg))
-                  #self.DeleteOrCleanup('cleanup') #JISHNU
                   return 0
 
-    def testTrafficFromExtRtrToVmFip(self,extgwrtr):
+    def testCreateNsp(self):
+        """
+        Create a Network Service Profile
+        """
+        self._log.info(
+                "\nStep: Creating a Network Service Policy")
+        self.nspuuid = self.gbpcrud.create_gbp_network_service_policy_for_nat('TestNsp')
+        if self.nspuuid == 0:
+           return 0
+
+    def testApplyRemoveNSpFromPtg(self,nspuuid=''):
+        """
+        Update to Apply or Remove NSP from Internal PTGs
+        """
+        if nspuuid == None:
+           self._log.info(
+             "\nStep: Removing Network Service Policy from Internal PTGs")
+           nspuuid = None
+        else:
+           self._log.info(
+             "\nStep: Applying Network Service Policy from Internal PTGs")
+           nspuuid = self.nspuuid
+        for ptg in [self.ptg1name, self.ptg2name]:
+               if self.gbpcrud.update_gbp_policy_target_group(
+                                   ptg,
+                                   network_service_policy=nspuuid,
+                                   ) == 0:
+                  self._log.error(
+                     "\nUpdating PTG with NSP %s failed" %(ptg))
+                  return 0
+
+    def testDeleteNatPool(self):
+        """
+        Deletes all available NAT Pool in the system
+        """
+        natpool_list = self.gbpcrud.get_gbp_nat_pool_list()
+        if len(natpool_list) > 0:
+              for natpool in natpool_list:
+                 self.gbpcrud.delete_gbp_nat_pool(natpool)
+
+    def testTrafficFromExtRtrToVmFip(self,extgwrtr,vmfips=0):
         """
         Ping and TCP test from external router to VMs
         """
         self._log.info("\nStep: Ping and TCP test from external router\n")
+        if vmfips == 0:
+           vmfips = self.vm_to_fip
+        else:
+           vmfips = self.gbpnova.get_floating_ips(ret=1)
         run_traffic = traff_from_extgwrtr(
                                           extgwrtr,
-                                          self.vm_to_fip,
+                                          vmfips,
                                           proto='all'
                                           )
         if isinstance(run_traffic, dict):
@@ -372,33 +412,44 @@ class NatFuncTestMethods(object):
               self._log.info("\n Incorrect params passed for delete action")
         if action == 'cleanup':
            self._log.info("\nStep: Blind CleanUp to be executed")
+           self._log.info("\nStep: Blind CleanUp: VMs Delete")
            for vm in [self.vm1name, self.vm2name]:
                self.gbpnova.vm_delete(vm)
+           self._log.info("\nStep: Blind CleanUp: Release FIPs")
            self.gbpnova.delete_release_fips()
+           self._log.info("\nStep: Blind CleanUp: Delete PTs")
            pt_list = self.gbpcrud.get_gbp_policy_target_list()
            if len(pt_list) > 0:
               for pt in pt_list:
                 self.gbpcrud.delete_gbp_policy_target(pt, property_type='uuid')
+           self._log.info("\nStep: Blind CleanUp: Delete PTGs")
            ptg_list = self.gbpcrud.get_gbp_policy_target_group_list()
            if len(ptg_list) > 0:
               for ptg in ptg_list:
                 self.gbpcrud.delete_gbp_policy_target_group(ptg, property_type='uuid')
+           self._log.info("\nStep: Blind CleanUp: Delete L2Ps")
            l2p_list = self.gbpcrud.get_gbp_l2policy_list()
            if len(l2p_list) > 0:
               for l2p in l2p_list:
                  self.gbpcrud.delete_gbp_l2policy(l2p, property_type='uuid')
+           self._log.info("\nStep: Blind CleanUp: Delete L3Ps")
            l3p_list = self.gbpcrud.get_gbp_l3policy_list()
            if len(l3p_list) > 0:
               for l3p in l3p_list:
                  self.gbpcrud.delete_gbp_l3policy(l3p, property_type='uuid')
+           self._log.info("\nStep: Blind CleanUp: Delete NSPs")
+           self.gbpcrud.delete_gbp_network_service_policy()
+           self._log.info("\nStep: Blind CleanUp: Delete NAT Pools")
            natpool_list = self.gbpcrud.get_gbp_nat_pool_list()
            if len(natpool_list) > 0:
               for natpool in natpool_list:
                  self.gbpcrud.delete_gbp_nat_pool(natpool)
+           self._log.info("\nStep: Blind CleanUp: Delete External Pols")
            extpol_list = self.gbpcrud.get_gbp_external_policy_list()
            if len(extpol_list) > 0:
               for extpol in extpol_list:
                  self.gbpcrud.delete_gbp_external_policy(extpol)
+           self._log.info("\nStep: Blind CleanUp: Delete Ext Segs")
            extseg_list = self.gbpcrud.get_gbp_external_segment_list()
            if len(extseg_list) > 0:
               for extseg in extseg_list:

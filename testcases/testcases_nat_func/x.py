@@ -16,7 +16,7 @@ from natfunctestmethod import NatFuncTestMethods
 def main():
     cfgfile = sys.argv[1]
     suite=NatTestSuite(cfgfile)
-    #suite.test_runner()
+    suite.test_runner()
 
 class NatTestSuite(object):
     
@@ -25,17 +25,15 @@ class NatTestSuite(object):
             conf = yaml.load(f)
         self.cntlr_ip = conf['controller_ip']
         self.extrtr = conf['ext_rtr']
+        self.gwip1_extrtr = conf['gwip1_extrtr']
+        self.gwip2_extrtr = conf['gwip2_extrtr']
         self.globalcfg = GbpNatFuncGlobalCfg(self.cntlr_ip)
         self.steps = NatFuncTestMethods(self.cntlr_ip)
-        self.fipsubnet = self.steps.natippool
-        print "FIP Subnet", self.fipsubnet
-        forexttraff = Gbp_def_traff()
-        print 'When Adding Route'
-        forexttraff.add_route_in_extrtr('172.28.184.38','55.55.55.0/24','1.102.1.254',action='update')
-        PauseToDebug()
-        print 'When Updating Route'
-        forexttraff.add_route_in_extrtr('172.28.184.38','55.55.55.0/24','1.102.2.254',action='update')
-
+        self.natpoolname = self.steps.natpoolname2
+        self.fipsubnet1 = self.steps.natippool1
+        self.fipsubnet2 = self.steps.natippool2
+        self.forextrtr = Gbp_def_traff()
+        
     def test_runner(self):
         """
         Method to run the Testcase in Ordered Steps
@@ -46,7 +44,10 @@ class NatTestSuite(object):
         # Initiate Global Configuration 
         self.globalcfg.CfgGlobalObjs() 
         test_results = {}
-        test_list = [self.test_nat_func_5]
+        test_list = [
+		     #self.test_nat_func_6,
+		     self.test_nat_func_7
+                     ]
         for test in test_list:
                 if test() == 0:
                     test_results[string.upper(test.__name__.lstrip('self.'))] = 'FAIL'
@@ -59,19 +60,90 @@ class NatTestSuite(object):
         pprint.pprint(test_results)
         self.globalcfg.cleanup()
 
-    def test_nat_func_5(self):
+    def test_nat_func_6(self):
         """
-        Testcase-5 in NAT Functionality
+        Testcase in NAT Functionality
         """
-        self.steps._log.info(
-              "\nExecution of Testcase TEST_NAT_FUNC_5 starts")
+        print " Going to Run TESTCASE -6"
+        if self.steps.testCreatePtgDefaultL3p() == 0:
+           return 0
+        if self.steps.testCreateNonDefaultL3pAndL2p() == 0:
+           return 0
+        if self.steps.testCreatePtgWithNonDefaultL3p() == 0:
+           return 0
+        if self.steps.testCreatePolicyTargetForEachPtg() == 0:
+           return 0
+        if self.steps.testLaunchVmsForEachPt() == 0:
+           return 0
+        print "Sleeping for VM to come up ..."
+        sleep(10)
         if self.steps.testCreateExtSegWithDefault('Management-Out') == 0:
+           return 0
+        if self.steps.testCreateUpdateExternalPolicy() == 0:
+           return 0
+        for ptgtype in ['internal','external']:
+            if self.steps.testApplyUpdatePrsToPtg(
+                                   ptgtype,
+                                   self.globalcfg.prsicmptcp
+                                   ) == 0:
+               return 0
+        if self.steps.testVerifyCfgdObjects == 0:
+           return 0
+        if self.steps.testAssociateExtSegToBothL3ps() == 0:
+           return 0
+        if self.steps.testCreateNatPoolAssociateExtSeg() == 0:
+           return 0
+        if self.steps.testAssociateFipToVMs() == 0:
+           return 0
+        sleep(30)
+        self.forextrtr.add_route_in_extrtr(
+                                          self.extrtr,
+                                          self.fipsubnet1,
+                                          self.gwip1_extrtr,
+                                          action='update'
+                                          )
+        if self.steps.testTrafficFromExtRtrToVmFip(self.extrtr) == 0:
+           return 0
+        if self.steps.testDisassociateFipFromVMs(release_fip=1) == 0:
+           return 0
+        self.steps.testDeleteNatPool()
+        if self.steps.testCreateNatPoolAssociateExtSeg(
+                                   poolname=self.natpoolname,
+                                   natpool=self.fipsubnet2
+                                   ) == 0:
+           return 0
+        if self.steps.testAssociateFipToVMs() == 0:
+           return 0
+        sleep(40)
+        self.forextrtr.add_route_in_extrtr(
+                                          self.extrtr,
+                                          self.fipsubnet2,
+                                          self.gwip1_extrtr,
+                                          action='update'
+                                          )
+        if self.steps.testTrafficFromExtRtrToVmFip(self.extrtr) == 0:
+           return 0
+
+        if self.steps.testDisassociateFipFromVMs() == 0:
+           return 0
+        self.steps.DeleteOrCleanup('cleanup')
+
+    def test_nat_func_7(self):
+        """
+        Testcase-7 in NAT Functionality
+        """
+        print " Going to Run TESTCASE -6"
+        if self.steps.testCreateExtSegWithDefault('Management-Out') == 0:
+           return 0
+        if self.steps.testCreateNatPoolAssociateExtSeg() == 0:
            return 0
         if self.steps.testCreatePtgDefaultL3p() == 0:
            return 0
         if self.steps.testCreateNonDefaultL3pAndL2p() == 0:
            return 0
         if self.steps.testCreatePtgWithNonDefaultL3p() == 0:
+           return 0
+        if self.steps.testAssociateExtSegToBothL3ps() == 0:
            return 0
         if self.steps.testCreatePolicyTargetForEachPtg() == 0:
            return 0
@@ -85,40 +157,32 @@ class NatTestSuite(object):
                return 0
         if self.steps.testVerifyCfgdObjects == 0:
            return 0
+        if self.steps.testCreateNsp() == 0:
+           return 0
+        if self.steps.testApplyRemoveNSpFromPtg() == 0:
+           return 0
         if self.steps.testLaunchVmsForEachPt() == 0:
            return 0
         print "Sleeping for VM to come up ..."
-        sleep(10)
-        if self.steps.testAssociateExtSegToBothL3ps() == 0:
+        sleep(40)
+        self.forextrtr.add_route_in_extrtr(
+                                          self.extrtr,
+                                          self.fipsubnet1,
+                                          self.gwip1_extrtr,
+                                          action='update'
+                                          )
+        if self.steps.testTrafficFromExtRtrToVmFip(self.extrtr,vmfips=1) == 0:
            return 0
-        if self.steps.testCreateNatPoolAssociateExtSeg() == 0:
+        if self.steps.testApplyRemoveNSpFromPtg(nspuuid=None) == 0:
            return 0
+        sleep(5)
         if self.steps.testAssociateFipToVMs() == 0:
            return 0
-        self.PauseToDebug()
+        sleep(40)
         if self.steps.testTrafficFromExtRtrToVmFip(self.extrtr) == 0:
            return 0
         if self.steps.testDisassociateFipFromVMs(release_fip=1) == 0:
            return 0
-        DcExtsegid = self.steps.testCreateExtSegWithDefault(extsegname='Datacenter-Out')
-        if DcExtsegid == 0:
-           return 0
-        print 'DcExtSegID ==',DcExtsegid
-        if self.steps.testAssociateExtSegToBothL3ps(extsegid=DcExtsegid) == 0:
-           return 0
-        if self.steps.testUpdateNatPoolAssociateExtSeg(DcExtsegid) == 0:
-           return 0
-        if self.steps.testAssociateFipToVMs(ExtSegName='Datacenter-Out') == 0:
-           return 0
-        print 'Sleeping after new NAT Pool Change'
-        if self.steps.testCreateUpdateExternalPolicy(update=1,updextseg=DcExtsegid) == 0:
-           return 0
-        self.PauseToDebug()
-        if self.steps.testTrafficFromExtRtrToVmFip(self.extrtr) == 0:
-           return 0
-        if self.steps.testDisassociateFipFromVMs() == 0:
-           return 0
-        self.steps.DeleteOrCleanup('cleanup')
 
 if __name__ == "__main__":
     main()

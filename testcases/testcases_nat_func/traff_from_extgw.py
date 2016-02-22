@@ -19,7 +19,10 @@ def traff_from_extgwrtr(extgwrtr_ip, fipsOftargetVMs, proto='all', jumbo=0):
     targetvm_list = ['TestVM1','TestVM2']
     print 'FIPs of Target VMs == %s' % (fipsOftargetVMs)
     # List of FIPs ExtGWRtr will ping:
-    ping_fips = fipsOftargetVMs.values()
+    if isinstance(fipsOftargetVMs,dict):
+       ping_fips = fipsOftargetVMs.values()
+    if isinstance(fipsOftargetVMs,list):
+       ping_fips = fipsOftargetVMs
     if proto == 'all':
         if jumbo == 1:
             results_icmp = traff.test_regular_icmp(

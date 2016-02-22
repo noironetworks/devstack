@@ -318,7 +318,30 @@ class Gbp_Nova(object):
             _log.error('Exception Type = %s, Exception Object = %s' %(exc_type,exc_traceback))
             return 0
         return vm_dict
- 
+    
+    def get_floating_ips(self,ret=0):
+        """
+        ret = 0::Returns a dict of VM UUID & FIP
+        OR
+        Returns a list of FIPs
+        """
+        try:
+           vm_to_fip = {}
+           fiplist = []
+           for obj in self.nova.floating_ips.list():
+               if ret == 0:
+                  vm_to_fip[obj.instance_id] = obj.ip
+               else:
+                  fiplist.append(obj.ip)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            _log.error('Exception Type = %s, Exception Object = %s' %(exc_type,exc_traceback))
+            return 0
+        if ret == 0:
+           return vm_to_fip
+        else:
+           return fiplist
+        
     def sshkey_for_vm(self,sshkeyname,method='cli',action='create'):
         """
         Creates and Upload SSH key for VM

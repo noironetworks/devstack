@@ -60,13 +60,13 @@ class GBPCrud(object):
         _log.error("Policy Action NOT Found")
         return 0
  
-    def get_gbp_policy_action_list(self,getlist=False):
+    def get_gbp_policy_action_list(self,getdict=False):
         """
         Fetch a List of GBP Policy Actions
-        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        getdict: 'True', will return a dictionary comprising 'name' & 'uuid'
         """
         try:
-           if getlist == True:
+           if getdict == True:
               name_uuid = {}
               for action in self.client.list_policy_actions()['policy_actions']:
                   name_uuid[action['name'].encode('ascii')]= action['id'].encode('ascii')
@@ -76,7 +76,7 @@ class GBPCrud(object):
            _log.error("\nException Error: %s\n" %(e))
            _log.error("Fetching Policy Action List, failed")
            return 0
-        if getlist == True:
+        if getdict == True:
            return name_uuid
         else:
            return pa_list
@@ -160,13 +160,13 @@ class GBPCrud(object):
            _log.error("Update of Policy Classifier= %s, failed" %(name_uuid))
            return 0
 
-    def get_gbp_policy_classifier_list(self,getlist=False):
+    def get_gbp_policy_classifier_list(self,getdict=False):
         """
         Fetch a List of GBP Policy Classifiers
-        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        getdict: 'True', will return a dictionary comprising 'name' & 'uuid'
         """
         try:
-           if getlist == True:
+           if getdict == True:
               name_uuid = {}
               for classifier in self.client.list_policy_classifiers()['policy_classifiers']:
                   name_uuid[classifier['name'].encode('ascii')]= classifier['id'].encode('ascii')
@@ -176,7 +176,7 @@ class GBPCrud(object):
            _log.error("\nException Error: %s\n" %(e))
            _log.error("Fetching Policy Classifier List, failed")
            return 0
-        if getlist == True:
+        if getdict == True:
            return name_uuid
         else:
            return pc_list
@@ -272,13 +272,13 @@ class GBPCrud(object):
         _log.error("Policy Rule NOT Found")
         return 0
 
-    def get_gbp_policy_rule_list(self,getlist=False):
+    def get_gbp_policy_rule_list(self,getdict=False):
         """
         Fetch a List of GBP Policy Rules
-        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        getdict: 'True', will return a dictionary comprising 'name' & 'uuid'
         """
         try:
-           if getlist == True:
+           if getdict == True:
               name_uuid = {}
               for rule in self.client.list_policy_rules()['policy_rules']:
                   name_uuid[rule['name'].encode('ascii')]= rule['id'].encode('ascii')
@@ -288,7 +288,7 @@ class GBPCrud(object):
            _log.error("\nException Error: %s\n" %(e))
            _log.error("Fetching Policy Rule List, failed")
            return 0
-        if getlist == True:
+        if getdict == True:
            return name_uuid
         else:
            return rules_list
@@ -391,13 +391,13 @@ class GBPCrud(object):
            _log.error("Deleting Policy RuleSet = %s, failed" %(name_uuid))
            return 0
 
-    def get_gbp_policy_rule_set_list(self,getlist=False):
+    def get_gbp_policy_rule_set_list(self,getdict=False):
         """
         Fetch a List of GBP Policy RuleSet
-        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        getdict: 'True', will return a dictionary comprising 'name' & 'uuid'
         """
         try:
-           if getlist == True:
+           if getdict == True:
               name_uuid = {}
               for ruleset in self.client.list_policy_rule_sets()['policy_rule_sets']:
                   name_uuid[ruleset['name'].encode('ascii')]= ruleset['id'].encode('ascii')
@@ -407,7 +407,7 @@ class GBPCrud(object):
            _log.error("\nException Error: %s\n" %(e))
            _log.error("Fetching Policy RuleSet List, failed")
            return 0
-        if getlist == True:
+        if getdict == True:
            return name_uuid
         else:
            return rulesets_list
@@ -451,10 +451,10 @@ class GBPCrud(object):
     def update_gbp_policy_target_group(self,
                                        name_uuid,
                                        property_type='name',
-                                       consumed_policy_rulesets=None,
-                                       provided_policy_rulesets=None,
+                                       consumed_policy_rulesets='',
+                                       provided_policy_rulesets='',
                                        shared=False,
-                                       network_service_policy=None):
+                                       network_service_policy=''):
         """
         Update the Policy Target Group
         Provide uniform property_type('name' or 'uuid') across objects
@@ -483,36 +483,61 @@ class GBPCrud(object):
                         provided_dict[ruleset] = "scope"
           body = {"policy_target_group" : {"shared" : shared}}
           while True:
-               if consumed_policy_rulesets is not None and provided_policy_rulesets is not None:
-                    body = {"policy_target_group" : {
+               if consumed_policy_rulesets != '' and consumed_policy_rulesets is not None:
+                  if provided_policy_rulesets!= '' and provided_policy_rulesets is not None:
+                     body = {"policy_target_group" : {
                              "provided_policy_rule_sets" : provided_dict,
                              "consumed_policy_rule_sets" : consumed_dict
                                                     }
                          }
-                    break
-               elif consumed_policy_rulesets is not None and provided_policy_rulesets is None:
-                    body = {"policy_target_group" : {
-                            "consumed_policy_rule_sets" : consumed_dict
+                     if network_service_policy != '' and network_service_policy is not None:
+                        body["policy_target_group"]["network_service_policy_id"]=network_service_policy
+                        break
+                     else:
+                        break
+               elif consumed_policy_rulesets != '' and consumed_policy_rulesets is not None:
+                    if provided_policy_rulesets == '':
+                       body = {"policy_target_group" : {
+                               "consumed_policy_rule_sets" : consumed_dict
                                                   }
-                         }
-                    break
-               elif provided_policy_rulesets is not None and consumed_policy_rulesets is None:
-                    body = {"policy_target_group" : {
-                            "provided_policy_rule_sets" : provided_dict
+                              }
+                       if network_service_policy != '' and network_service_policy is not None:
+                          body["policy_target_group"]["network_service_policy_id"]=network_service_policy
+                          break
+                       else:
+                          break
+               elif provided_policy_rulesets != '' and provided_policy_rulesets is not None:
+                    if consumed_policy_rulesets == '':
+                       body = {"policy_target_group" : {
+                               "provided_policy_rule_sets" : provided_dict
                                                   }
-                         }
-                    break
+                              }
+                       if network_service_policy != '' and network_service_policy is not None:
+                          body["policy_target_group"]["network_service_policy_id"]=network_service_policy
+                          break
+                       else:
+                          break
                elif provided_policy_rulesets is None and consumed_policy_rulesets is None:
                     body = {"policy_target_group" : {
                             "provided_policy_rule_sets" : {},
                             "consumed_policy_rule_sets" : {}
                                                   }
                          }
-                    break
+                    if network_service_policy != '' and network_service_policy is not None:
+                          body["policy_target_group"]["network_service_policy_id"]=network_service_policy
+                          break
+               elif provided_policy_rulesets == '' and consumed_policy_rulesets == '':
+                    if network_service_policy is None:
+                       body["policy_target_group"]["network_service_policy_id"]=None
+                       break
+                    if network_service_policy == '':
+                       break
+                    if network_service_policy != '' and network_service_policy is not None:
+                       body["policy_target_group"]["network_service_policy_id"]=network_service_policy
+                       break
                else:
-                    break
-          if network_service_policy is not None:
-             body["policy_target_group"]["network_service_policy_id"]=network_service_policy 
+                   print 'Do nothing'
+                   break
           self.client.update_policy_target_group(group_id, body)
         except Exception as e:
            _log.error("\nException Error: %s\n" %(e))
@@ -537,13 +562,13 @@ class GBPCrud(object):
            _log.error("Deleting Policy Target Group = %s, failed" %(name_uuid))
            return 0
 
-    def get_gbp_policy_target_group_list(self,getlist=False):
+    def get_gbp_policy_target_group_list(self,getdict=False):
         """
         Fetch a List of GBP Policy Target Group
-        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        getdict: 'True', will return a dictionary comprising 'name' & 'uuid'
         """
         try:
-           if getlist == True:
+           if getdict == True:
               name_uuid = {}
               for ptg in self.client.list_policy_target_groups()['policy_target_groups']:
                   name_uuid[ptg['name'].encode('ascii')]= ptg['id'].encode('ascii')
@@ -553,7 +578,7 @@ class GBPCrud(object):
            _log.error("\nException Error: %s\n" %(e))
            _log.error("Fetching Policy Target Group List, failed")
            return 0
-        if getlist == True:
+        if getdict == True:
            return name_uuid
         else:
            return ptgs_list
@@ -698,13 +723,13 @@ class GBPCrud(object):
            _log.error("Update of L3Policy = %s, failed" %(name_uuid))
            return 0
  
-    def get_gbp_l3policy_list(self,getlist=False):
+    def get_gbp_l3policy_list(self,getdict=False):
         """
         Fetch a List of GBP L3Policy
-        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        getdict: 'True', will return a dictionary comprising 'name' & 'uuid'
         """
         try:
-           if getlist == True:
+           if getdict == True:
               name_uuid = {}
               for l3p  in self.client.list_l3_policies()['l3_policies']:
                   name_uuid[l3p['name'].encode('ascii')]= l3p['id'].encode('ascii')
@@ -714,7 +739,7 @@ class GBPCrud(object):
            _log.error("\nException Error: %s\n" %(e))
            _log.error("Fetching L3Policy List, failed")
            return 0
-        if getlist == True:
+        if getdict == True:
            return name_uuid
         else:
            return l3p_list
@@ -773,13 +798,13 @@ class GBPCrud(object):
            _log.error("Deleting L2Policy = %s, failed" %(name_uuid))
            return 0
 
-    def get_gbp_l2policy_list(self,getlist=False):
+    def get_gbp_l2policy_list(self,getdict=False):
         """
         Fetch a List of GBP L2Policy
-        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        getdict: 'True', will return a dictionary comprising 'name' & 'uuid'
         """
         try:
-           if getlist == True:
+           if getdict == True:
               name_uuid = {}
               for l2p  in self.client.list_l2_policies()['l2_policies']:
                   name_uuid[l2p['name'].encode('ascii')]= l2p['id'].encode('ascii')
@@ -789,7 +814,7 @@ class GBPCrud(object):
            _log.error("\nException Error: %s\n" %(e))
            _log.error("Fetching L2Policy List, failed")
            return 0
-        if getlist == True:
+        if getdict == True:
            return name_uuid
         else:
            return l2p_list
@@ -854,13 +879,13 @@ class GBPCrud(object):
            _log.error("Update of External Segment = %s, failed" %(uuid))
            return 0
 
-    def get_gbp_external_segment_list(self,getlist=False):
+    def get_gbp_external_segment_list(self,getdict=False):
         """
         Fetch a List of GBP External Segments
-        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        getdict: 'True', will return a dictionary comprising 'name' & 'uuid'
         """
         try:
-           if getlist == True:
+           if getdict == True:
               name_uuid = {}
               for extseg in self.client.list_external_segments()['external_segments']:
                   name_uuid[extseg['name'].encode('ascii')]= extseg['id'].encode('ascii')
@@ -870,7 +895,7 @@ class GBPCrud(object):
            _log.error("\nException Error: %s\n" %(e))
            _log.error("Fetching External Segment List, failed")
            return 0
-        if getlist == True:
+        if getdict == True:
            return name_uuid
         else:
            return extseg_list
@@ -904,13 +929,13 @@ class GBPCrud(object):
            _log.error("Deleting NAT Pool %s, failed" %(uuid))
            return 0
 
-    def get_gbp_nat_pool_list(self,getlist=False):
+    def get_gbp_nat_pool_list(self,getdict=False):
         """
         Fetch a List of GBP NAT Pools
-        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        getdict: 'True', will return a dictionary comprising 'name' & 'uuid'
         """
         try:
-           if getlist == True:
+           if getdict == True:
               name_uuid = {}
               for natpool in self.client.list_nat_pools()['nat_pools']:
                   name_uuid[natpool['name'].encode('ascii')]= natpool['id'].encode('ascii')
@@ -920,7 +945,7 @@ class GBPCrud(object):
            _log.error("\nException Error: %s\n" %(e))
            _log.error("Fetching NAT Pool List, failed")
            return 0
-        if getlist == True:
+        if getdict == True:
            return name_uuid
         else:
            return natpool_list
@@ -943,7 +968,7 @@ class GBPCrud(object):
            _log.error("Update of NAT Pool = %s, failed" %(uuid))
            return 0
 
-    def create_gbp_network_service_policy_for_nat(self,shared=False):
+    def create_gbp_network_service_policy_for_nat(self,name,shared=False):
         """
         Create Network Service Policy
         """
@@ -956,10 +981,27 @@ class GBPCrud(object):
            nsp_nat_uuid = self.client.create_network_service_policy(body)['network_service_policy']['id'].encode('ascii')
         except Exception as e:
            _log.error("\nException Error: %s\n" %(e))
-           _log.error("Creating NAT NSP = %s, failed" %(uuid))
+           _log.error("Creating NAT NSP failed")
            return 0
         return nsp_nat_uuid   
 
+    def delete_gbp_network_service_policy(self,nspuuid=''):
+        """
+        Delete Network Service Policy
+        """
+        try:
+           if nspuuid != '':
+              self.client.delete_network_service_policy(nspuuid)
+           else:
+              nsp_list = self.client.list_network_service_policies()['network_service_policies']
+              for nsp in nsp_list:
+                  nspuuid = nsp['id']
+                  self.client.delete_network_service_policy(nspuuid)
+        except Exception as e:
+           _log.error("\nException Error: %s\n" %(e))
+           _log.error("Deleting NAT NSP = %s, failed" %(nspuuid))
+           return 0
+        
     def create_gbp_external_policy(self,name,**kwargs):
         """
         Create the External Policy
@@ -1055,13 +1097,13 @@ class GBPCrud(object):
            _log.error("Deleting External Policy %s, failed" %(uuid))
            return 0
 
-    def get_gbp_external_policy_list(self,getlist=False):
+    def get_gbp_external_policy_list(self,getdict=False):
         """
         Fetch a List of GBP External Policies
-        getlist: 'True', will return a dictionary comprising 'name' & 'uuid'
+        getdict: 'True', will return a dictionary comprising 'name' & 'uuid'
         """
         try:
-           if getlist == True:
+           if getdict == True:
               name_uuid = {}
               for extpol in self.client.list_external_policies()['external_policies']:
                   name_uuid[extpol['name'].encode('ascii')]= extpol['id'].encode('ascii')
@@ -1071,7 +1113,7 @@ class GBPCrud(object):
            _log.error("\nException Error: %s\n" %(e))
            _log.error("Fetching External Policies List, failed")
            return 0
-        if getlist == True:
+        if getdict == True:
            return name_uuid
         else:
            return extpol_list
