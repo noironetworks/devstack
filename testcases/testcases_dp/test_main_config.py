@@ -113,7 +113,8 @@ class gbp_main_config(object):
         svc_epg_list = [
                         'demo_same_ptg_l2p_l3p_bd',
                         'demo_diff_ptg_same_l2p_l3p_bd',
-                        'demo_diff_ptg_l2p_same_l3p_bd',
+                        'demo_diff_ptg_l2p_same_l3p_bd_1',
+                        'demo_diff_ptg_l2p_same_l3p_bd_2',
                         'demo_srvr_bd', 'demo_clnt_bd'
                        ]
         create_add_filter(self.apic_ip, svc_epg_list)

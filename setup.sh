@@ -25,7 +25,11 @@ systemctl restart openstack-nova-api.service
 systemctl restart openstack-nova-scheduler.service
 source /root/keystonerc_admin
 nova quota-show
-
+# If the above nova.conf changes for quota does not take effect then resort to CLI
+nova quota-class-update --instances -1 default
+nova quota-class-update --ram -1 default
+nova quota-class-update --cores -1 default
+nova quota-show
 # Restart Heat-Engine & Heat-API
 systemctl restart openstack-heat-engine.service
 systemctl restart openstack-heat-api.service

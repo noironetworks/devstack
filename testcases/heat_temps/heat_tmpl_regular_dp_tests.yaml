@@ -273,8 +273,8 @@ resources:
         type: OS::GroupBasedPolicy::L3Policy
         properties:
             name: demo_diff_ptg_l2p_same_l3p
-            ip_pool: "7.7.7.0/24"
-            subnet_prefix_length: 28
+            ip_pool: "7.7.0.0/16"
+            subnet_prefix_length: 24
             shared: False
 
     demo_diff_ptg_l2p_same_l3p_l2_policy_1:
