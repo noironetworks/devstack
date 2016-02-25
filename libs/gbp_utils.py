@@ -204,6 +204,16 @@ def action_service(hostIp,servicename,action='restart',user='root',pwd='noir0123
                       return 0
         return 1   
 
+def addEnforcedToPtg(apic_ip,epg,flag='enforced',username='admin',password='noir0123',tenant='_noirolab_admin'):
+    """
+    Add Enforced flag to the PTG
+    """
+    apic = Apic(apic_ip,username,password)
+    path = '/api/node/mo/uni/tn-_noirolab_admin/ap-noirolab_app/epg-%s.json' %(epg)
+    data = '{"fvAEPg":{"attributes":{"dn":"uni/tn-_noirolab_admin/ap-noirolab_app/epg-%s","pcEnfPref":"%s"},"children":[]}}' %(epg,flag)
+    req = apic.post(path, data)
+    print req.text
+
 def add_route_in_extrtr(rtrip,route,nexthop,action='add',ostype='ubuntu',user='noiro',pwd='noir0123'):
     """
     Adding Routes in ExtRtr(Ubuntu)

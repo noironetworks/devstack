@@ -4,6 +4,7 @@ import sys
 import optparse
 import platform
 from commands import *
+getoutput("rm -rf /tmp/test*") #Deletes pre-existing test logs
 from time import sleep
 from libs.gbp_verify_libs import Gbp_Verify
 from test_main_config import gbp_main_config
@@ -19,7 +20,7 @@ def main():
                            'header2': [header2, test_diff_ptg_same_l2p_l3p],
                             'header3': [header3, test_diff_ptg_diff_l2p_same_l3p],
                            'header4': [header4, test_diff_ptg_diff_l2p_diff_l3p]}
-
+ 
     # Build the Test Config to be used for all DataPath Testcases
     cfg_file = sys.argv[1]
     print "Setting up global config for all DP Testing"
@@ -43,6 +44,13 @@ def main():
         # Initialize Testsuite class to run its testcases
         testsuite = val[1](objs_uuid)
 
+        for location in ['same_host', 'diff_host_same_leaf']:
+            log_string = "%s_%s_%s_%s" % (testbed_cfg.test_parameters['bd_type'],
+                                          testbed_cfg.test_parameters['ip_version'],
+                                          testbed_cfg.test_parameters['vpc_type'],
+                                          location)
+            testsuite.test_runner(log_string, location)
+
         # now run the loop of test-combos
         """
         for bdtype in ['vxlan', 'vlan']:
@@ -55,15 +63,15 @@ def main():
                             bdtype, ip, vpc, location)
                         testsuite.test_runner(log_string, location)
         """
-        for bdtype in ['vxlan']:
-            for ip in ['ipv4']:
-                for vpc in ['vpc']:
-                    for location in ['diff_host_diff_leaf','same_host']:
-                        # Run the testcases specific to the initialized
-                        # testsuite
-                        log_string = "%s_%s_%s_%s" % (
-                            bdtype, ip, vpc, location)
-                        testsuite.test_runner(log_string, location)
+        # for bdtype in ['vxlan']:
+        #     for ip in ['ipv4']:
+        #         for vpc in ['vpc']:
+        #             for location in ['diff_host_diff_leaf','same_host']:
+        #                 # Run the testcases specific to the initialized
+        #                 # testsuite
+        #                 log_string = "%s_%s_%s_%s" % (
+        #                     bdtype, ip, vpc, location)
+        #                 testsuite.test_runner(log_string, location)
         # Testsuite specific cleanup
         # header.cleanup()
     testbed_cfg.cleanup()

@@ -43,6 +43,7 @@ class test_same_ptg_same_l2p_same_l3p(object):
         stack_name = super_hdr.stack_name
         heat_temp = super_hdr.heat_temp
         self.ntk_node = super_hdr.ntk_node
+        self.apic_ip = super_hdr.apic_ip
         self.ptg = objs_uuid['demo_same_ptg_l2p_l3p_ptg_id']
         self.test_2_prs = objs_uuid['demo_ruleset_norule_id']
         self.test_3_prs = objs_uuid['demo_ruleset_icmp_id']
@@ -71,29 +72,42 @@ class test_same_ptg_same_l2p_same_l3p(object):
                      self.test_8_traff_rem_prs
                      ]
         test_results = {}
-        for test in test_list:
+        for flag in ['enforced','unenforced']:
+            self._log.info("Run the Intra-EPG TestSuite with %s" %(flag))
+            ptg_name = 'demo_same_ptg_l2p_l3p_ptg' #TBD: JISHNU For now hardcoded, we will improve this
+            if flag == 'enforced':
+               expectedRetVal = 0
+               addEnforcedToPtg(self.apic_ip,ptg_name,tenant='_noirolab_admin') #Cant use self.ptg as its a UUID instead of namestring
+            else:
+               addEnforcedToPtg(self.apic_ip,ptg_name,flag=flag,tenant='_noirolab_admin')
+               expectedRetVal = 1
+            for test in test_list:
                 repeat_test = 1
                 while repeat_test < 4:
-                  if test() == 1:
-                     break
-                  self._log.info("Repeat Run of the Testcase = %s" %(test.__name__.lstrip('self.')))
-                  repeat_test += 1
+                      if flag == 'enforced':
+                         if test() == 0:
+                            break
+                      if flag == 'unenforced':
+                         if test() == expectedRetVal:
+                            break
+                      self._log.info("Repeat Run of the Testcase = %s" %(test.__name__.lstrip('self.')))
+                      repeat_test += 1
                 if repeat_test == 4:
                     test_results[string.upper(
-                        test.__name__.lstrip('self.'))] = 'FAIL'
-                    self._log.info("\n%s_%s_%s == FAIL" % (self.__class__.__name__.upper(
-                    ), log_string.upper(), string.upper(test.__name__.lstrip('self.'))))
+                        test.__name__.lstrip('self.'))+'_'+flag.upper()] = 'FAIL'
+                    self._log.info("\n%s_%s_%s_%s == FAIL" % (self.__class__.__name__.upper(
+                    ), log_string.upper(), string.upper(test.__name__.lstrip('self.')),flag.upper()))
                 else:
                     if 'test_1' in test.__name__ or 'test_2' in test.__name__:
                         test_results[string.upper(
-                            test.__name__.lstrip('self.'))] = 'PASS'
-                        self._log.info("\n%s_%s_%s 10 subtestcases == PASS" % (self.__class__.__name__.upper(
-                        ), log_string.upper(), string.upper(test.__name__.lstrip('self.'))))
+                            test.__name__.lstrip('self.'))+'_'+flag.upper()] = 'PASS'
+                        self._log.info("\n%s_%s_%s_%s 10 subtestcases == PASS" % (self.__class__.__name__.upper(
+                        ), log_string.upper(), string.upper(test.__name__.lstrip('self.')),flag.upper()))
                     else:
                         test_results[string.upper(
-                            test.__name__.lstrip('self.'))] = 'PASS'
-                        self._log.info("\n%s_%s_%s == PASS" % (self.__class__.__name__.upper(
-                        ), log_string.upper(), string.upper(test.__name__.lstrip('self.'))))
+                            test.__name__.lstrip('self.'))+'_'+flag.upper()] = 'PASS'
+                        self._log.info("\n%s_%s_%s_%s == PASS" % (self.__class__.__name__.upper(
+                        ), log_string.upper(), string.upper(test.__name__.lstrip('self.')),flag.upper()))
         pprint.pprint(test_results)    
 
     def verify_traff(self):
@@ -123,7 +137,7 @@ class test_same_ptg_same_l2p_same_l3p(object):
             dest_ip].iteritems() if val == 0}
         if len(failed) > 0:
             self._log.error('Following traffic_types %s = FAILED' % (failed))
-            return failed
+            return 0
         else:
             return 1
 
