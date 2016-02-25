@@ -51,7 +51,7 @@ def main():
                                           location)
             testsuite.test_runner(log_string, location)
 
-        # now run the loop of test-combos
+        # now run the loop of test-combos(NOTE: The below forloop is now part of Harness & cfgable)
         """
         for bdtype in ['vxlan', 'vlan']:
             for ip in ['ipv4', 'ipv6']:
@@ -63,17 +63,6 @@ def main():
                             bdtype, ip, vpc, location)
                         testsuite.test_runner(log_string, location)
         """
-        # for bdtype in ['vxlan']:
-        #     for ip in ['ipv4']:
-        #         for vpc in ['vpc']:
-        #             for location in ['diff_host_diff_leaf','same_host']:
-        #                 # Run the testcases specific to the initialized
-        #                 # testsuite
-        #                 log_string = "%s_%s_%s_%s" % (
-        #                     bdtype, ip, vpc, location)
-        #                 testsuite.test_runner(log_string, location)
-        # Testsuite specific cleanup
-        # header.cleanup()
     testbed_cfg.cleanup()
 
 if __name__ == "__main__":

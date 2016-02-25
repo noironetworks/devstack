@@ -1,18 +1,15 @@
-#!highlight yaml
-
-# Mandatory: User must not change the below config params
-main_setup_heat_temp: '/root/gbpauto/testcases/heat_temps/heat_tmpl_regular_dp_tests.yaml'
-nova_agg_name: 'gbp_agg'
-nova_az_name: 'gbp_zone'
-heat_stack_name: 'gbpstack'
-key_name: 'gbpkey' #Ensure that it is same as mentioned in heat template
-
-# User editable config params
+apic_ip: 172.28.184.30
+az_comp_node: f2-compute-1.noiro.lab
+controller_ip: 172.28.184.35
+heat_stack_name: gbpstack
+key_name: gbpkey
+main_setup_heat_temp: /root/gbpauto/testcases/heat_temps/heat_tmpl_regular_dp_tests.yaml
+nova_agg_name: gbp_agg
+nova_az_name: gbp_zone
+ntk_node: 172.28.184.36
 num_comp_nodes: 2
-apic_ip: '172.28.184.40'
-controller_ip: '172.28.184.45'
-ntk_node: '172.28.184.46'
-az_comp_node: 'f3-compute-1.noiro.lab'
-#vm_image: '"trusty-multi-if"'
-vm_image: 'ubuntu_multi_nics'
-
+test_parameters:
+  bd_type: vxlan
+  ip_version: ipv4
+  vpc_type: vpc
+vm_image: ubuntu_multi_nics
