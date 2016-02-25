@@ -46,6 +46,7 @@ class gbp_main_config(object):
         self.heat_temp_test = conf['main_setup_heat_temp']
         self.num_hosts = conf['num_comp_nodes']
         self.heat_stack_name = conf['heat_stack_name']
+        self.test_parameters = conf['test_parameters']
         self.gbpcfg = Gbp_Config()
         self.gbpverify = Gbp_Verify()
         self.gbpnova = Gbp_Nova(self.cntlr_ip)
