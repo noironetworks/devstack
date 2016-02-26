@@ -77,14 +77,16 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
                      ]
         test_results = {}
         for test in test_list:
-            try:
                 repeat_test = 1
                 while repeat_test < 4:
                   if test() == 1:
                      break
                   self._log.warn("Repeat Run of the Testcase = %s" %(test.__name__.lstrip('self.')))
                   repeat_test += 1
-                if repeat_test == 4:
+                if repeat_test == 4: #NOTE: JISHNU changed it below for BugRepro
+                    for test in ['test_8','test_9','test_9A']:
+                        if test in test.__name__:
+                           self.test_revert_policy_ruleset(test.upper())
                     test_results[string.upper(
                         test.__name__.lstrip('self.'))] = 'FAIL'
                     self._log.info("\n%s_%s_%s == FAIL" % (self.__class__.__name__.upper(
@@ -100,22 +102,19 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
                             test.__name__.lstrip('self.'))] = 'PASS'
                         self._log.info("\n%s_%s_%s == PASS" % (self.__class__.__name__.upper(
                         ), log_string.upper(), string.upper(test.__name__.lstrip('self.'))))
-            except TestFailed as err:
-                self._log.error('%s' %(err))
         pprint.pprint(test_results)
  
     def verify_traff(self, proto=['all']):
         """
         Verifies the expected traffic result per testcase
         """
-
-        # Incase of Diff PTG  Diff L2P and Same L3P all traffic is dis-allowed irrespective what Policy-Ruleset is applied
+        # Incase of Diff PTG Same L2 & L3P all traffic is dis-allowed by default unless Policy-Ruleset is applied
         # Hence verify_traff will check for all protocols including the
         # implicit ones
         gbpcfg = Gbp_Config()
         if self.vm_loc == 'diff_host_same_leaf' or self.vm_loc == 'diff_host_diff_leaf':
             dest_ip = gbpcfg.get_vm_subnet('VM9', ret='ip')
-	    self._log.debug('VM7-IP: %s, VM7-subnet: %s, Dest-IP: %s, NetNS: %s' %(self.vm7_ip, self.vm7_subn, dest_ip, self.dhcp_ns))
+            self._log.debug('VM7-IP: %s, VM7-subnet: %s, Dest-IP: %s, NetNS: %s' %(self.vm7_ip, self.vm7_subn, dest_ip, self.dhcp_ns))
             gbppexptraff = Gbp_pexp_traff(
                 self.ntk_node, self.dhcp_ns, self.vm7_ip, dest_ip)
         if self.vm_loc == 'same_host':
@@ -124,15 +123,19 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
             gbppexptraff = Gbp_pexp_traff(
                 self.ntk_node, self.dhcp_ns, self.vm7_ip, dest_ip)
         results = gbppexptraff.test_run()
-        self._log.info("Results from the Testcase == %s" %(results))
+        self._log.info('Results from the Testcase == %s' %(results))
         if results == {}:
             return 0
         failed = {}
-        if proto[0] == 'all':  # In 'all' proto is verified for PTGs with NO_PRS, PRS_NO_RULE, REM_PRS, hence below val ==1, then Fail, because pkts were not dropped
+        # In 'all' proto is verified for PTGs with NO_PRS, PRS_NO_RULE,
+        # REM_PRS, hence below val ==1, then Fail, because pkts were
+        # expected to be dropped but they were NOT(hence the Test should
+        # be marked FAIL.
+        if proto[0] == 'all':
             failed = {key: val for key, val in results[
                 dest_ip].iteritems() if val == 1}
             if len(failed) > 0:
-                self._log.error('For all Protocols Following traffic_types %s = Failed' % (failed))
+                self._log.error('For All Protcol Following traffic_types %s = Failed' %(failed))
                 return 0
             else:
                 return 1
@@ -144,10 +147,11 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
             failed.update({key: val for key, val in results[
                           dest_ip].iteritems() if val == 1 and key not in allow_list})
             if len(failed) > 0:
-                self._log.error('Following traffic_types %s = Failed' % (failed))
+                self._log.error('Following traffic_types %s = Failed' %(failed))
                 return 0
             else:
                 return 1
+
 
     def test_1_traff_with_no_prs(self):
         """
@@ -259,14 +263,10 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
         self._log.info(
             "\nTest_8_Traff_Rem_Add_UDP_Rule: Remove and Apply back UDP Rule from CONTRACT and Verify Traffic")
         if self.gbpcfg.gbp_policy_cfg_all(2, 'ruleset', prs, policy_rule='%s,%s' % (self.tcp_rule, self.icmp_rule)) != 0:
-            return self.verify_traff(proto=['icmp', 'tcp'])
+            if self.verify_traff(proto=['icmp', 'tcp'])==1:
+               return self.test_revert_policy_ruleset('Test_8',traff=1)
         else:
-            self._log.error('Updating PolicyRuleSet by removing UDP PolicyRule : Failed') 
-            return 0
-        if self.gbpcfg.gbp_policy_cfg_all(2, 'ruleset', prs, policy_rule='%s,%s,%s' % (self.tcp_rule, self.icmp_rule, self.udp_rule)) != 0:
-            return self.verify_traff(proto=['icmp', 'tcp', 'udp'])
-        else:
-            self._log.error('Updating PolicyRuleSet by adding back all PolicyRules: Failed')
+            self._log.error("Updating PRS by removing of UDP PolicyRule from All-Proto PRS: Failed")
             return 0
 
     def test_9_traff_rem_add_tcp_rule(self):
@@ -280,14 +280,10 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
         self._log.info(
             "\nTest_9_Traff_Rem_Add_TCP_Rule: Remove and Apply back TCP Rule from CONTRACT and Verify Traffic")
         if self.gbpcfg.gbp_policy_cfg_all(2, 'ruleset', prs, policy_rule='%s,%s' % (self.udp_rule, self.icmp_rule)) != 0:
-            return self.verify_traff(proto=['icmp', 'udp'])
+            if self.verify_traff(proto=['icmp', 'udp'])==1:
+               return self.test_revert_policy_ruleset('Test_9',traff=1)
         else:
-            self._log.error('Updating PolicyRuleSet by removing TCP PolicyRule : Failed')
-            return 0
-        if self.gbpcfg.gbp_policy_cfg_all(2, 'ruleset', prs, policy_rule='%s,%s,%s' % (self.udp_rule, self.icmp_rule, self.tcp_rule)) != 0:
-            return self.verify_traff(proto=['icmp', 'udp', 'tcp'])
-        else:
-            self._log.error('Updating PolicyRuleSet by adding back all PolicyRules: Failed')
+            self._log.error("Updating PRS by removing of TCP PolicyRule from All-Proto PRS: Failed")
             return 0
 
     def test_9A_traff_rem_add_icmp_udp_rule(self):
@@ -301,14 +297,31 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
         self._log.info(
             "\nTest_9A_Traff_Rem_Add_ICMP_UDP_Rule: Remove and Apply back ICMP & UDP Rules from CONTRACT and Verify Traffic")
         if self.gbpcfg.gbp_policy_cfg_all(2, 'ruleset', prs, policy_rule='%s' % (self.tcp_rule)) != 0:
-            return self.verify_traff(proto=['tcp'])
+            if self.verify_traff(proto=['tcp'])==1:
+               return self.test_revert_policy_ruleset('Test_9A',traff=1)
         else:
-            self._log.error('Updating PolicyRuleSet by removing both ICMP & UDP PolicyRule : Failed')
+            self._log.error("Updating PRS by removing of ICMP & UDP PolicyRules from All-Proto PRS: Failed")
             return 0
-        if self.gbpcfg.gbp_policy_cfg_all(2, 'ruleset', prs, policy_rule='%s,%s,%s' % (self.udp_rule, self.icmp_rule, self.tcp_rule)) != 0:
-            return self.verify_traff(proto=['icmp', 'udp', 'tcp'])
+
+    def test_revert_policy_ruleset(self,tc,traff=0):
+        """
+        Reverts the All-Protocol PRS
+        Runs and verifies traffic
+        tc:: TestCase Name inside which this test runs
+        traff:: 0--> send no traffic, 1--> send traffic
+        Send Traff when the parent test traff PASS,ensuring that adding
+        all PRs to the PRS works fine before invoking the next similar testcase
+        """
+        prs = self.test_7_prs
+        if traff == 1:
+           self._log.info("Adding TCP,UDP,ICMP PRs back to All-Proto PRS and Verify Traffic After %s" %(tc))
         else:
-            self._log.error('Updating PolicyRuleSet by adding back all PolicyRules: Failed')
+           self._log.info("Only Adding TCP,UDP,ICMP PRs back to All-Proto PRS After Test %s" %(tc))
+        if self.gbpcfg.gbp_policy_cfg_all(2, 'ruleset', prs, policy_rule='%s,%s,%s' % (self.udp_rule, self.icmp_rule, self.tcp_rule)) != 0:
+           if traff == 1:
+              return self.verify_traff(proto=['icmp', 'tcp', 'udp'])
+        else:
+            self._log.error("Updating All-Proto PRS by adding ALL PRs back: Failed")
             return 0
 
     def test_11_traff_rem_prs(self):
