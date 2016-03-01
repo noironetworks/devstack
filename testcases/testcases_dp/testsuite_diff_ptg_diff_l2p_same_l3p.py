@@ -84,9 +84,9 @@ class test_diff_ptg_diff_l2p_same_l3p(object):
                   self._log.warn("Repeat Run of the Testcase = %s" %(test.__name__.lstrip('self.')))
                   repeat_test += 1
                 if repeat_test == 4: #NOTE: JISHNU changed it below for BugRepro
-                    for test in ['test_8','test_9','test_9A']:
-                        if test in test.__name__:
-                           self.test_revert_policy_ruleset(test.upper())
+                    for name in ['test_8','test_9','test_9A']:
+                        if name in test.__name__:
+                           self.test_revert_policy_ruleset(name.upper())
                     test_results[string.upper(
                         test.__name__.lstrip('self.'))] = 'FAIL'
                     self._log.info("\n%s_%s_%s == FAIL" % (self.__class__.__name__.upper(
