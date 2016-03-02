@@ -136,7 +136,7 @@ class test_same_ptg_same_l2p_same_l3p(object):
         failed = {key: val for key, val in results[
             dest_ip].iteritems() if val == 0}
         if len(failed) > 0:
-            self._log.error('Following traffic_types %s = FAILED' % (failed))
+            self._log.error('Following traffic_types %s = Failed' % (failed))
             return 0
         else:
             return 1
@@ -174,7 +174,7 @@ class test_same_ptg_same_l2p_same_l3p(object):
         if self.gbpcfg.gbp_policy_cfg_all(2, 'group', self.ptg, provided_policy_rule_sets="%s=scope" % (prs), consumed_policy_rule_sets="%s=scope" % (prs)) != 0:
             return self.verify_traff()
         else:
-            self._log.error('Updating PTG == FAILED')
+            self._log.error('Updating PTG == Failed')
             return 0
 
     def test_4_traff_apply_prs_tcp(self):
