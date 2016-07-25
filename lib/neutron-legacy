@@ -1322,7 +1322,8 @@ function _neutron_configure_router_v4 {
             fi
             ROUTER_GW_IP=`neutron port-list -c fixed_ips -c device_owner | grep router_gateway | awk -F '"' -v subnet_id=$PUB_SUBNET_ID '$4 == subnet_id { print $8; }'`
             die_if_not_set $LINENO ROUTER_GW_IP "Failure retrieving ROUTER_GW_IP"
-            sudo ip route replace  $FIXED_RANGE via $ROUTER_GW_IP
+            NEW_GW=`echo $ROUTER_GW_IP | awk '{print $1;}'`
+            sudo ip route replace  $FIXED_RANGE via $NEW_GW
         fi
         _neutron_set_router_id
     fi
@@ -1353,11 +1354,13 @@ function _neutron_configure_router_v6 {
 
         if is_neutron_ovs_base_plugin && [[ "$Q_USE_NAMESPACE" = "True" ]]; then
             local ext_gw_interface=$(_neutron_get_ext_gw_interface)
+            new_ext_gw_interface=`echo $ext_gw_interface | awk '{print $1;}'`
+            NEW_IPV6_GW_IP=`echo $IPV6_ROUTER_GW_IP | awk '{print $1;}'`
             local ipv6_cidr_len=${IPV6_PUBLIC_RANGE#*/}
 
             # Configure interface for public bridge
             sudo ip -6 addr add $ipv6_ext_gw_ip/$ipv6_cidr_len dev $ext_gw_interface
-            sudo ip -6 route replace $FIXED_RANGE_V6 via $IPV6_ROUTER_GW_IP dev $ext_gw_interface
+            sudo ip -6 route replace $FIXED_RANGE_V6 via $NEW_IPV6_GW_IP dev $ext_gw_interface
         fi
         _neutron_set_router_id
     fi
