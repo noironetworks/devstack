@@ -1,0 +1,10 @@
+{
+  "interface": "eth1.4093",
+  "base_dir": "/etc/opflex_agent",
+  "domain": "comp/prov-Kubernetes/ctrlr-[vk8s_1]-vk8s_1/sw-InsiemeLSOid",
+  "num_agents": 5,
+  "epg_per_agent": 10,
+  "ep_per_epg": 5,
+  "contracts_per_agent": 5,
+  "sec_grps_per_agent": 5
+}
