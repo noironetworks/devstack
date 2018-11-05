@@ -40,7 +40,16 @@ class OpflexAgent:
         finally:
             f.close()
            
-        log_file = './agent' + str(self.agent_id) +  '.log'
+        # setup base dir for agent logs
+        base_dir_logs = '/var/log/opflex_agent'
+        if not os.path.exists(base_dir_logs):
+          try:
+             os.mkdir(base_dir_logs)
+          except:
+             logger.error("cannot create %s", base_dir_logs)
+             raise
+
+        log_file = base_dir_logs + '/agent' + str(self.agent_id) +  '.log'
         # start agent under its owm namespace
         try:
            subprocess.Popen(["sudo", "ip", "netns", "exec", "ns" + str(self.agent_id), "opflex_agent", "-c", path_to_conf_file, "--log", log_file])
@@ -58,29 +67,31 @@ class NetworkSetup:
 
     def isBridgePresent(self, bridge):
        for br in self.brctl.showall():
-          if 'br-agent'  in str(br):
+          if bridge  in str(br):
             return True
        return False
 
            
     def setupBridge(self, bridge):
-       self.bridge = bridge
        if not self.isBridgePresent(bridge):
           try:
-             br = self.brctl.addbr("br-agent")
+             br = self.brctl.addbr(bridge)
              br.addif(self.interface)
+             self.bridge = br
           except OSError as e:
              logger.error("bridge creation failed\n" + e)
              raise
 
     def createLink(self, name_space, idx):
        try:
+          # assume the bridge has been created and named 'br-agent'
           subprocess.call("ip link add " + name_space + "-tap" + " type veth peer name tap", shell=True)
+          subprocess.call("ip link set dev " + name_space + "-tap" + " up", shell=True)
           
           mac = "00:01:00:00:00:" + format(idx, '02x')
           subprocess.call("ip link set dev tap addr " + mac, shell=True)
           subprocess.call("ip link set tap netns " + name_space, shell=True)
-          subprocess.call("brctl addif " + self.bridge + " " + name_space + "-tap", shell=True)
+          self.bridge.addif(name_space + "-tap")
        except:
           logger.error("Unable to create link to namspace " + name_space)
           raise
@@ -107,7 +118,7 @@ interface "tap" {\n \
           f.close()
        # run dhclient to get ip lease
        try:
-          p = subprocess.Popen("ip netns exec " +  name_space + " dhclient" " -cf " + path_to_dhclient_file + " -lf /var/lib/dhclient/dhclient-" + name_space + ".lease" + " -pf /var/run/dhclient-" + name_space + " tap" , shell=True, stdout=PIPE, stderr=PIPE)
+          p = subprocess.Popen("ip netns exec " +  name_space + " dhclient" " -cf " + path_to_dhclient_file + " -lf /var/lib/dhcp/dhclient-" + name_space + ".leases" + " -pf /var/run/dhclient-" + name_space + " tap" , shell=True, stdout=PIPE, stderr=PIPE)
        except:
           self.logger.error("Error starting DHCP client for " + name_space + '\n stdout:\n' + p.stdout + '\n stderr:\n' + p.stderr)
           raise
@@ -140,7 +151,7 @@ if __name__ == '__main__':
     nw.setupBridge( "br-agent" )
 
     # setup base dir for agent
-    base_dir = '/etc/opflex_agent'
+    base_dir = data["base_dir"]
     if not os.path.exists(base_dir):
        try:
          os.mkdir(base_dir)
