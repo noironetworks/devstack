@@ -1,10 +1,14 @@
 {
+  "apic_ip": "172.28.184.172",
+  "apic_uid": "admin",
+  "apic_passwd": "noir0123",
   "interface": "eth1.4093",
   "base_dir": "/etc/opflex_agent",
   "domain": "comp/prov-Kubernetes/ctrlr-[vk8s_1]-vk8s_1/sw-InsiemeLSOid",
-  "num_agents": 5,
-  "epg_per_agent": 10,
-  "ep_per_epg": 5,
-  "contracts_per_agent": 5,
-  "sec_grps_per_agent": 5
+  "tenant_name": "agent-scale-test",
+  "num_agents": 1,
+  "total_epg": 10,
+  "total_ep": 5,
+  "total_contracts": 5,
+  "total_sec_grps": 5
 }

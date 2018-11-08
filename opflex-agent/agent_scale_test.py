@@ -9,6 +9,7 @@ import sys
 import re
 from pybrctl import BridgeController
 from subprocess import PIPE
+import apic_request
 
 
 class OpflexAgent:
@@ -146,6 +147,11 @@ if __name__ == '__main__':
        
     logger.info("options passed %s", json.dumps(data, indent=4))
 
+    # provision APIC with the required artifacts
+    args = { "apic_ip": data["apic_ip"], "apic_uid": data["apic_uid"], "apic_passwd": data["apic_passwd"], 
+             "tenant_name": data["tenant_name"], "EPGs": data["total_epg"], "EPs": data["total_ep"] }
+    apic = apic_request.create_policy(args)
+    
     # setup bridge
     nw = NetworkSetup( data["interface"] )
     nw.setupBridge( "br-agent" )
