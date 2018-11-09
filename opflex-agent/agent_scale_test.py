@@ -17,17 +17,22 @@ class OpflexAgent:
 "opflex":{"domain":"$domain", "name":"agent-$id_Str", \
 "peers":[{"hostname":"10.0.0.30", "port":"8009"}], \
 "ssl":{"mode":"encrypted", "ca-store":"/etc/ssl/certs/"}, \
-"inspector":{"enabled": true, "socket-name": "/var/run/opflex-agent$id_Str-ovs-inspect.sock"}, \
-"notif":{"enabled": true, "socket-name": "/var/run/opflex-agent$id_Str-ovs-notif.sock", "socket-group": "opflexep", "socket-permissions": "770"}}, \
-"endpoint-sources":{"filesystem":["/etc/opflex-agent-ovs/$id_Str"], "model-local": ["default"]}, \
-"service-sources":{"filesystem":["/var/lib/opflex-agent-ovs/services"]}, \
+"inspector":{"enabled": true, "socket-name": "/var/run/opflex_agent$id_Str-ovs-inspect.sock"}, \
+"notif":{"enabled": true, "socket-name": "/var/run/opflex_agent$id_Str-ovs-notif.sock", "socket-group": "opflexep", "socket-permissions": "770"}}, \
+"endpoint-sources":{"filesystem":["/etc/opflex_agent/$id_Str"], "model-local": ["default"]}, \
+"service-sources":{"filesystem":["/etc/opflex_agent/services/$id_Str"]}, \
 "renderers":{}}')
+    ep_content = Template('{"interface-name": "ep_if$id_Str", "ip": ["192.168.$id_Str.$index"], "promiscuous-mode": false, "mac": "36:8c:97:ff:$id_hex_str:$index_hex_str", "policy-space-name": "$tenant", "attributes": {"vm-name": "agent$id_Str"}, "endpoint-group-name": "$tenant$EPG_index", "uuid": "1649307c-e335-47a1-b3d1-6b425bec$id_hex_str$index_hex_str"}')
     def __init__(self, options):
         self.agent_id = options["id"]
         self.config = self.agent_conf.substitute(domain = options["domain"], id_Str = options["id"])
         self.config_file_name = 'agent' + str(self.agent_id) + '_config_ovs.conf'
         self.base_dir = options["base_dir"]
         self.logger = options["logger"]
+        self.tenant = options["tenant_name"]
+        self.epg_index = options["current_epg_index"]
+        self.ep_per_agent = options["ep_per_agent"]
+        self.total_epgs = options["total_epgs"]
 
     def run(self):
         # setup config file
@@ -51,13 +56,57 @@ class OpflexAgent:
              raise
 
         log_file = base_dir_logs + '/agent' + str(self.agent_id) +  '.log'
-        # start agent under its owm namespace
+        # create ep files directory
+        path_to_ep_files = '/etc/opflex_agent/' + str(self.agent_id)
+        if not os.path.exists( path_to_ep_files ):
+           try:
+              os.mkdir(path_to_ep_files)
+           except:
+              logger.error("cannot create ep file dir " + path_to_ep_files)
+              sys.exit("cannot create ep file dir " + path_to_ep_files)
+        # create services files directory
+        services_dir = '/etc/opflex_agent/services'
+        if not os.path.exists( services_dir ):
+           try:
+              os.mkdir(services_dir)
+           except:
+              logger.error("cannot create services dir " + services_dir)
+              sys.exit("cannot create services dir " + path_to_ep_files)
+        # create services directory for this agent
+        path_to_svc_files = '/etc/opflex_agent/services/' + str(self.agent_id)
+        if not os.path.exists( path_to_svc_files ):
+           try:
+              os.mkdir(path_to_svc_files)
+           except:
+              logger.error("cannot create svc file dir " + path_to_svc_files)
+              sys.exit("cannot create svc file dir " + path_to_svc_files)
+        # start agent under its own namespace
         try:
            subprocess.Popen(["sudo", "ip", "netns", "exec", "ns" + str(self.agent_id), "opflex_agent", "-c", path_to_conf_file, "--log", log_file])
         except Exception as ex:
            logger.error( type(ex))
            logger.error( sys.exc_info()[0])
            raise
+
+        # create end point files
+        id_hex_str = format( self.agent_id, '02x' )
+        for ep_index in range(1, self.ep_per_agent):
+            idx_hex_str = format( ep_index, '02x' )
+            ep_config = self.ep_content.substitute( id_Str = self.agent_id, index = ep_index, id_hex_str = id_hex_str, index_hex_str = idx_hex_str, \
+                                                    tenant = self.tenant, EPG_index = self.epg_index )
+            path_to_ep_file = path_to_ep_files + '/' + str(ep_index) + '.ep'
+            try:
+              f = open(path_to_ep_file, 'w')
+              f.write(ep_config)
+            except:
+              self.logger.error("Unable to write EP file " + path_to_ep_file )
+              sys.exit("Unable to write EP file " + path_to_ep_file)
+            finally:
+              f.close()
+
+            self.epg_index = (self.epg_index + 1) % self.total_epgs
+
+        
 
 
 class NetworkSetup:
@@ -165,6 +214,10 @@ if __name__ == '__main__':
          logger.error("cannot create %s", base_dir)
          raise
 
+    # how many end points per agent ? total EP/num agents
+    ep_per_agent = data["total_ep"]/data["num_agents"]
+    total_epgs = data["total_epg"]
+    current_epg_index = 0
     # setup the agent spawning loop
     for id in range(data["num_agents"]):
         # create namespace and connect to bridge
@@ -186,9 +239,14 @@ if __name__ == '__main__':
              logger.error("cannot create %s", socket_dir)
              raise
         # setup a dict of options and pass to agent
-        agent_options = { "domain": data["domain"], "id" : id + 1, "base_dir": data["base_dir"], "logger": logger }
+        agent_options = { "domain": data["domain"], "id" : id + 1, "base_dir": data["base_dir"], "logger": logger, \
+                          "tenant_name": data["tenant_name"], "ep_per_agent": ep_per_agent, "current_epg_index": current_epg_index, \
+                          "total_epgs" : data["total_epg"]}
         agent = OpflexAgent(agent_options)
         agent.run()
+ 
+        # increment the epg index t the next available.
+        current_epg_index += (current_epg_index + ep_per_agent) % total_epgs
     
         
 
