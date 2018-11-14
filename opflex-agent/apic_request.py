@@ -101,9 +101,11 @@ def create_policy(args):
 
 			# add VMM domain association to EPG
 
-			data = '{"fvRsDomAtt":{"attributes":{"tDn":"uni/vmmp-OpenStack/dom-' + tenant_name + '","status":"created"},"children":[]}}'
+			data = '{"fvRsDomAtt":{"attributes":{"tDn":"uni/vmmp-' + args["domain_orch"] + '/dom-' + args["domain_vmm"] + \
+                               '","status":"created"},"children":[]}}'
 			req = apic.post(path, data)
 			print req.text
+
 
 
 if __name__ == '__main__':

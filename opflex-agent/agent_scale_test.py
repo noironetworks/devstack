@@ -21,8 +21,9 @@ class OpflexAgent:
 "notif":{"enabled": true, "socket-name": "/var/run/opflex_agent$id_Str-ovs-notif.sock", "socket-group": "opflexep", "socket-permissions": "770"}}, \
 "endpoint-sources":{"filesystem":["/etc/opflex_agent/$id_Str"], "model-local": ["default"]}, \
 "service-sources":{"filesystem":["/etc/opflex_agent/services/$id_Str"]}, \
-"renderers":{}}')
-    ep_content = Template('{"interface-name": "ep_if$id_Str", "ip": ["192.168.$id_Str.$index"], "promiscuous-mode": false, "mac": "36:8c:97:ff:$id_hex_str:$index_hex_str", "policy-space-name": "$tenant", "attributes": {"vm-name": "agent$id_Str"}, "endpoint-group-name": "$tenant$EPG_index", "uuid": "1649307c-e335-47a1-b3d1-6b425bec$id_hex_str$index_hex_str"}')
+"renderers":{}, \
+"simulate":{"enabled": true, "update-interval": 15 }}')
+    ep_content = Template('{"interface-name": "ep_if$index", "ip": ["192.168.$id_Str.$index"], "promiscuous-mode": false, "mac": "36:8c:97:ff:$id_hex_str:$index_hex_str", "policy-space-name": "$tenant", "attributes": {"vm-name": "agent$id_Str","org-id":"scale-test$id_Str"}, "endpoint-group-name": "$tenant|$tenant$EPG_index", "uuid": "1649307c-e335-47a1-b3d1-6b425bec$id_hex_str$index_hex_str"}')
     def __init__(self, options):
         self.agent_id = options["id"]
         self.config = self.agent_conf.substitute(domain = options["domain"], id_Str = options["id"])
@@ -90,7 +91,7 @@ class OpflexAgent:
 
         # create end point files
         id_hex_str = format( self.agent_id, '02x' )
-        for ep_index in range(1, self.ep_per_agent):
+        for ep_index in range(1, self.ep_per_agent+1):
             idx_hex_str = format( ep_index, '02x' )
             ep_config = self.ep_content.substitute( id_Str = self.agent_id, index = ep_index, id_hex_str = id_hex_str, index_hex_str = idx_hex_str, \
                                                     tenant = self.tenant, EPG_index = self.epg_index )
@@ -138,7 +139,7 @@ class NetworkSetup:
           subprocess.call("ip link add " + name_space + "-tap" + " type veth peer name tap", shell=True)
           subprocess.call("ip link set dev " + name_space + "-tap" + " up", shell=True)
           
-          mac = "00:01:00:00:00:" + format(idx, '02x')
+          mac = "00:0c:29:fc:2f:" + format(idx, '02x')
           subprocess.call("ip link set dev tap addr " + mac, shell=True)
           subprocess.call("ip link set tap netns " + name_space, shell=True)
           self.bridge.addif(name_space + "-tap")
@@ -196,9 +197,15 @@ if __name__ == '__main__':
        
     logger.info("options passed %s", json.dumps(data, indent=4))
 
+    # get the orchestration technology and VMM domain
+    domain = data["domain"].split("/")
+    domain_orch = domain[1].replace("prov-","")
+    domain_vmm = domain[2].split("[")[1].split("]")[0]
+
     # provision APIC with the required artifacts
     args = { "apic_ip": data["apic_ip"], "apic_uid": data["apic_uid"], "apic_passwd": data["apic_passwd"], 
-             "tenant_name": data["tenant_name"], "EPGs": data["total_epg"], "EPs": data["total_ep"] }
+             "tenant_name": data["tenant_name"], "EPGs": data["total_epg"], "EPs": data["total_ep"], \
+             "domain_orch": domain_orch, "domain_vmm": domain_vmm }
     apic = apic_request.create_policy(args)
     
     # setup bridge
