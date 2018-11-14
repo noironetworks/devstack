@@ -28,6 +28,8 @@ class Apic(object):
 
     def post(self, path, data):
         return requests.post(self.url(path), data=data, cookies=self.cookies, verify=False)
+    def delete(self, path):
+        return requests.delete(self.url(path), cookies=self.cookies, verify=False)
 
 def create_policy(args):
 
@@ -107,6 +109,11 @@ def create_policy(args):
 			print req.text
 
 
+def delete_policy(args):
+    apic = Apic(args["apic_ip"], args["apic_uid"], args["apic_passwd"], True)
 
-if __name__ == '__main__':
-	create_policy()
+    tenant_name = args["tenant_name"]
+    path = '/api/node/mo/uni/tn-' + tenant_name + '.json'
+    req = apic.delete(path)
+    print req.text
+

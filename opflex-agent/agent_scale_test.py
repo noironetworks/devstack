@@ -187,6 +187,8 @@ if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option("-c", "--config", dest="config_file",
                       help="config file for scale setup")
+    parser.add_option("-d", "--cleanup", action="store_true", 
+                      help="delete all artifacts generated as part of the test\non the agent host and APIC")
     (options, args) = parser.parse_args()
 
     if options.config_file == None:
@@ -206,7 +208,10 @@ if __name__ == '__main__':
     args = { "apic_ip": data["apic_ip"], "apic_uid": data["apic_uid"], "apic_passwd": data["apic_passwd"], 
              "tenant_name": data["tenant_name"], "EPGs": data["total_epg"], "EPs": data["total_ep"], \
              "domain_orch": domain_orch, "domain_vmm": domain_vmm }
-    apic = apic_request.create_policy(args)
+    if( options.cleanup == True ):
+       apic = apic_request.delete_policy(args)
+    else:
+       apic = apic_request.create_policy(args)
     
     # setup bridge
     nw = NetworkSetup( data["interface"] )
