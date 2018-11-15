@@ -12,6 +12,20 @@ from subprocess import PIPE
 import apic_request
 
 
+# loop around range counter
+class RangeCounter:
+    def __init__(self, args):
+       self.start = args["start"]
+       self.max = args["max"]
+       self.current_index = self.start
+
+    def next_index(self):
+       if( self.current_index > self.max ):
+           self.current_index = 1
+       retval = self.current_index
+       self.current_index += 1
+       return retval
+
 class OpflexAgent:
     agent_conf = Template('{"log":{"level":"debug"}, \
 "opflex":{"domain":"$domain", "name":"agent-$id_Str", \
@@ -31,9 +45,9 @@ class OpflexAgent:
         self.base_dir = options["base_dir"]
         self.logger = options["logger"]
         self.tenant = options["tenant_name"]
-        self.epg_index = options["current_epg_index"]
+        self.epg_start_index = options["start_epg_index"]
+        self.epg_max_index = options["max_epg_index"]
         self.ep_per_agent = options["ep_per_agent"]
-        self.total_epgs = options["total_epgs"]
 
     def run(self):
         # setup config file
@@ -89,12 +103,13 @@ class OpflexAgent:
            logger.error( sys.exc_info()[0])
            raise
 
+        epg_range_counter = RangeCounter({"start": self.epg_start_index, "max": self.epg_max_index})
         # create end point files
         id_hex_str = format( self.agent_id, '02x' )
         for ep_index in range(1, self.ep_per_agent+1):
             idx_hex_str = format( ep_index, '02x' )
             ep_config = self.ep_content.substitute( id_Str = self.agent_id, index = ep_index, id_hex_str = id_hex_str, index_hex_str = idx_hex_str, \
-                                                    tenant = self.tenant, EPG_index = self.epg_index )
+                                                    tenant = self.tenant, EPG_index = epg_range_counter.next_index() )
             path_to_ep_file = path_to_ep_files + '/' + str(ep_index) + '.ep'
             try:
               f = open(path_to_ep_file, 'w')
@@ -104,10 +119,6 @@ class OpflexAgent:
               sys.exit("Unable to write EP file " + path_to_ep_file)
             finally:
               f.close()
-
-            self.epg_index = (self.epg_index + 1) % self.total_epgs
-
-        
 
 
 class NetworkSetup:
@@ -210,6 +221,7 @@ if __name__ == '__main__':
              "domain_orch": domain_orch, "domain_vmm": domain_vmm }
     if( options.cleanup == True ):
        apic = apic_request.delete_policy(args)
+       sys.exit(0)
     else:
        apic = apic_request.create_policy(args)
     
@@ -227,9 +239,9 @@ if __name__ == '__main__':
          raise
 
     # how many end points per agent ? total EP/num agents
-    ep_per_agent = data["total_ep"]/data["num_agents"]
+    ep_per_agent,leftover_eps = divmod(data["total_ep"],data["num_agents"])
     total_epgs = data["total_epg"]
-    current_epg_index = 0
+    current_epg_index = 1
     # setup the agent spawning loop
     for id in range(data["num_agents"]):
         # create namespace and connect to bridge
@@ -251,14 +263,20 @@ if __name__ == '__main__':
              logger.error("cannot create %s", socket_dir)
              raise
         # setup a dict of options and pass to agent
+        if leftover_eps > 0:
+           ep_count = ep_per_agent + 1
+           leftover_eps -= 1
+        else:
+           ep_count = ep_per_agent
+
         agent_options = { "domain": data["domain"], "id" : id + 1, "base_dir": data["base_dir"], "logger": logger, \
-                          "tenant_name": data["tenant_name"], "ep_per_agent": ep_per_agent, "current_epg_index": current_epg_index, \
-                          "total_epgs" : data["total_epg"]}
+                          "tenant_name": data["tenant_name"], "ep_per_agent": ep_count, "start_epg_index": current_epg_index, \
+                          "max_epg_index": total_epgs}
         agent = OpflexAgent(agent_options)
         agent.run()
  
-        # increment the epg index t the next available.
-        current_epg_index += (current_epg_index + ep_per_agent) % total_epgs
+           
+        current_epg_index = ((current_epg_index  + ep_per_agent - 1) % total_epgs) + 1
     
         
 

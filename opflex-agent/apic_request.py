@@ -68,13 +68,13 @@ def create_policy(args):
 			# add contract
 
 			path = '/api/node/mo/uni/tn-' + tenant_name + '/brc-' + tenant_name + 'Contract' + str(index) + '.json'
-                        data = '{"vzBrCP":{"attributes":{"dn":"uni/tn-' + tenant_name + '/brc-' + tenant_name + 'Contract' + str(index) + '","name":"' + tenant_name + 'Contract' + str(index) + '","rn":"brc-' + tenant_name + 'Contract' + str(index) + '","status":"created"},"children":[{"vzSubj":{"attributes":{"dn":"uni/tn-' + tenant_name + '/brc-' + tenant_name + 'Contract' + str(index) + '/subj-' + tenant_name + 'Subject","name":"' + tenant_name + 'Subject","rn":"subj-' + tenant_name + 'Subject","status":"created"},"children":[{"vzRsSubjFiltAtt":{"attributes":{"status":"created","tnVzFilterName":"icmp"},"children":[]}}]}}]}}'
+                        data = '{"vzBrCP":{"attributes":{"dn":"uni/tn-' + tenant_name + '/brc-' + tenant_name + 'Contract' + str(index) + '","name":"' + tenant_name + 'Contract' + str(index) + '","rn":"brc-' + tenant_name + 'Contract' + str(index) + '","scope":"application-profile","status":"created"},"children":[{"vzSubj":{"attributes":{"dn":"uni/tn-' + tenant_name + '/brc-' + tenant_name + 'Contract' + str(index) + '/subj-' + tenant_name + 'Subject","name":"' + tenant_name + 'Subject","rn":"subj-' + tenant_name + 'Subject","status":"created"},"children":[{"vzRsSubjFiltAtt":{"attributes":{"status":"created","tnVzFilterName":"icmp"},"children":[]}}]}}]}}'
 			req = apic.post(path, data)
 			print req.text
 	
 		# 35 EPGs/BDs each tenant
 
-		for index in range(0, 1):
+		for index in range(1, 2):
 
 			# add a BD
 	
