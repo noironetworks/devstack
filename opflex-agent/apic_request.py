@@ -61,9 +61,11 @@ def create_policy(args):
 		req = apic.post(path, data)
 		print req.text
 
-		# 40 contracts each tenant
+		# contracts = specified in config file, otherwise one for every 5 EPGs.
+                total_epgs = args["EPGs"]
+                num_contracts = (total_epgs/5) + 1
 
-		for index in range(1, 2):
+		for index in range(1, num_contracts +  1):
 
 			# add contract
 
@@ -74,7 +76,8 @@ def create_policy(args):
 	
 		# 35 EPGs/BDs each tenant
 
-		for index in range(1, 2):
+                contract_index = 1
+		for index in range(1, total_epgs + 1):
 
 			# add a BD
 	
@@ -96,8 +99,9 @@ def create_policy(args):
 			# assign contract to EPG
 
 			data = '{"fvAEPg":{"attributes":{"dn":"uni/tn-' + tenant_name + '/ap-' + tenant_name + '/epg-' + tenant_name + ''  + str(index) + '","status":"modified"}, \
-							   "children":[{"fvRsCons":{"attributes":{"status":"created,modified","tnVzBrCPName":"' + tenant_name + 'Contract'  + str(index) + '"},"children":[]}}, \
-										   {"fvRsProv":{"attributes":{"status":"created,modified","tnVzBrCPName":"' + tenant_name + 'Contract'  + str(index) + '"},"children":[]}}]}}'
+							   "children":[{"fvRsCons":{"attributes":{"status":"created,modified","tnVzBrCPName":"' + tenant_name + 'Contract'  + str(contract_index) + '"},"children":[]}}, \
+										   {"fvRsProv":{"attributes":{"status":"created,modified","tnVzBrCPName":"' + tenant_name + 'Contract'  + str(contract_index) + '"},"children":[]}}]}}'
+                        contract_index = (index/5) + 1
 			req = apic.post(path, data)
 			print req.text
 
