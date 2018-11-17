@@ -70,7 +70,38 @@ def create_policy(args):
 			# add contract
 
 			path = '/api/node/mo/uni/tn-' + tenant_name + '/brc-' + tenant_name + 'Contract' + str(index) + '.json'
-                        data = '{"vzBrCP":{"attributes":{"dn":"uni/tn-' + tenant_name + '/brc-' + tenant_name + 'Contract' + str(index) + '","name":"' + tenant_name + 'Contract' + str(index) + '","rn":"brc-' + tenant_name + 'Contract' + str(index) + '","scope":"application-profile","status":"created"},"children":[{"vzSubj":{"attributes":{"dn":"uni/tn-' + tenant_name + '/brc-' + tenant_name + 'Contract' + str(index) + '/subj-' + tenant_name + 'Subject","name":"' + tenant_name + 'Subject","rn":"subj-' + tenant_name + 'Subject","status":"created"},"children":[{"vzRsSubjFiltAtt":{"attributes":{"status":"created","tnVzFilterName":"icmp"},"children":[]}}]}}]}}'
+                        data = '{"vzBrCP": \
+                                 {"attributes": \
+                                  {"dn":"uni/tn-' + tenant_name + '/brc-' + tenant_name + 'Contract' + str(index) + \
+                                   '","name":"' + tenant_name + 'Contract' + str(index) + \
+                                   '","rn":"brc-' + tenant_name + 'Contract' + str(index) + \
+                                   '","scope":"application-profile","status":"created"}, \
+                                    "children":[ \
+                                    {"vzSubj": \
+                                     {"attributes": \
+                                      {"dn":"uni/tn-' + tenant_name + '/brc-' + tenant_name + 'Contract' + str(index) + \
+                                            '/subj-' + tenant_name + 'Subject", \
+                                       "name":"' + tenant_name + 'Subject","rn":"subj-' + tenant_name + 'Subject","status":"created"}, \
+                                       "children":[ \
+                                        {"vzOutTerm": \
+                                         {"attributes": \
+                                          {"dn": "uni/tn-' + tenant_name + '/brc-' + tenant_name + 'Contract' + str(index) + \
+                                            '/subj-' + tenant_name + 'Subject/outtmnl", \
+                                            "status": "created"}, \
+                                          "children":[ \
+                                            {"vzRsFiltAtt": \
+                                             {"attributes": \
+                                              {"status":"created","tnVzFilterName":"icmp"}}}]}}, \
+                                         {"vzInTerm": \
+                                         {"attributes": \
+                                          {"dn": "uni/tn-' + tenant_name + '/brc-' + tenant_name + 'Contract' + str(index) + \
+                                            '/subj-' + tenant_name + 'Subject/intmnl", \
+                                           "status": "created" }, \
+                                          "children": \
+                                          [{"vzRsFiltAtt": \
+                                           {"attributes": \
+                                            {"status":"created","tnVzFilterName":"icmp"}}}]}}]}}, \
+                                          ]}}'
 			req = apic.post(path, data)
 			print req.text
 	

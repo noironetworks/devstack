@@ -10,6 +10,7 @@ import re
 from pybrctl import BridgeController
 from subprocess import PIPE
 import apic_request
+import agent_scale_cleanup
 
 
 # loop around range counter
@@ -221,6 +222,7 @@ if __name__ == '__main__':
              "domain_orch": domain_orch, "domain_vmm": domain_vmm }
     if( options.cleanup == True ):
        apic = apic_request.delete_policy(args)
+       agent_scale_cleanup.cleanup()
        sys.exit(0)
     else:
        apic = apic_request.create_policy(args)

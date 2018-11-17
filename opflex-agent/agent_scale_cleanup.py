@@ -6,7 +6,7 @@ from pybrctl import BridgeController
 import glob
 
 
-if __name__ == '__main__':
+def cleanup():
     """
     list1 = subprocess.Popen(["ps", "-ef"], stdout=PIPE)
     list3 = subprocess.Popen(["grep", "-v", "grep"], stdin=list1.stdout, stdout=PIPE)

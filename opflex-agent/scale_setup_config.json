@@ -5,10 +5,8 @@
   "interface": "eth1.4093",
   "base_dir": "/etc/opflex_agent",
   "domain": "comp/prov-Kubernetes/ctrlr-[vk8s_1]-vk8s_1/sw-InsiemeLSOid",
-  "tenant_name": "agent-scale-test",
+  "tenant_name": "msandhu3",
   "num_agents": 1,
-  "total_epg": 10,
-  "total_ep": 5,
-  "total_contracts": 5,
-  "total_sec_grps": 5
+  "total_epg": 1,
+  "total_ep": 38
 }
