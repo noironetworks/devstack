@@ -28,6 +28,9 @@ def cleanup():
     files = glob.glob('/var/lib/dhcp/dhclient-ns*')
     for file in files:
        kill = subprocess.call(["rm", "-Rf", file])        
+    files = glob.glob('/var/run/opflex_agent*-ovs-notif.sock')
+    for file in files:
+       kill = subprocess.call(["rm", "-Rf", file])
     kill = subprocess.Popen(["rm", "-Rf", "/var/log/opflex_agent"], stdout=PIPE)        
     name_spaces = subprocess.Popen(["ls", "/var/run/netns"], stdout=PIPE)
     # get a list of all namespaces. Assumption: all namespaces follow this format - ns#

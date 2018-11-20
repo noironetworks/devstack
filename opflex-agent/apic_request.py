@@ -112,10 +112,65 @@ def create_policy(args):
 
 			# add a BD
 	
+                        print " --------------   setup BD -----------------  "
 			index_hex_str = format(index, '02x')
+                        path = '/api/node/mo/uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '.json'
+#			data = '{"fvBD":{"attributes":{"dn":"uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '","mac":"00:22:BD:F8:' + i_hex_str + ':' + index_hex_str + '","name":"' + tenant_name + 'Bd' + str(index) + '","rn":"BD-' + tenant_name + 'Bd' + str(index) + '","status":"created"},"children":[{"dhcpLbl":{"attributes":{"dn":"uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '/dhcplbl-default","name":"default","rn":"dhcplbl-default","status":"created"},"children":[{"dhcpRsDhcpOptionPol":{"attributes":{"tnDhcpOptionPolName":"default","status":"created,modified"},"children":[]}}]}},{"fvRsCtx":{"attributes":{"tnFvCtxName":"' + tenant_name + 'Net","status":"created,modified"},"children":[]}},{"fvSubnet":{"attributes":{"dn":"uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '/subnet-[172.' + str(i) + '.' + str(index) + '.1/24]","ip":"172.' + str(i) + '.' + str(index) + '.1/24","rn":"subnet-[172.' + str(i) + '.' + str(index) + '.1/24]","status":"created"}}}]}}'
 
-			path = '/api/node/mo/uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '.json'
-			data = '{"fvBD":{"attributes":{"dn":"uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '","mac":"00:22:BD:F8:' + i_hex_str + ':' + index_hex_str + '","name":"' + tenant_name + 'Bd' + str(index) + '","rn":"BD-' + tenant_name + 'Bd' + str(index) + '","status":"created"},"children":[{"dhcpLbl":{"attributes":{"dn":"uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '/dhcplbl-default","name":"default","rn":"dhcplbl-default","status":"created"},"children":[{"dhcpRsDhcpOptionPol":{"attributes":{"tnDhcpOptionPolName":"default","status":"created,modified"},"children":[]}}]}},{"fvRsCtx":{"attributes":{"tnFvCtxName":"' + tenant_name + 'Net","status":"created,modified"},"children":[]}},{"fvSubnet":{"attributes":{"dn":"uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '/subnet-[172.' + str(i) + '.' + str(index) + '.1/24]","ip":"172.' + str(i) + '.' + str(index) + '.1/24","rn":"subnet-[172.' + str(i) + '.' + str(index) + '.1/24]","status":"created"}}}]}}'
+                        data = '{ \
+                          "fvBD": { \
+                            "attributes": { \
+                              "dn": "uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '", \
+                              "mac": "00:22:BD:F8:' + i_hex_str + ':' + index_hex_str + '", \
+                              "name": "' + tenant_name + 'Bd' + str(index) + '", \
+                              "rn": "BD-' + tenant_name + 'Bd' + str(index) + '", \
+                              "status": "created" \
+                            }, \
+                            "children": [ \
+                              { \
+                                "dhcpLbl": { \
+                                  "attributes": { \
+                                    "dn": "uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '/dhcplbl-default", \
+                                    "name": "default", \
+                                    "rn": "dhcplbl-default", \
+                                    "status": "created" \
+                                  }, \
+                                  "children": [ \
+                                    { \
+                                      "dhcpRsDhcpOptionPol": { \
+                                        "attributes": { \
+                                          "tnDhcpOptionPolName": "default", \
+                                          "status": "created,modified" \
+                                        }, \
+                                        "children": [] \
+                                      } \
+                                    } \
+                                  ] \
+                                } \
+                              }, \
+                              { \
+                                "fvRsCtx": { \
+                                  "attributes": { \
+                                    "tnFvCtxName": "' + tenant_name + 'Net", \
+                                    "status": "created,modified" \
+                                  }, \
+                                  "children": [] \
+                                } \
+                              }, \
+                              { \
+                                "fvSubnet": { \
+                                  "attributes": { \
+                                    "dn": "uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '/subnet-[172.' + str(i) + '.' + str(index) + '.1/24]", \
+                                    "ip": "172.' + str(i) + '.' + str(index) + '.1/24", \
+                                    "rn": "subnet-[172.' + str(i) + '.' + str(index) + '.1/24]", \
+                                    "status": "created" \
+                                  } \
+                                } \
+                              } \
+                            ] \
+                          } \
+                        }'
+
 			req = apic.post(path, data)
 			print req.text
 
