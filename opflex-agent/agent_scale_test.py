@@ -11,6 +11,7 @@ from pybrctl import BridgeController
 from subprocess import PIPE
 import apic_request
 import agent_scale_cleanup
+import uuid
 
 
 # loop around range counter
@@ -28,6 +29,7 @@ class RangeCounter:
        return retval
 
 class OpflexAgent:
+    """
     agent_conf = Template('{"log":{"level":"debug"}, \
 "opflex":{"domain":"$domain", "name":"agent-$id_Str", \
 "peers":[{"hostname":"10.0.0.30", "port":"8009"}], \
@@ -38,7 +40,74 @@ class OpflexAgent:
 "service-sources":{"filesystem":["/etc/opflex_agent/services/$id_Str"]}, \
 "renderers":{}, \
 "simulate":{"enabled": true, "update-interval": 15 }}')
-    ep_content = Template('{"interface-name": "ep_if$index", "ip": ["192.168.$id_Str.$index"], "promiscuous-mode": false, "mac": "36:8c:97:ff:$id_hex_str:$index_hex_str", "policy-space-name": "$tenant", "attributes": {"vm-name": "agent$id_Str","org-id":"scale-test$id_Str"}, "endpoint-group-name": "$tenant|$tenant$EPG_index", "uuid": "1649307c-e335-47a1-b3d1-6b425bec$id_hex_str$index_hex_str"}')
+    """
+
+    agent_conf = Template(' \
+      {"log": { \
+        "level": "debug" \
+      }, \
+      "opflex": { \
+        "domain": "$domain", \
+        "name": "agent-$id_Str", \
+        "peers": [ \
+          { \
+            "hostname": "10.0.0.30", \
+            "port": "8009" \
+          } \
+        ], \
+        "ssl": { \
+          "mode": "encrypted", \
+          "ca-store": "/etc/ssl/certs/" \
+        }, \
+        "inspector": { \
+          "enabled": true, \
+          "socket-name": "/var/run/opflex_agent$id_Str-ovs-inspect.sock" \
+        }, \
+        "notif": { \
+          "enabled": true, \
+          "socket-name": "/var/run/opflex_agent$id_Str-ovs-notif.sock", \
+          "socket-group": "opflexep", \
+          "socket-permissions": "770" \
+        } \
+      }, \
+      "endpoint-sources": { \
+        "filesystem": [ \
+          "/etc/opflex_agent/$id_Str" \
+        ], \
+        "model-local": [ \
+          "default" \
+        ] \
+      }, \
+      "service-sources": { \
+        "filesystem": [ \
+          "/etc/opflex_agent/services/$id_Str" \
+        ] \
+      }, \
+      "renderers": {}, \
+      "simulate": { \
+        "enabled": true, \
+        "update-interval": 15 \
+      } \
+    }') 
+    #ep_content = Template('{"interface-name": "ep_if$index", "ip": ["192.168.$id_Str.$index"], "promiscuous-mode": false, "mac": "36:8c:97:ff:$id_hex_str:$index_hex_str", "policy-space-name": "$tenant", "attributes": {"vm-name": "agent$id_Str","org-id":"scale-test$id_Str"}, "endpoint-group-name": "$tenant|$tenant$EPG_index", "uuid": "1649307c-e335-47a1-b3d1-6b425bec$id_hex_str$index_hex_str"}')
+    ep_content = Template(' \
+    { \
+      "interface-name": "ep_if$index", \
+      "ip": [ \
+        "192.168.$id_Str.$index" \
+      ], \
+      "promiscuous-mode": false, \
+      "mac": "36:8c:97:ff:$id_hex_str:$index_hex_str", \
+      "policy-space-name": "$tenant", \
+      "attributes": { \
+        "vm-name": "agent$id_Str", \
+        "org-id": "scale-test$id_Str" \
+      }, \
+      "endpoint-group-name": "$tenant|$tenant$EPG_index", \
+      "uuid": "$uuid" \
+    }') 
+
+
     def __init__(self, options):
         self.agent_id = options["id"]
         self.config = self.agent_conf.substitute(domain = options["domain"], id_Str = options["id"])
@@ -109,8 +178,9 @@ class OpflexAgent:
         id_hex_str = format( self.agent_id, '02x' )
         for ep_index in range(1, self.ep_per_agent+1):
             idx_hex_str = format( ep_index, '02x' )
-            ep_config = self.ep_content.substitute( id_Str = self.agent_id, index = ep_index, id_hex_str = id_hex_str, index_hex_str = idx_hex_str, \
-                                                    tenant = self.tenant, EPG_index = epg_range_counter.next_index() )
+            ep_config = self.ep_content.substitute( id_Str = self.agent_id, index = ep_index, id_hex_str = id_hex_str, \
+                                                    index_hex_str = idx_hex_str, tenant = self.tenant, \
+                                                    EPG_index = epg_range_counter.next_index(), uuid = uuid.uuid4() )
             path_to_ep_file = path_to_ep_files + '/' + str(ep_index) + '.ep'
             try:
               f = open(path_to_ep_file, 'w')
@@ -222,7 +292,7 @@ if __name__ == '__main__':
              "domain_orch": domain_orch, "domain_vmm": domain_vmm }
     if( options.cleanup == True ):
        apic = apic_request.delete_policy(args)
-       agent_scale_cleanup.cleanup()
+       agent_scale_cleanup.cleanup(logger)
        sys.exit(0)
     else:
        apic = apic_request.create_policy(args)

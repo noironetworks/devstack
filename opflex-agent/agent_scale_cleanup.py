@@ -4,9 +4,10 @@ import shlex
 from time import sleep
 from pybrctl import BridgeController
 import glob
+import time
 
 
-def cleanup():
+def cleanup(logger):
     """
     list1 = subprocess.Popen(["ps", "-ef"], stdout=PIPE)
     list3 = subprocess.Popen(["grep", "-v", "grep"], stdin=list1.stdout, stdout=PIPE)
@@ -19,12 +20,16 @@ def cleanup():
           cmd = ["pkill", " -P ", tokens[1]]
           subprocess.Popen(cmd, stdout=PIPE)
     """
+    # delete all endpoint files first so agent can undeclare them causing the leaf to clean them up.
+    logger.info("deleting generated files under /etc/opflex_agent")
+    kill = subprocess.Popen(["rm", "-Rf", "/etc/opflex_agent"], stdout=PIPE)        
+    # wait for the undeclare to the leaf so the leaf cleans up endpoints.
+    time.sleep(5)
     kill = subprocess.Popen(["pkill", "opflex"], stdout=PIPE)        
     kill = subprocess.Popen(["pkill", "-f", "dhclient-ns"], stdout=PIPE)        
     files = glob.glob('etc/dhcp/dhclient-ns*')
     for file in files:
        kill = subprocess.call(["rm", "-Rf", file] )        
-    kill = subprocess.Popen(["rm", "-Rf", "/etc/opflex_agent"], stdout=PIPE)        
     files = glob.glob('/var/lib/dhcp/dhclient-ns*')
     for file in files:
        kill = subprocess.call(["rm", "-Rf", file])        
