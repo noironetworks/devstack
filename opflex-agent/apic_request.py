@@ -10,6 +10,7 @@ class Apic(object):
         self.passwd = passwd
         self.cookies = None
         self.login()
+        self.max_secgrp_index = 0
 
     def url(self, path):
         if self.ssl:
@@ -64,6 +65,7 @@ def create_policy(args):
 		# contracts = specified in config file, otherwise one for every 5 EPGs.
                 total_epgs = args["EPGs"]
                 num_contracts = (total_epgs/5) + 1
+                apic.max_secgrp_index = num_contracts
 
 		for index in range(1, num_contracts +  1):
 
@@ -101,10 +103,73 @@ def create_policy(args):
                                           [{"vzRsFiltAtt": \
                                            {"attributes": \
                                             {"status":"created","tnVzFilterName":"icmp"}}}]}}]}}, \
-                                          ]}}'
+                                    ]}}'
 			req = apic.post(path, data)
 			print req.text
 	
+                # add a security group
+			path = '/api/node/mo/uni/tn-' + tenant_name + '/pol-' + tenant_name + 'SecGrp' + str(index) + '.json'
+                        data = '{ \
+                           "hostprotPol": { \
+                             "attributes": { \
+                               "descr": "Security Group", \
+                               "dn": "uni/tn-' + tenant_name + '/pol-' + tenant_name + 'SecGrp' + str(index) + '", \
+                               "name": "' + tenant_name + 'SecGrp' + str(index) + '" \
+                             }, \
+                             "children": [ \
+                               { \
+                                 "hostprotSubj": { \
+                                   "attributes": { \
+                                     "descr": "host prot subject", \
+                                     "name": "' + tenant_name + 'Subj" \
+                                   }, \
+                                   "children": [ \
+                                     { \
+                                       "hostprotRule": { \
+                                         "attributes": { \
+                                           "descr": "host prot rule", \
+                                           "direction": "egress", \
+                                           "ethertype": "ipv4", \
+                                           "name": "allow-all-egress" \
+                                         }, \
+                                       } \
+                                     }, \
+                                     { \
+                                       "hostprotRule": { \
+                                         "attributes": { \
+                                           "direction": "ingress", \
+                                           "ethertype": "ipv4", \
+                                           "icmpCode": "7", \
+                                           "connTrack": "normal", \
+                                           "icmpType": "44", \
+                                           "fromPort": "80", \
+                                           "name": "allow-all-ingress", \
+                                           "protocol": "unspecified", \
+                                           "toPort": "80" \
+                                         }, \
+                                         "children": [ \
+                                           { \
+                                             "hostprotRemoteIp": { \
+                                               "attributes": { \
+                                                 "addr": "1.100.202.' + str(index) + '", \
+                                                 "descr": "host prot rule", \
+                                                 "name": "remote-IP" \
+                                                  } \
+                                                 } \
+                                                } \
+                                               ] \
+                                             } \
+                                           } \
+                                         ] \
+                                       } \
+                                     } \
+                                   ] \
+                                 } \
+                               }' 
+
+			req = apic.post(path, data)
+			print req.text
+
 		# 35 EPGs/BDs each tenant
 
                 contract_index = 1
@@ -197,6 +262,7 @@ def create_policy(args):
                                '","status":"created"},"children":[]}}'
 			req = apic.post(path, data)
 			print req.text
+                return apic
 
 
 def delete_policy(args):

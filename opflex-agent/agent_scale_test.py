@@ -104,7 +104,13 @@ class OpflexAgent:
         "org-id": "scale-test$id_Str" \
       }, \
       "endpoint-group-name": "$tenant|$tenant$EPG_index", \
-      "uuid": "$uuid" \
+      "uuid": "$uuid", \
+      "security-group": [ \
+       { \
+         "policy-space": "$tenant", \
+         "name": "$SecGrp" \
+       } \
+      ] \
     }') 
 
 
@@ -119,7 +125,7 @@ class OpflexAgent:
         self.epg_max_index = options["max_epg_index"]
         self.ep_per_agent = options["ep_per_agent"]
 
-    def run(self):
+    def run(self, max_secgrp_index):
         # setup config file
         path_to_conf_file = self.base_dir + '/' + self.config_file_name
         try:
@@ -176,11 +182,13 @@ class OpflexAgent:
         epg_range_counter = RangeCounter({"start": self.epg_start_index, "max": self.epg_max_index})
         # create end point files
         id_hex_str = format( self.agent_id, '02x' )
+        secgrp_index = 1
         for ep_index in range(1, self.ep_per_agent+1):
             idx_hex_str = format( ep_index, '02x' )
             ep_config = self.ep_content.substitute( id_Str = self.agent_id, index = ep_index, id_hex_str = id_hex_str, \
                                                     index_hex_str = idx_hex_str, tenant = self.tenant, \
-                                                    EPG_index = epg_range_counter.next_index(), uuid = uuid.uuid4() )
+                                                    EPG_index = epg_range_counter.next_index(), uuid = uuid.uuid4(), \
+                                                    SecGrp = self.tenant + "SecGrp" + str(secgrp_index)  )
             path_to_ep_file = path_to_ep_files + '/' + str(ep_index) + '.ep'
             try:
               f = open(path_to_ep_file, 'w')
@@ -190,6 +198,8 @@ class OpflexAgent:
               sys.exit("Unable to write EP file " + path_to_ep_file)
             finally:
               f.close()
+            secgrp_index += secgrp_index
+            secgrp_index = ((secgrp_index - 1) % max_secgrp_index) + 1
 
 
 class NetworkSetup:
@@ -353,7 +363,7 @@ if __name__ == '__main__':
                           "tenant_name": data["tenant_name"], "ep_per_agent": ep_count, "start_epg_index": current_epg_index, \
                           "max_epg_index": total_epgs}
         agent = OpflexAgent(agent_options)
-        agent.run()
+        agent.run(apic.max_secgrp_index)
  
            
         current_epg_index = ((current_epg_index  + ep_per_agent - 1) % total_epgs) + 1
