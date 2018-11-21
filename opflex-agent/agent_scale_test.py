@@ -327,6 +327,14 @@ if __name__ == '__main__':
         nw.createLink("ns" + str(id+1), id+1)
 
         # setup listener socket dir for this agent
+        socket_dir = '/etc/opflex-agent-ovs' 
+        if not os.path.exists(socket_dir):
+           try:
+             os.mkdir(socket_dir)
+           except:
+             logger.error("cannot create %s", socket_dir)
+             raise
+
         socket_dir = '/etc/opflex-agent-ovs/' + str(id)
         if not os.path.exists(socket_dir):
            try:
