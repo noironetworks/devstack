@@ -7,7 +7,7 @@ import glob
 import time
 
 
-def cleanup(logger):
+def cleanup(logger, num_agents):
     """
     list1 = subprocess.Popen(["ps", "-ef"], stdout=PIPE)
     list3 = subprocess.Popen(["grep", "-v", "grep"], stdin=list1.stdout, stdout=PIPE)
@@ -24,7 +24,9 @@ def cleanup(logger):
     logger.info("deleting generated files under /etc/opflex_agent")
     kill = subprocess.Popen(["rm", "-Rf", "/etc/opflex_agent"], stdout=PIPE)        
     # wait for the undeclare to the leaf so the leaf cleans up endpoints.
-    time.sleep(5)
+    sleep_time = (num_agents/10 + 1) * 5
+    logger.info("sleeping " + str(sleep_time) + " seconds to wait for EP cleanup.... ")
+    time.sleep(sleep_time)
     kill = subprocess.Popen(["pkill", "opflex"], stdout=PIPE)        
     kill = subprocess.Popen(["pkill", "-f", "dhclient-ns"], stdout=PIPE)        
     files = glob.glob('etc/dhcp/dhclient-ns*')

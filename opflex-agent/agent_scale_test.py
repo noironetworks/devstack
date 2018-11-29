@@ -138,6 +138,14 @@ class OpflexAgent:
             f.close()
            
         # setup base dir for agent logs
+        socket_dir = '/etc/opflex-agent-ovs'
+        if not os.path.exists(socket_dir):
+           try:
+             os.mkdir(socket_dir)
+           except:
+             logger.error("cannot create %s", socket_dir)
+             raise
+
         base_dir_logs = '/var/log/opflex_agent'
         if not os.path.exists(base_dir_logs):
           try:
@@ -299,10 +307,10 @@ if __name__ == '__main__':
     # provision APIC with the required artifacts
     args = { "apic_ip": data["apic_ip"], "apic_uid": data["apic_uid"], "apic_passwd": data["apic_passwd"], 
              "tenant_name": data["tenant_name"], "EPGs": data["total_epg"], "EPs": data["total_ep"], \
-             "domain_orch": domain_orch, "domain_vmm": domain_vmm }
+             "domain_orch": domain_orch, "domain_vmm": domain_vmm, "logger": logger, "name": __name__ }
     if( options.cleanup == True ):
        apic = apic_request.delete_policy(args)
-       agent_scale_cleanup.cleanup(logger)
+       agent_scale_cleanup.cleanup(logger, data["num_agents"])
        sys.exit(0)
     else:
        apic = apic_request.create_policy(args)
