@@ -1,9 +1,18 @@
 import json
 import requests
 import sys
+import urllib3
+import logging
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+try:
+    from requests.packages.urllib3.exceptions import InsecureRequestWarning
+    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+except Exception:
+    pass
 
 class Apic(object):
-    def __init__(self, addr, user, passwd, ssl=True):
+    def __init__(self, addr, user, passwd, name, ssl=True):
         self.addr = addr
         self.ssl = ssl
         self.user = user
@@ -11,6 +20,7 @@ class Apic(object):
         self.cookies = None
         self.login()
         self.max_secgrp_index = 0
+        self.logger = logging.getLogger(name)
 
     def url(self, path):
         if self.ssl:
@@ -28,22 +38,41 @@ class Apic(object):
         return req
 
     def post(self, path, data):
-        return requests.post(self.url(path), data=data, cookies=self.cookies, verify=False)
+        req = requests.post(self.url(path), data=data, cookies=self.cookies, verify=False)
+        if req.status_code != requests.codes.ok:
+           self.logger.error(req.text)
+        else:
+           return req
+          
     def delete(self, path):
-        return requests.delete(self.url(path), cookies=self.cookies, verify=False)
+        req = requests.delete(self.url(path), cookies=self.cookies, verify=False)
+        if req.status_code != requests.codes.ok:
+           self.logger.error(req.text)
+        else:
+           return req
+
 
 def create_policy(args):
 
-	apic = Apic(args["apic_ip"], args["apic_uid"], args["apic_passwd"], True)
-
-	# 100 tenants
+	apic = Apic(args["apic_ip"], args["apic_uid"], args["apic_passwd"], args["name"], True)
+   
+        # turn off remote end point learning in the vmm domain
+        path = '/api/node/mo/uni/vmmp-' + args["domain_orch"] + '/dom-' + args["domain_vmm"] + '.json'
+        data = '{ \
+               "vmmDomP": \
+                    {"attributes": \
+                       {"dn": "uni/vmmp-' + args["domain_orch"] + '/dom-' + args["domain_vmm"] + '", \
+                       "name": "' + args["domain_vmm"] + '", \
+                        "epInventoryType": "none" } \
+                       } \
+        }'
+        req = apic.post( path, data )
+	# add tenants
 
 	for i in range(1, 2):
 
-		print '-----------------------------------configure tenant------------------------------------------------------'
 
 		if i % 20 == 0:
-			print '-------------------log in again to avoid time-out---------------------'
 			apic.login()
 
 		i_hex_str = format(i, '02x')
@@ -53,14 +82,12 @@ def create_policy(args):
 		path = '/api/node/mo/uni/tn-' + tenant_name + '.json'
 		data = '{"fvTenant":{"attributes":{"dn":"uni/tn-' + tenant_name + '","name":"' + tenant_name + '","rn":"tn-' + tenant_name + '","status":"created"}, "children":[{"fvCtx":{"attributes":{"dn":"uni/tn-' + tenant_name + '/ctx-' + tenant_name  + 'Net","name":"' + tenant_name + 'Net","rn":"ctx-' + tenant_name + 'Net","status":"created"},"children":[]}}]}}'
 		req = apic.post(path, data)
-		print req.text
 		# add app profile
 
 		path = '/api/node/mo/uni/tn-' + tenant_name + '/ap-' + tenant_name + '.json'
 		data = '{"fvAp":{"attributes":{"dn":"uni/tn-' + tenant_name +'/ap-' + tenant_name +'","name":"' + tenant_name + '","rn":"ap-' \
                          + tenant_name + '","status":"created"}}}'
 		req = apic.post(path, data)
-		print req.text
 
 		# contracts = specified in config file, otherwise one for every 5 EPGs.
                 total_epgs = args["EPGs"]
@@ -105,7 +132,6 @@ def create_policy(args):
                                             {"status":"created","tnVzFilterName":"icmp"}}}]}}]}}, \
                                     ]}}'
 			req = apic.post(path, data)
-			print req.text
 	
                 # add a security group
 			path = '/api/node/mo/uni/tn-' + tenant_name + '/pol-' + tenant_name + 'SecGrp' + str(index) + '.json'
@@ -168,7 +194,6 @@ def create_policy(args):
                                }' 
 
 			req = apic.post(path, data)
-			print req.text
 
 		# 35 EPGs/BDs each tenant
 
@@ -177,7 +202,6 @@ def create_policy(args):
 
 			# add a BD
 	
-                        print " --------------   setup BD -----------------  "
 			index_hex_str = format(index, '02x')
                         path = '/api/node/mo/uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '.json'
 #			data = '{"fvBD":{"attributes":{"dn":"uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '","mac":"00:22:BD:F8:' + i_hex_str + ':' + index_hex_str + '","name":"' + tenant_name + 'Bd' + str(index) + '","rn":"BD-' + tenant_name + 'Bd' + str(index) + '","status":"created"},"children":[{"dhcpLbl":{"attributes":{"dn":"uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '/dhcplbl-default","name":"default","rn":"dhcplbl-default","status":"created"},"children":[{"dhcpRsDhcpOptionPol":{"attributes":{"tnDhcpOptionPolName":"default","status":"created,modified"},"children":[]}}]}},{"fvRsCtx":{"attributes":{"tnFvCtxName":"' + tenant_name + 'Net","status":"created,modified"},"children":[]}},{"fvSubnet":{"attributes":{"dn":"uni/tn-' + tenant_name + '/BD-' + tenant_name + 'Bd' + str(index) + '/subnet-[172.' + str(i) + '.' + str(index) + '.1/24]","ip":"172.' + str(i) + '.' + str(index) + '.1/24","rn":"subnet-[172.' + str(i) + '.' + str(index) + '.1/24]","status":"created"}}}]}}'
@@ -237,7 +261,6 @@ def create_policy(args):
                         }'
 
 			req = apic.post(path, data)
-			print req.text
 
 			# add an EPG
 
@@ -245,7 +268,6 @@ def create_policy(args):
 
 			data = '{"fvAEPg":{"attributes":{"dn":"uni/tn-' + tenant_name + '/ap-' + tenant_name + '/epg-' + tenant_name + ''  + str(index) + '","name":"' + tenant_name + ''  + str(index) + '","rn":"epg-' + tenant_name + ''  + str(index) + '","status":"created"},"children":[{"fvRsBd":{"attributes":{"tnFvBDName":"' + tenant_name + 'Bd'  + str(index) + '","status":"created,modified"},"children":[]}}]}}'
 			req = apic.post(path, data)
-			print req.text
 
 			# assign contract to EPG
 
@@ -254,22 +276,19 @@ def create_policy(args):
 										   {"fvRsProv":{"attributes":{"status":"created,modified","tnVzBrCPName":"' + tenant_name + 'Contract'  + str(contract_index) + '"},"children":[]}}]}}'
                         contract_index = (index/5) + 1
 			req = apic.post(path, data)
-			print req.text
 
 			# add VMM domain association to EPG
 
 			data = '{"fvRsDomAtt":{"attributes":{"tDn":"uni/vmmp-' + args["domain_orch"] + '/dom-' + args["domain_vmm"] + \
                                '","status":"created"},"children":[]}}'
 			req = apic.post(path, data)
-			print req.text
                 return apic
 
 
 def delete_policy(args):
-    apic = Apic(args["apic_ip"], args["apic_uid"], args["apic_passwd"], True)
+    apic = Apic(args["apic_ip"], args["apic_uid"], args["apic_passwd"], args["name"], True)
 
     tenant_name = args["tenant_name"]
     path = '/api/node/mo/uni/tn-' + tenant_name + '.json'
     req = apic.delete(path)
-    print req.text
 
