@@ -7,6 +7,10 @@ from logging.handlers import RotatingFileHandler
 import subprocess
 import sys
 import re
+try:
+    import pybrctl
+except:
+    sys.exit("pybrctl not installed")
 from pybrctl import BridgeController
 from subprocess import PIPE
 import apic_request
@@ -137,15 +141,6 @@ class OpflexAgent:
         finally:
             f.close()
            
-        # setup base dir for agent logs
-        socket_dir = '/etc/opflex-agent-ovs'
-        if not os.path.exists(socket_dir):
-           try:
-             os.mkdir(socket_dir)
-           except:
-             logger.error("cannot create %s", socket_dir)
-             raise
-
         base_dir_logs = '/var/log/opflex_agent'
         if not os.path.exists(base_dir_logs):
           try:
@@ -345,7 +340,7 @@ if __name__ == '__main__':
         nw.createLink("ns" + str(id+1), id+1)
 
         # setup listener socket dir for this agent
-        socket_dir = '/etc/opflex-agent-ovs' 
+        socket_dir = '/var/run' 
         if not os.path.exists(socket_dir):
            try:
              os.mkdir(socket_dir)
@@ -353,13 +348,6 @@ if __name__ == '__main__':
              logger.error("cannot create %s", socket_dir)
              raise
 
-        socket_dir = '/etc/opflex-agent-ovs/' + str(id)
-        if not os.path.exists(socket_dir):
-           try:
-             os.mkdir(socket_dir)
-           except:
-             logger.error("cannot create %s", socket_dir)
-             raise
         # setup a dict of options and pass to agent
         if leftover_eps > 0:
            ep_count = ep_per_agent + 1
