@@ -33,18 +33,6 @@ class RangeCounter:
        return retval
 
 class OpflexAgent:
-    """
-    agent_conf = Template('{"log":{"level":"debug"}, \
-"opflex":{"domain":"$domain", "name":"agent-$id_Str", \
-"peers":[{"hostname":"10.0.0.30", "port":"8009"}], \
-"ssl":{"mode":"encrypted", "ca-store":"/etc/ssl/certs/"}, \
-"inspector":{"enabled": true, "socket-name": "/var/run/opflex_agent$id_Str-ovs-inspect.sock"}, \
-"notif":{"enabled": true, "socket-name": "/var/run/opflex_agent$id_Str-ovs-notif.sock", "socket-group": "opflexep", "socket-permissions": "770"}}, \
-"endpoint-sources":{"filesystem":["/etc/opflex_agent/$id_Str"], "model-local": ["default"]}, \
-"service-sources":{"filesystem":["/etc/opflex_agent/services/$id_Str"]}, \
-"renderers":{}, \
-"simulate":{"enabled": true, "update-interval": 15 }}')
-    """
 
     agent_conf = Template(' \
       {"log": { \
@@ -72,6 +60,9 @@ class OpflexAgent:
           "socket-name": "/var/run/opflex_agent$id_Str-ovs-notif.sock", \
           "socket-group": "opflexep", \
           "socket-permissions": "770" \
+        }, \
+        "timers": { \
+          "prr": "$prr_timer" \
         } \
       }, \
       "endpoint-sources": { \
@@ -93,7 +84,6 @@ class OpflexAgent:
         "update-interval": 15 \
       } \
     }') 
-    #ep_content = Template('{"interface-name": "ep_if$index", "ip": ["192.168.$id_Str.$index"], "promiscuous-mode": false, "mac": "36:8c:97:ff:$id_hex_str:$index_hex_str", "policy-space-name": "$tenant", "attributes": {"vm-name": "agent$id_Str","org-id":"scale-test$id_Str"}, "endpoint-group-name": "$tenant|$tenant$EPG_index", "uuid": "1649307c-e335-47a1-b3d1-6b425bec$id_hex_str$index_hex_str"}')
     ep_content = Template(' \
     { \
       "interface-name": "ep_if$index", \
@@ -120,7 +110,7 @@ class OpflexAgent:
 
     def __init__(self, options):
         self.agent_id = options["id"]
-        self.config = self.agent_conf.substitute(domain = options["domain"], id_Str = options["id"])
+        self.config = self.agent_conf.substitute(domain = options["domain"], id_Str = options["id"], prr_timer = options["prr_timer"])
         self.config_file_name = 'agent' + str(self.agent_id) + '_config_ovs.conf'
         self.base_dir = options["base_dir"]
         self.logger = options["logger"]
@@ -128,6 +118,7 @@ class OpflexAgent:
         self.epg_start_index = options["start_epg_index"]
         self.epg_max_index = options["max_epg_index"]
         self.ep_per_agent = options["ep_per_agent"]
+        self.prr_timer = options["prr_timer"]
 
     def run(self, max_secgrp_index):
         # setup config file
@@ -357,7 +348,7 @@ if __name__ == '__main__':
 
         agent_options = { "domain": data["domain"], "id" : id + 1, "base_dir": data["base_dir"], "logger": logger, \
                           "tenant_name": data["tenant_name"], "ep_per_agent": ep_count, "start_epg_index": current_epg_index, \
-                          "max_epg_index": total_epgs}
+                          "max_epg_index": total_epgs, "prr_timer": data["prr_timer"]}
         agent = OpflexAgent(agent_options)
         agent.run(apic.max_secgrp_index)
  
