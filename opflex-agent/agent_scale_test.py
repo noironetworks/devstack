@@ -36,7 +36,7 @@ class OpflexAgent:
 
     agent_conf = Template(' \
       {"log": { \
-        "level": "debug" \
+        "level": "info" \
       }, \
       "opflex": { \
         "domain": "$domain", \
@@ -79,9 +79,12 @@ class OpflexAgent:
         ] \
       }, \
       "renderers": {}, \
-      "simulate": { \
-        "enabled": true, \
-        "update-interval": 15 \
+      "simulate":{ \
+         "enabled": true,  \
+         "update-interval": 30, \
+         "contracts": false, \
+         "security-grps": true, \
+         "endpoints": true \
       } \
     }') 
     ep_content = Template(' \
@@ -225,7 +228,7 @@ class NetworkSetup:
           subprocess.call("ip link add " + name_space + "-tap" + " type veth peer name tap", shell=True)
           subprocess.call("ip link set dev " + name_space + "-tap" + " up", shell=True)
           
-          mac = "00:0c:29:fc:2f:" + format(idx, '02x')
+          mac = "00:7c:39:fc:2f:" + format(idx, '02x')
           subprocess.call("ip link set dev tap addr " + mac, shell=True)
           subprocess.call("ip link set tap netns " + name_space, shell=True)
           self.bridge.addif(name_space + "-tap")

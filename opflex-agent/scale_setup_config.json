@@ -6,8 +6,8 @@
   "base_dir": "/etc/opflex_agent",
   "domain": "comp/prov-Kubernetes/ctrlr-[msandhu]-msandhu/sw-InsiemeLSOid",
   "tenant_name": "msandhu8",
-  "num_agents": 1,
-  "total_epg": 2,
-  "total_ep": 2,
-  "prr_timer": 60
+  "num_agents": 40,
+  "total_epg": 80,
+  "total_ep": 10000,
+  "prr_timer": 3600
 }
