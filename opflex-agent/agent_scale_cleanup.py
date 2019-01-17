@@ -24,7 +24,7 @@ def cleanup(logger, num_agents):
     logger.info("deleting generated files under /etc/opflex_agent")
     kill = subprocess.Popen(["rm", "-Rf", "/etc/opflex_agent"], stdout=PIPE)        
     # wait for the undeclare to the leaf so the leaf cleans up endpoints.
-    sleep_time = (num_agents/10 + 1) * 5
+    sleep_time = 5 + num_agents
     logger.info("sleeping " + str(sleep_time) + " seconds to wait for EP cleanup.... ")
     time.sleep(sleep_time)
     kill = subprocess.Popen(["pkill", "opflex"], stdout=PIPE)        

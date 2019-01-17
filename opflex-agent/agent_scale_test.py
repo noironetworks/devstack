@@ -63,6 +63,21 @@ class OpflexAgent:
         }, \
         "timers": { \
           "prr": "$prr_timer" \
+        }, \
+        "statistics": { \
+          "mode": "simulate", \
+          "interface": { \
+             "enabled": true, \
+             "interval": 30 \
+          }, \
+          "contract": { \
+             "enabled": true, \
+             "interval": 20 \
+          }, \
+          "security-group": { \
+             "enabled": true, \
+             "interval": 15 \
+          } \
         } \
       }, \
       "endpoint-sources": { \
@@ -78,14 +93,7 @@ class OpflexAgent:
           "/etc/opflex_agent/services/$id_Str" \
         ] \
       }, \
-      "renderers": {}, \
-      "simulate":{ \
-         "enabled": true,  \
-         "update-interval": 30, \
-         "contracts": false, \
-         "security-grps": true, \
-         "endpoints": true \
-      } \
+      "renderers": {} \
     }') 
     ep_content = Template(' \
     { \
