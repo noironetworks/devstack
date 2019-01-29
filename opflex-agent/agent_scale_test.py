@@ -16,6 +16,7 @@ from subprocess import PIPE
 import apic_request
 import agent_scale_cleanup
 import uuid
+import time
 
 
 # loop around range counter
@@ -71,7 +72,7 @@ class OpflexAgent:
              "interval": 30 \
           }, \
           "contract": { \
-             "enabled": true, \
+             "enabled": false, \
              "interval": 20 \
           }, \
           "security-group": { \
@@ -361,10 +362,12 @@ if __name__ == '__main__':
                           "tenant_name": data["tenant_name"], "ep_per_agent": ep_count, "start_epg_index": current_epg_index, \
                           "max_epg_index": total_epgs, "prr_timer": data["prr_timer"]}
         agent = OpflexAgent(agent_options)
+        print "starting agent {}".format(id+1)
         agent.run(apic.max_secgrp_index)
  
            
         current_epg_index = ((current_epg_index  + ep_per_agent - 1) % total_epgs) + 1
+        time.sleep(5)
     
         
 

@@ -2,10 +2,12 @@ import json
 import requests
 import sys
 from xml.etree import ElementTree
+import time
+import csv
 
 
 class Api(object):
-    def __init__(self, addr, user, passwd, ssl=True, debug=False):
+    def __init__(self, addr, user, passwd, ssl=True, debug=True):
         self.ignore_warnings()
         self.debug = debug
         self.addr = addr
@@ -42,6 +44,7 @@ class Api(object):
     def get_resp(self, ret):
         if ret.status_code == 200:
             resp = json.loads(ret.text)
+            resp["imdata"][0]["time"] = repr(time.time())
             return resp["imdata"]
         if self.debug:
             print ret, ret.text
@@ -64,16 +67,12 @@ class Api(object):
 
     @staticmethod
     def key_value_list(resp):
-        return dict(map(lambda x: (
+            val_dict =  dict(map(lambda x: (
             x['KeyValue']['attributes']['key'],
             x['KeyValue']['children'][0]['Value']['attributes']['value']),
             resp[0]['KeyValueList']['children']))
-
-    def getL2Ep(self, agent):
-        path = 'https://%s/api/node/class/opflexpL2Ep.xml?query-target-filter=and(wcard(opflexpL2Ep.containerName,"%s"))' % (self.addr, agent, )
-        ret = requests.get(path, cookies=self.cookies, verify=False)
-        retTree = ElementTree.fromstring(ret.content)
-        print "agent:%s, totalCount of opflexpL2Ep:%s" % (agent, retTree.get('totalCount'))
+            val_dict["time"] = resp[0]["time"]
+            return val_dict
 
 if __name__ == '__main__':
     dryrun = True
@@ -81,11 +80,24 @@ if __name__ == '__main__':
         print "Usage: %s <leaf-addr> <username> <password>" % (sys.argv[0], )
     else:
         addr, user, passwd = sys.argv[1:4]
-        api = Api(addr, user, passwd)
-        debug_data = api.get_debug_data()
+        with open('procdata.csv', 'wb') as file:
+          fieldnames = ['time', 'cpuRuntimeMs', 'cpuDelta', 'memoryRssKb']
+          writer = csv.DictWriter(file, fieldnames)
+          writer.writeheader()
+          cpuDelta = 0
+          prevCpuRuntime = 0
+          for index in range(1,9000):
+            api = Api(addr, user, passwd)
+            debug_data = api.get_debug_data()
 #        resp = api.getL2Ep("agent12")
-
-        for key in sorted(debug_data.keys()):
-            print '*****', key
-            print json.dumps(debug_data[key], indent=4,
-                             sort_keys=True, separators=(',', ': '))
+#            for key in sorted(debug_data.keys()):
+#             line = 
+#            print '*****', key
+            if index is not 1:
+              cpuDelta = int(debug_data['procstats']['cpuRuntimeMs']) - prevCpuRuntime
+              debug_data['procstats']['cpuDelta'] = cpuDelta
+            print "itertion {}, {}".format(index, json.dumps(debug_data['procstats'], indent=4, 
+                             sort_keys=True, separators=(',', ': ')))
+            writer.writerow(debug_data['procstats'])
+            prevCpuRuntime = int(debug_data['procstats']['cpuRuntimeMs'])
+            time.sleep(5)
