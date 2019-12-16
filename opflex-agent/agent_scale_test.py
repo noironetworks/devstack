@@ -41,7 +41,7 @@ class OpflexAgent:
       }, \
       "opflex": { \
         "domain": "$domain", \
-        "name": "agent-$id_Str", \
+        "name": "agent-$tenant-$id_Str", \
         "peers": [ \
           { \
             "hostname": "10.0.0.30", \
@@ -122,7 +122,7 @@ class OpflexAgent:
 
     def __init__(self, options):
         self.agent_id = options["id"]
-        self.config = self.agent_conf.substitute(domain = options["domain"], id_Str = options["id"], prr_timer = options["prr_timer"])
+        self.config = self.agent_conf.substitute(domain = options["domain"], id_Str = options["id"], prr_timer = options["prr_timer"], tenant = options["tenant_name"])
         self.config_file_name = 'agent' + str(self.agent_id) + '_config_ovs.conf'
         self.base_dir = options["base_dir"]
         self.logger = options["logger"]
@@ -362,7 +362,7 @@ if __name__ == '__main__':
                           "tenant_name": data["tenant_name"], "ep_per_agent": ep_count, "start_epg_index": current_epg_index, \
                           "max_epg_index": total_epgs, "prr_timer": data["prr_timer"]}
         agent = OpflexAgent(agent_options)
-        print "starting agent {}".format(id+1)
+        print "starting agent {0}-{1}".format(data["tenant_name"], id+1)
         agent.run(apic.max_secgrp_index)
  
            
