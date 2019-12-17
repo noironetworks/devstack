@@ -37,7 +37,7 @@ class OpflexAgent:
 
     agent_conf = Template(' \
       {"log": { \
-        "level": "info" \
+        "level": "debug" \
       }, \
       "opflex": { \
         "domain": "$domain", \
@@ -66,9 +66,9 @@ class OpflexAgent:
           "prr": "$prr_timer" \
         }, \
         "statistics": { \
-          "mode": "simulate", \
+          "mode": "off", \
           "interface": { \
-             "enabled": true, \
+             "enabled": false, \
              "interval": 30 \
           }, \
           "contract": { \
@@ -76,7 +76,7 @@ class OpflexAgent:
              "interval": 20 \
           }, \
           "security-group": { \
-             "enabled": true, \
+             "enabled": false, \
              "interval": 15 \
           } \
         } \
