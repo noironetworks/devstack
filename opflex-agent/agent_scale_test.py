@@ -103,7 +103,7 @@ class OpflexAgent:
         "192.168.$id_Str.$index" \
       ], \
       "promiscuous-mode": false, \
-      "mac": "36:8c:97:ff:$id_hex_str:$index_hex_str", \
+      "mac": "$agent_mac_oui:ff:$id_hex_str:$index_hex_str", \
       "policy-space-name": "$tenant", \
       "attributes": { \
         "vm-name": "agent$id_Str", \
@@ -131,6 +131,8 @@ class OpflexAgent:
         self.epg_max_index = options["max_epg_index"]
         self.ep_per_agent = options["ep_per_agent"]
         self.prr_timer = options["prr_timer"]
+        self.br_mac_oui = options["br_mac_oui"]
+        self.agent_mac_oui = options["agent_mac_oui"]
 
     def run(self, max_secgrp_index):
         # setup config file
@@ -194,7 +196,8 @@ class OpflexAgent:
             ep_config = self.ep_content.substitute( id_Str = self.agent_id, index = ep_index, id_hex_str = id_hex_str, \
                                                     index_hex_str = idx_hex_str, tenant = self.tenant, \
                                                     EPG_index = epg_range_counter.next_index(), uuid = uuid.uuid4(), \
-                                                    SecGrp = self.tenant + "SecGrp" + str(secgrp_index)  )
+                                                    SecGrp = self.tenant + "SecGrp" + str(secgrp_index), \
+                                                    agent_mac_oui = self.agent_mac_oui ) 
             path_to_ep_file = path_to_ep_files + '/' + str(ep_index) + '.ep'
             try:
               f = open(path_to_ep_file, 'w')
@@ -231,13 +234,13 @@ class NetworkSetup:
              logger.error("bridge creation failed\n" + e)
              raise
 
-    def createLink(self, name_space, idx):
+    def createLink(self, name_space, idx, br_mac_oui):
        try:
           # assume the bridge has been created and named 'br-agent'
           subprocess.call("ip link add " + name_space + "-tap" + " type veth peer name tap", shell=True)
           subprocess.call("ip link set dev " + name_space + "-tap" + " up", shell=True)
           
-          mac = "00:7c:39:fc:2f:" + format(idx, '02x')
+          mac = br_mac_oui + ":fc:2f:" + format(idx, '02x')
           subprocess.call("ip link set dev tap addr " + mac, shell=True)
           subprocess.call("ip link set tap netns " + name_space, shell=True)
           self.bridge.addif(name_space + "-tap")
@@ -340,7 +343,7 @@ if __name__ == '__main__':
             logger.error("bridge creation failed\n" + e)
             raise
         # create links between namspace and bridge
-        nw.createLink("ns" + str(id+1), id+1)
+        nw.createLink("ns" + str(id+1), id+1, data["br_mac_oui"])
 
         # setup listener socket dir for this agent
         socket_dir = '/var/run' 
@@ -360,7 +363,8 @@ if __name__ == '__main__':
 
         agent_options = { "domain": data["domain"], "id" : id + 1, "base_dir": data["base_dir"], "logger": logger, \
                           "tenant_name": data["tenant_name"], "ep_per_agent": ep_count, "start_epg_index": current_epg_index, \
-                          "max_epg_index": total_epgs, "prr_timer": data["prr_timer"]}
+                          "max_epg_index": total_epgs, "prr_timer": data["prr_timer"], \
+                          "br_mac_oui": data["br_mac_oui"], "agent_mac_oui": data["agent_mac_oui"]}
         agent = OpflexAgent(agent_options)
         print "starting agent {0}-{1}".format(data["tenant_name"], id+1)
         agent.run(apic.max_secgrp_index)

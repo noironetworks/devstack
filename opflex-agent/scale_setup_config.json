@@ -1,13 +1,15 @@
 {
-  "apic_ip": "172.28.184.172",
+  "apic_ip": "172.28.184.110",
   "apic_uid": "admin",
   "apic_passwd": "noir0123",
-  "interface": "eth1.4093",
+  "interface": "bond0.4081",
   "base_dir": "/etc/opflex_agent",
-  "domain": "comp/prov-Kubernetes/ctrlr-[msandhu]-msandhu/sw-InsiemeLSOid",
-  "tenant_name": "msandhu8",
-  "num_agents": 1,
-  "total_epg": 2,
-  "total_ep": 4,
-  "prr_timer": 3600
+  "domain": "comp/prov-Kubernetes/ctrlr-[k8s]-cluster1/sw-InsiemeLSOid",
+  "tenant_name": "msandhu-vm1",
+  "num_agents": 5,
+  "total_epg": 10,
+  "total_ep": 100,
+  "prr_timer": 3600,
+  "agent_mac_oui": "00:00:01",
+  "br_mac_oui": "00:00:02"
 }
